@@ -5,6 +5,7 @@ using LMS.Blazor.Components.Account;
 using LMS.Blazor.Data;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using System.Net.Http.Headers;
 
 namespace LMS.Blazor;
 
@@ -48,6 +49,19 @@ public class Program
             .AddDefaultTokenProviders();
 
         builder.Services.AddSingleton<IEmailSender<ApplicationUser>, IdentityNoOpEmailSender>();
+
+
+        builder.Services.AddHttpClient("LmsApiClient", client =>
+        {
+            var apiBaseUrl = builder.Configuration["LmsApiBaseUrl"] 
+                ?? throw new InvalidOperationException("BaseUrl not found");
+
+            client.BaseAddress = new Uri(apiBaseUrl);
+            client.Timeout = TimeSpan.FromSeconds(20);
+            client.DefaultRequestHeaders.Clear();
+            client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+        });
+
 
         var app = builder.Build();
 
