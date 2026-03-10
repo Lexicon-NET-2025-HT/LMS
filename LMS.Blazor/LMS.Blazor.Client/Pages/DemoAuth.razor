@@ -1,0 +1,81 @@
+﻿@page "/demoauth"
+
+@attribute [Authorize]
+
+<PageTitle>Demo Auth</PageTitle>
+
+<h3>Demo: Calling Protected API</h3>
+
+<p>This page demonstrates calling the remote API through the BFF proxy (Blazor server) with JWT tokens.</p>
+
+<button class="btn btn-primary" @onclick="CallApi" disabled="@isLoading">
+    @if (isLoading)
+    {
+        <span class="spinner-border spinner-border-sm me-2"></span>
+    }
+    Call API
+</button>
+
+@if (error != null)
+{
+    <div class="alert alert-danger mt-3">
+        <strong>Error:</strong> @error
+    </div>
+}
+
+@if (users != null && !users.Any())
+{
+    <div class="alert alert-info mt-3">
+        No users were returned.
+    </div>
+}
+
+@if (users != null && users.Any())
+{
+    <div class="alert alert-success mt-3">
+        <h4>Response from API:</h4>
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Name</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var user in users)
+                {
+                    <tr>
+                        <td>@user.Id</td>
+                        <td>@user.Name</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}
+
+@code {
+    private IEnumerable<DemoAuthDto>? users;
+    private string? error;
+    private bool isLoading;
+
+    private async Task CallApi()
+    {
+        isLoading = true;
+        error = null;
+        users = null;
+
+        try
+        {
+            throw new HttpRequestException("We have not implement this yet :)");
+        }
+        catch (Exception ex)
+        {
+            error = ex.Message;
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+}
