@@ -1,9 +1,12 @@
 ﻿using LMS.Blazor.Services;
+using LMS.Shared.DTOs.AuthDtos;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Net;
 using System.Net.Http.Headers;
 using System.Security.Claims;
+using System.Text;
+using System.Text.Json;
 
 [Route("api/proxy")]
 [ApiController]
@@ -42,21 +45,23 @@ public class ApiProxyController : ControllerBase
         {
             using var response = await ForwardRequestToApiAsync(endpoint, accessToken, ct);
 
-            // Retry approach:
-            // If we get 401, try refreshing token once and retry
+           
             if (response.StatusCode == HttpStatusCode.Unauthorized)
             {
-                // ToDo: Implement token refresh logic
-                // Ask token storage for tokens
-                // Call refresh endpoint
-                // Store new tokens
-                // Retry ForwardRequestToApiAsync(...)
-                //If no success remove tokens
+                var newTokens = await TryRefreshTokenAsync(userId, ct);
+                if(newTokens == null)
+                {
+                    await _tokenStorage.RemoveTokensAsync(userId);
+                    return Unauthorized("Token refresh failed");
+                }
+
+                using var retryResponse = await ForwardRequestToApiAsync(endpoint, newTokens.AccessToken, ct);
+                return await ConvertHttpResponseToActionResultAsync(retryResponse, ct);
             }
 
             return await ConvertHttpResponseToActionResultAsync(response, ct);
         }
-        catch (HttpRequestException ex)
+        catch (HttpRequestException)
         {
             return StatusCode(StatusCodes.Status503ServiceUnavailable,
                 "Service unavailable could not reach API");
@@ -64,6 +69,47 @@ public class ApiProxyController : ControllerBase
         catch (Exception)
         {
             return StatusCode(StatusCodes.Status500InternalServerError, "Internal server error");
+        }
+    }
+
+    private async Task<TokenDto?> TryRefreshTokenAsync(string userId, CancellationToken ct)
+    {
+        var client = _httpClientFactory.CreateClient("LmsApiClient");
+        
+        try
+        {
+            TokenDto? token = await _tokenStorage.GetTokensAsync(userId);
+            if(token == null)
+                return null;
+
+            var refreshEndPoint = "api/token/refresh";
+            var jsonContent = JsonSerializer.Serialize(token);
+            var content = new StringContent(jsonContent, Encoding.UTF8, "application/json");
+
+            var response = await client.PostAsync(refreshEndPoint, content, ct);
+
+            if(!response.IsSuccessStatusCode)
+                return null;
+
+            var responseContwnt = await response.Content.ReadAsStringAsync(ct);
+            var newTokens = JsonSerializer.Deserialize<TokenDto?>(responseContwnt, new JsonSerializerOptions
+            {
+                PropertyNameCaseInsensitive = true,
+            });
+
+            if(newTokens == null)
+                return null;
+
+            await _tokenStorage.StoreTokensAsync(userId, newTokens);
+
+            return newTokens;
+
+        }
+        catch (Exception ex)
+        {
+
+            _logger.LogError(ex, "Error refresh tokens for user: {userId}", userId);
+            return null;
         }
     }
 
