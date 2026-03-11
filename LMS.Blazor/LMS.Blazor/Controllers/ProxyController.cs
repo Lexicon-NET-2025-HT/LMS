@@ -41,21 +41,23 @@ public class ApiProxyController : ControllerBase
         if (string.IsNullOrWhiteSpace(accessToken))
             return Unauthorized("Unable to obtain valid access token");
 
+        var client = _httpClientFactory.CreateClient("LmsApiClient");
+
         try
         {
-            using var response = await ForwardRequestToApiAsync(endpoint, accessToken, ct);
+            using var response = await ForwardRequestToApiAsync(client, endpoint, accessToken, ct);
 
            
             if (response.StatusCode == HttpStatusCode.Unauthorized)
             {
-                var newTokens = await TryRefreshTokenAsync(userId, ct);
+                var newTokens = await TryRefreshTokenAsync(client, userId, ct);
                 if(newTokens == null)
                 {
                     await _tokenStorage.RemoveTokensAsync(userId);
                     return Unauthorized("Token refresh failed");
                 }
 
-                using var retryResponse = await ForwardRequestToApiAsync(endpoint, newTokens.AccessToken, ct);
+                using var retryResponse = await ForwardRequestToApiAsync(client, endpoint, newTokens.AccessToken, ct);
                 return await ConvertHttpResponseToActionResultAsync(retryResponse, ct);
             }
 
@@ -72,10 +74,8 @@ public class ApiProxyController : ControllerBase
         }
     }
 
-    private async Task<TokenDto?> TryRefreshTokenAsync(string userId, CancellationToken ct)
+    private async Task<TokenDto?> TryRefreshTokenAsync(HttpClient client, string userId, CancellationToken ct)
     {
-        var client = _httpClientFactory.CreateClient("LmsApiClient");
-        
         try
         {
             TokenDto? token = await _tokenStorage.GetTokensAsync(userId);
@@ -134,9 +134,8 @@ public class ApiProxyController : ControllerBase
         return new EmptyResult();
     }
 
-    private async Task<HttpResponseMessage> ForwardRequestToApiAsync(string endpoint, string accessToken, CancellationToken ct)
+    private async Task<HttpResponseMessage> ForwardRequestToApiAsync(HttpClient client, string endpoint, string accessToken, CancellationToken ct)
     {
-        var client = _httpClientFactory.CreateClient("LmsApiClient");
         var targetUri = BuildTargetUri(client.BaseAddress!, endpoint);
 
         var requestMessage = new HttpRequestMessage(new HttpMethod(Request.Method), targetUri);
