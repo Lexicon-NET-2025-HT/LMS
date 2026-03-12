@@ -2,6 +2,7 @@ using Domain.Models.Entities;
 using LMS.Blazor.Components.Account.Pages;
 using LMS.Blazor.Components.Account.Pages.Manage;
 using LMS.Blazor.Data;
+using LMS.Blazor.Services;
 using Microsoft.AspNetCore.Antiforgery;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Components.Authorization;
@@ -45,8 +46,15 @@ internal static class IdentityComponentsEndpointRouteBuilderExtensions
         accountGroup.MapPost("/Logout", async (
             ClaimsPrincipal user,
             [FromServices] SignInManager<ApplicationUser> signInManager,
+            [FromServices] ITokenStorage tokenStorage,
+            [FromServices] UserManager<ApplicationUser> userManager,
             [FromForm] string returnUrl) =>
         {
+            var userId = userManager.GetUserId(user);
+
+            if (!string.IsNullOrEmpty(userId))
+                await tokenStorage.RemoveTokensAsync(userId);
+
             await signInManager.SignOutAsync();
             return TypedResults.LocalRedirect($"~/{returnUrl}");
         });
