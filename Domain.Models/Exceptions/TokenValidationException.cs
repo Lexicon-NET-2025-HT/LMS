@@ -1,7 +1,9 @@
 ﻿namespace Domain.Models.Exceptions;
-public class TokenValidationException : Exception
+
+public class TokenValidationException : DomainException
 {
-    public int StatusCode { get; }
-    public TokenValidationException(string message, int statusCode = 401)
-        : base(message) => StatusCode = statusCode;
+    public TokenValidationException(string message = "Invalid or expired token", int statusCode = 401)
+        : base(message, "Unauthorized", statusCode)
+    {
+    }
 }

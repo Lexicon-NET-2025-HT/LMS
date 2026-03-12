@@ -142,14 +142,8 @@ public class AuthService : IAuthService
         ClaimsPrincipal principal = GetPrincipalFromExpiredToken(token.AccessToken);
         ApplicationUser? user = await userManager.FindByNameAsync(principal.Identity?.Name!);
 
-        if (user == null)
-            throw new TokenValidationException("User not found", StatusCodes.Status400BadRequest);
-
-        if (user!.RefreshToken != token.RefreshToken)
-            throw new TokenValidationException("Refreshtoken do not match");
-
-        if (user.RefreshTokenExpireTime <= DateTime.Now)
-            throw new TokenValidationException("Refreshtoken has expired");
+        if (user == null || user.RefreshToken != token.RefreshToken || user.RefreshTokenExpireTime <= DateTime.Now)
+            throw new TokenValidationException();
 
         this.user = user;
 
