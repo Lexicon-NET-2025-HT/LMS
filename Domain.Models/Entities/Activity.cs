@@ -12,4 +12,6 @@ public class Activity
     public ActivityType Type { get; set; }
     public DateTime StartTime { get; set; }
     public DateTime EndTime { get; set; }
+    public ICollection<Document> Documents { get; set; } = [];
+    public ICollection<Submission> Submissions { get; set; } = [];
 }
