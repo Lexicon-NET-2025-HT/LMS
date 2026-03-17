@@ -48,8 +48,9 @@ erDiagram
 
     SUBMISSION {
         int Id PK
-        int ActivityId FK
         string StudentId FK
+        int ActivityId FK
+        string Body
         int DocumentId FK
         datetime SubmittedAt
         bool IsLate
@@ -69,8 +70,6 @@ erDiagram
     COURSE ||--o{ DOCUMENT : contains
     MODULE ||--o{ DOCUMENT : contains
     ACTIVITY ||--o{ DOCUMENT : contains
-    ACTIVITY ||--o| ASSIGNMENT : defines
-    ASSIGNMENT ||--o{ SUBMISSION : receives
     USER ||--o{ SUBMISSION : makes
     DOCUMENT ||--o| SUBMISSION : attached_to
     USER ||--o{ SUBMISSION : reviews
