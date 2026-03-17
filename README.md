@@ -4,11 +4,7 @@
 ```mermaid
 erDiagram
     APPLICATIONUSER {
-        int Id PK
-        string FirstName
-        string LastName
-        string Email UK
-        string PasswordHash
+        string Id "<+ IdentityUser fields>"
         int CourseId FK
     }
 
@@ -44,24 +40,16 @@ erDiagram
         string DisplayName
         string Description
         datetime UploadedAt
-        int UploadedByUserId FK
+        string UploadedByUserId FK
         int CourseId FK
         int ModuleId FK
         int ActivityId FK
     }
 
-    ASSIGNMENT {
-        int Id PK
-        int ActivityId FK
-        string Title
-        string Description
-        datetime DueDate
-    }
-
     SUBMISSION {
         int Id PK
-        int AssignmentId FK
-        int StudentId FK
+        int ActivityId FK
+        string StudentId FK
         int DocumentId FK
         datetime SubmittedAt
         bool IsLate
