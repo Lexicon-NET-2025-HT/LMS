@@ -1,7 +1,6 @@
 using LMS.API.Extensions;
 using LMS.API.Services;
 using LMS.Infractructure.Data;
-using Microsoft.OpenApi;
 
 namespace LMS.API;
 
@@ -9,6 +8,7 @@ public class Program
 {
     public static void Main(string[] args)
     {
+        // testing PR
         var builder = WebApplication.CreateBuilder(args);
 
         builder.Services.ConfigureSql(builder.Configuration);
@@ -42,7 +42,7 @@ public class Program
         }
 
         app.UseHttpsRedirection();
-        app.UseCors("AllowAll"); 
+        app.UseCors("AllowAll");
 
         app.UseAuthentication();
         app.UseAuthorization();
