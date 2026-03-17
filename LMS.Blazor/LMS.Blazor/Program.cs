@@ -17,6 +17,8 @@ public class Program
     {
         var builder = WebApplication.CreateBuilder(args);
 
+        builder.Configuration.AddJsonFile("appsettings.local.json", optional: true, reloadOnChange: true);
+
         // Add services to the container.
         builder.Services.AddRazorComponents()
             .AddInteractiveWebAssemblyComponents()
@@ -57,7 +59,7 @@ public class Program
 
         builder.Services.AddHttpClient("LmsApiClient", client =>
         {
-            var apiBaseUrl = builder.Configuration["LmsApiBaseUrl"] 
+            var apiBaseUrl = builder.Configuration["LmsApiBaseUrl"]
                 ?? throw new InvalidOperationException("BaseUrl not found");
 
             client.BaseAddress = new Uri(apiBaseUrl);

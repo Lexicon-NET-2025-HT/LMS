@@ -11,6 +11,8 @@ public class Program
     {
         var builder = WebApplication.CreateBuilder(args);
 
+        builder.Configuration.AddJsonFile("appsettings.local.json", optional: true, reloadOnChange: true);
+
         builder.Services.ConfigureSql(builder.Configuration);
         builder.Services.ConfigureControllers();
 
@@ -42,7 +44,7 @@ public class Program
         }
 
         app.UseHttpsRedirection();
-        app.UseCors("AllowAll"); 
+        app.UseCors("AllowAll");
 
         app.UseAuthentication();
         app.UseAuthorization();
