@@ -1,7 +1,6 @@
 using LMS.API.Extensions;
 using LMS.API.Services;
 using LMS.Infractructure.Data;
-using Microsoft.OpenApi;
 
 namespace LMS.API;
 
@@ -9,6 +8,7 @@ public class Program
 {
     public static void Main(string[] args)
     {
+        // testing PR
         var builder = WebApplication.CreateBuilder(args);
 
         builder.Configuration.AddJsonFile("appsettings.local.json", optional: true, reloadOnChange: true);
