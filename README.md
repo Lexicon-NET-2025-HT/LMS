@@ -4,11 +4,7 @@
 ```mermaid
 erDiagram
     APPLICATIONUSER {
-        int Id PK
-        string FirstName
-        string LastName
-        string Email UK
-        string PasswordHash
+        string Id "<+ IdentityUser fields>"
         int CourseId FK
     }
 
@@ -44,25 +40,18 @@ erDiagram
         string DisplayName
         string Description
         datetime UploadedAt
-        int UploadedByUserId FK
+        string UploadedByUserId FK
         int CourseId FK
         int ModuleId FK
         int ActivityId FK
-    }
-
-    ASSIGNMENT {
-        int Id PK
-        int ActivityId FK
-        string Title
-        string Description
-        datetime DueDate
+        int SubmissionId FK
     }
 
     SUBMISSION {
         int Id PK
-        int AssignmentId FK
-        int StudentId FK
-        int DocumentId FK
+        string StudentId FK
+        int ActivityId FK
+        string Body
         datetime SubmittedAt
         bool IsLate
         string FeedbackText
@@ -81,8 +70,6 @@ erDiagram
     COURSE ||--o{ DOCUMENT : contains
     MODULE ||--o{ DOCUMENT : contains
     ACTIVITY ||--o{ DOCUMENT : contains
-    ACTIVITY ||--o| ASSIGNMENT : defines
-    ASSIGNMENT ||--o{ SUBMISSION : receives
     USER ||--o{ SUBMISSION : makes
     DOCUMENT ||--o| SUBMISSION : attached_to
     USER ||--o{ SUBMISSION : reviews
