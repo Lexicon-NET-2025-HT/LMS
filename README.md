@@ -44,6 +44,7 @@ erDiagram
         int CourseId FK
         int ModuleId FK
         int ActivityId FK
+        int SubmissionId FK
     }
 
     SUBMISSION {
@@ -51,7 +52,6 @@ erDiagram
         string StudentId FK
         int ActivityId FK
         string Body
-        int DocumentId FK
         datetime SubmittedAt
         bool IsLate
         string FeedbackText
