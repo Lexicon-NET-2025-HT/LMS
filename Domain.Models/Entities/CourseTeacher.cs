@@ -4,6 +4,6 @@ public class CourseTeacher
 {
     public int CourseId { get; set; }
     public Course Course { get; set; } = null!;
-    public Guid TeacherId { get; set; }
+    public string TeacherId { get; set; } = string.Empty;
     public ApplicationUser Teacher { get; set; } = null!;
 }
