@@ -1,4 +1,4 @@
-﻿using LMS.Shared.DTOs.CourseDtos;
+﻿using LMS.Shared.DTOs.Course;
 using System.Text.Json;
 
 namespace LMS.Blazor.Client.Services;
