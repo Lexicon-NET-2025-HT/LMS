@@ -1,0 +1,197 @@
+﻿@page "/admin/courses"
+@attribute [Authorize(Roles = "Teacher")]
+@using LMS.Blazor.Client.Components
+@using LMS.Shared.DTOs.CourseDtos
+@inject ICourseService CourseService
+
+<PageTitle>Course Management</PageTitle>
+
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="mb-0">Course Management</h2>
+        @if (!showForm)
+        {
+            <button class="btn btn-primary" @onclick="HandleCreateClicked">
+                <i class="bi bi-plus-lg me-1"></i> Create Course
+            </button>
+        }
+    </div>
+
+    @* ---- Feedback messages ---- *@
+    @if (!string.IsNullOrEmpty(successMessage))
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            @successMessage
+            <button type="button" class="btn-close" @onclick="() => successMessage = null"></button>
+        </div>
+    }
+    @if (!string.IsNullOrEmpty(errorMessage))
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            @errorMessage
+            <button type="button" class="btn-close" @onclick="() => errorMessage = null"></button>
+        </div>
+    }
+
+    @* ---- Form section ---- *@
+    @if (showForm)
+    {
+        <CourseFormComponent
+            Course="selectedCourse"
+            OnSubmit="HandleFormSubmit"
+            OnCancel="HandleFormCancel" />
+    }
+
+    @* ---- List section ---- *@
+    @if (isLoading)
+    {
+        <div class="text-center py-5">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+            <p class="mt-2 text-muted">Loading courses...</p>
+        </div>
+    }
+    else if (!string.IsNullOrEmpty(loadError))
+    {
+        <div class="alert alert-danger">
+            <p>@loadError</p>
+            <button class="btn btn-outline-danger btn-sm" @onclick="LoadCoursesAsync">Retry</button>
+        </div>
+    }
+    else if (!courses.Any())
+    {
+        <div class="text-center py-5 text-muted">
+            <i class="bi bi-journal-x fs-1"></i>
+            <p class="mt-2">No courses found. Create your first course.</p>
+        </div>
+    }
+    else
+    {
+        <CourseListComponent
+            Courses="courses"
+            OnEdit="HandleEditClicked"
+            OnDelete="HandleDeleteClicked" />
+    }
+</div>
+
+@* ---- Delete confirmation modal ---- *@
+@if (showDeleteConfirm && courseToDelete is not null)
+{
+    <div class="modal fade show d-block" tabindex="-1" style="background:rgba(0,0,0,0.5)">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Confirm Delete</h5>
+                </div>
+                <div class="modal-body">
+                    Are you sure you want to delete <strong>@courseToDelete.Name</strong>?
+                    This action cannot be undone.
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" @onclick="CancelDelete">Cancel</button>
+                    <button class="btn btn-danger" @onclick="ConfirmDeleteAsync">Delete</button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    // ---- State ----
+    private List<CourseDto> courses = [];
+    private CourseDto? selectedCourse;
+    private bool isLoading;
+    private bool showForm;
+    private bool showDeleteConfirm;
+    private CourseDto? courseToDelete;
+    private string? errorMessage;
+    private string? successMessage;
+    private string? loadError;
+
+    // ---- Lifecycle ----
+    protected override async Task OnInitializedAsync()
+        => await LoadCoursesAsync();
+
+    private async Task LoadCoursesAsync()
+    {
+        isLoading = true;
+        loadError = null;
+        StateHasChanged();
+
+        try
+        {
+            courses = await CourseService.GetAllCoursesAsync();
+        }
+        catch (Exception ex)
+        {
+            loadError = $"Failed to load courses. {ex.Message}";
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    // ---- Create ----
+    private void HandleCreateClicked()
+    {
+        selectedCourse = null;
+        showForm = true;
+    }
+
+    // ---- Edit ----
+    private void HandleEditClicked(CourseDto course)
+    {
+        selectedCourse = course;
+        showForm = true;
+    }
+
+    // ---- Form submit (create or update) ----
+    private async Task HandleFormSubmit(CourseDto result)
+    {
+        showForm = false;
+        selectedCourse = null;
+        await LoadCoursesAsync();
+        successMessage = $"Course '{result.Name}' saved successfully.";
+    }
+
+    private void HandleFormCancel()
+    {
+        showForm = false;
+        selectedCourse = null;
+    }
+
+    // ---- Delete ----
+    private void HandleDeleteClicked(CourseDto course)
+    {
+        courseToDelete = course;
+        showDeleteConfirm = true;
+    }
+
+    private void CancelDelete()
+    {
+        courseToDelete = null;
+        showDeleteConfirm = false;
+    }
+
+    private async Task ConfirmDeleteAsync()
+    {
+        if (courseToDelete is null) return;
+
+        var success = await CourseService.DeleteCourseAsync(courseToDelete.Id);
+
+        if (success)
+        {
+            successMessage = $"Course '{courseToDelete.Name}' deleted successfully.";
+            await LoadCoursesAsync();
+        }
+        else
+        {
+            errorMessage = $"Failed to delete '{courseToDelete.Name}'. Please try again.";
+        }
+
+        courseToDelete = null;
+        showDeleteConfirm = false;
+    }
+}
