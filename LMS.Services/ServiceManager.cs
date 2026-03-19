@@ -1,5 +1,4 @@
-﻿using LMS.Services.Services;
-using Service.Contracts;
+﻿using Service.Contracts;
 
 namespace LMS.Services;
 

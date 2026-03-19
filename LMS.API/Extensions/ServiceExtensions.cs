@@ -2,7 +2,6 @@
 using LMS.Infractructure.Repositories;
 using LMS.Presentation;
 using LMS.Services;
-using LMS.Services.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;

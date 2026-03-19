@@ -1,6 +1,7 @@
-﻿using LMS.Services.Services;
+﻿using LMS.Services;
 using LMS.Shared.DTOs.Activity;
 using LMS.Shared.DTOs.Common;
+using Service.Contracts;
 using System;
 using System.Collections.Generic;
 using System.Text;

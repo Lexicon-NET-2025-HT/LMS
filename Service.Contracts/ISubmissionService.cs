@@ -4,7 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace LMS.Services.Services
+namespace Service.Contracts
 {
     /// <summary>
     /// Service contract for Submission operations

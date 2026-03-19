@@ -1,7 +1,7 @@
 ﻿using LMS.Shared.DTOs.Common;
 using LMS.Shared.DTOs.Course;
 
-namespace LMS.Services.Services;
+namespace Service.Contracts;
 
 /// <summary>
 /// Service contract for Course operations
