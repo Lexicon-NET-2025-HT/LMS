@@ -11,6 +11,8 @@ public class Program
         // testing PR
         var builder = WebApplication.CreateBuilder(args);
 
+        builder.Configuration.AddJsonFile("appsettings.local.json", optional: true, reloadOnChange: true);
+
         builder.Services.ConfigureSql(builder.Configuration);
         builder.Services.ConfigureControllers();
 
