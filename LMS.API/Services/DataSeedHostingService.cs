@@ -3,6 +3,7 @@ using Domain.Models.Enums;
 using LMS.Infractructure.Data;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using System.Data;
 namespace LMS.API.Services;
 
 public class DataSeedHostingService : IHostedService
@@ -43,8 +44,6 @@ public class DataSeedHostingService : IHostedService
         try
         {
             await AddRolesAsync([TeacherRole, StudentRole]);
-            await AddDemoUsersAsync();
-            await AddUsersAsync(20);
 
             var courses = FakeCourses(5);
             await AddCoursesToDb(courses);
@@ -54,6 +53,9 @@ public class DataSeedHostingService : IHostedService
 
             var activities = FakeActivities(modules);
             await AddActivitiesToDb(activities);
+
+            await AddDemoUsersAsync(courses);
+            await AddFakedUsersAsync(20, courses);
 
             logger.LogInformation("Seed complete");
         }
@@ -75,41 +77,58 @@ public class DataSeedHostingService : IHostedService
             if (!res.Succeeded) throw new Exception(string.Join("\n", res.Errors));
         }
     }
-    private async Task AddDemoUsersAsync()
+    private async Task AddDemoUsersAsync(IEnumerable<Course> courses)
     {
-        var teacher = new ApplicationUser
-        {
-            UserName = "teacher@test.com",
-            Email = "teacher@test.com"
+        var faker = new Faker();
+
+        var teachers = new List<ApplicationUser> {
+            new(){ UserName = "teacher@test.com", Email = "teacher@test.com"},
+            new(){ UserName = "teacher1@test.com", Email = "teacher1@test.com"},
+            new(){ UserName = "teacher2@test.com", Email = "teacher2@test.com"},
+            new(){ UserName = "teacher3@test.com", Email = "teacher3@test.com"},
+            new(){ UserName = "teacher4@test.com", Email = "teacher4@test.com"},
+            new(){ UserName = "teacher5@test.com", Email = "teacher5@test.com"}
         };
+
+        await AddUserToDb(teachers, TeacherRole);
+
+        foreach (var teacher in teachers)
+        {
+            var selectedCourses = faker.PickRandom(courses, faker.Random.Int(1, 3));
+            teacher.TeachingCourses = selectedCourses
+                .Select(c => new CourseTeacher
+                {
+                    CourseId = c.Id,
+                    TeacherId = teacher.Id
+                })
+                .ToList();
+        }
+        await dbContext.SaveChangesAsync();
 
         var student = new ApplicationUser
         {
             UserName = "student@test.com",
-            Email = "student@test.com"
+            Email = "student@test.com",
+            CourseId = courses.First().Id
         };
 
-        await AddUserToDb([teacher, student]);
+        await AddUserToDb([student], StudentRole);
 
-        var teacherRoleResult = await userManager.AddToRoleAsync(teacher, TeacherRole);
-        if (!teacherRoleResult.Succeeded) throw new Exception(string.Join("\n", teacherRoleResult.Errors));
-
-        var studentRoleResult = await userManager.AddToRoleAsync(student, StudentRole);
-        if (!studentRoleResult.Succeeded) throw new Exception(string.Join("\n", studentRoleResult.Errors));
     }
 
-    private async Task AddUsersAsync(int nrOfUsers)
+    private async Task AddFakedUsersAsync(int nrOfUsers, IEnumerable<Course> courses)
     {
         var faker = new Faker<ApplicationUser>("sv").Rules((f, e) =>
         {
             e.Email = f.Person.Email;
             e.UserName = f.Person.Email;
+            e.CourseId = f.PickRandom(courses).Id;
         });
 
-        await AddUserToDb(faker.Generate(nrOfUsers));
+        await AddUserToDb(faker.Generate(nrOfUsers), StudentRole);
     }
 
-    private async Task AddUserToDb(IEnumerable<ApplicationUser> users)
+    private async Task AddUserToDb(IEnumerable<ApplicationUser> users, string role)
     {
         var passWord = configuration["password"];
         ArgumentNullException.ThrowIfNull(passWord, nameof(passWord));
@@ -117,8 +136,15 @@ public class DataSeedHostingService : IHostedService
         foreach (var user in users)
         {
             var result = await userManager.CreateAsync(user, passWord);
-            if (!result.Succeeded) throw new Exception(string.Join("\n", result.Errors));
+            if (!result.Succeeded)
+                throw new Exception(string.Join("\n", result.Errors));
+
+            var roleResult = await userManager.AddToRoleAsync(user, role);
+            if (!roleResult.Succeeded)
+                throw new Exception(string.Join("\n", roleResult.Errors));
         }
+
+        await dbContext.SaveChangesAsync();
     }
 
     private IEnumerable<Course> FakeCourses(int nrOfCourses)
