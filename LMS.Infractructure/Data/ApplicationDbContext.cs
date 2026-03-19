@@ -12,6 +12,7 @@ namespace LMS.Infractructure.Data
         public DbSet<Activity> Activities { get; set; }
         public DbSet<Document> Documents { get; set; }
         public DbSet<Submission> Submissions { get; set; }
+        public DbSet<CourseTeacher> CourseTeachers { get; set; }
         public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)
             : base(options)
         { }

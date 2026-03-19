@@ -1,4 +1,5 @@
-﻿using LMS.Shared.DTOs.Course;
+﻿using LMS.Shared.DTOs.Common;
+using LMS.Shared.DTOs.Course;
 using System.Text.Json;
 
 namespace LMS.Blazor.Client.Services;
@@ -8,7 +9,7 @@ public class CourseService : ICourseService
     private readonly IApiService _apiService;
     private readonly ILogger<CourseService> _logger;
 
-    private const string Base = "courses";
+    private const string Base = "api/courses";
 
     public CourseService(IApiService apiService, ILogger<CourseService> logger)
     {
@@ -16,12 +17,11 @@ public class CourseService : ICourseService
         _logger = logger;
     }
 
-    public async Task<List<CourseDto>> GetAllCoursesAsync(CancellationToken ct = default)
+    public async Task<PagedResultDto<CourseDto>?> GetAllCoursesAsync(int page = 1, int pageSize = 10, CancellationToken ct = default)
     {
         try
         {
-            var result = await _apiService.GetAsync<List<CourseDto>>(Base, ct);
-            return result ?? [];
+            return await _apiService.GetAsync<PagedResultDto<CourseDto>>($"{Base}?page={page}&pageSize={pageSize}", ct);
         }
         catch (HttpRequestException ex)
         {
@@ -35,10 +35,10 @@ public class CourseService : ICourseService
         {
             _logger.LogWarning(ex, "Request timed out fetching all courses.");
         }
-        return [];
+        return null;
     }
 
-    public async Task<CourseDto?> GetCourseAsync(int courseId, CancellationToken ct = default)
+    public async Task<CourseDto?> GetCourseByIdAsync(int courseId, CancellationToken ct = default)
     {
         try
         {
@@ -50,11 +50,32 @@ public class CourseService : ICourseService
         }
         catch (JsonException ex)
         {
-            _logger.LogError(ex, "Failed to deserialize course {CourseId} response.", courseId);
+            _logger.LogError(ex, "Failed to deserialize course {CourseId}.", courseId);
         }
         catch (TaskCanceledException ex)
         {
             _logger.LogWarning(ex, "Request timed out fetching course {CourseId}.", courseId);
+        }
+        return null;
+    }
+
+    public async Task<CourseDetailDto?> GetCourseDetailByIdAsync(int courseId, CancellationToken ct = default)
+    {
+        try
+        {
+            return await _apiService.GetAsync<CourseDetailDto>($"{Base}/{courseId}/detail", ct);
+        }
+        catch (HttpRequestException ex)
+        {
+            _logger.LogError(ex, "Network error fetching course detail {CourseId}.", courseId);
+        }
+        catch (JsonException ex)
+        {
+            _logger.LogError(ex, "Failed to deserialize course detail {CourseId}.", courseId);
+        }
+        catch (TaskCanceledException ex)
+        {
+            _logger.LogWarning(ex, "Request timed out fetching course detail {CourseId}.", courseId);
         }
         return null;
     }
@@ -80,11 +101,11 @@ public class CourseService : ICourseService
         return null;
     }
 
-    public async Task<CourseDto?> UpdateCourseAsync(int courseId, UpdateCourseDto dto, CancellationToken ct = default)
+    public async Task UpdateCourseAsync(int courseId, UpdateCourseDto dto, CancellationToken ct = default)
     {
         try
         {
-            return await _apiService.PutAsync<CourseDto>($"{Base}/{courseId}", dto, ct);
+            await _apiService.PutAsync<object>($"{Base}/{courseId}", dto, ct);
         }
         catch (HttpRequestException ex)
         {
@@ -98,14 +119,13 @@ public class CourseService : ICourseService
         {
             _logger.LogWarning(ex, "Request timed out updating course {CourseId}.", courseId);
         }
-        return null;
     }
 
-    public async Task<bool> DeleteCourseAsync(int courseId, CancellationToken ct = default)
+    public async Task DeleteCourseAsync(int courseId, CancellationToken ct = default)
     {
         try
         {
-            return await _apiService.DeleteAsync($"{Base}/{courseId}", ct);
+            await _apiService.DeleteAsync($"{Base}/{courseId}", ct);
         }
         catch (HttpRequestException ex)
         {
@@ -115,6 +135,5 @@ public class CourseService : ICourseService
         {
             _logger.LogWarning(ex, "Request timed out deleting course {CourseId}.", courseId);
         }
-        return false;
     }
 }

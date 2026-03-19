@@ -1,12 +1,14 @@
-﻿using LMS.Shared.DTOs.Course;
+﻿using LMS.Shared.DTOs.Common;
+using LMS.Shared.DTOs.Course;
 
 namespace LMS.Blazor.Client.Services;
 
 public interface ICourseService
 {
-    Task<List<CourseDto>> GetAllCoursesAsync(CancellationToken ct = default);
-    Task<CourseDto?> GetCourseAsync(int courseId, CancellationToken ct = default);
+    Task<PagedResultDto<CourseDto>?> GetAllCoursesAsync(int page = 1, int pageSize = 10, CancellationToken ct = default);
+    Task<CourseDto?> GetCourseByIdAsync(int courseId, CancellationToken ct = default);
+    Task<CourseDetailDto?> GetCourseDetailByIdAsync(int courseId, CancellationToken ct = default);
     Task<CourseDto?> CreateCourseAsync(CreateCourseDto dto, CancellationToken ct = default);
-    Task<CourseDto?> UpdateCourseAsync(int courseId, UpdateCourseDto dto, CancellationToken ct = default);
-    Task<bool> DeleteCourseAsync(int courseId, CancellationToken ct = default);
+    Task UpdateCourseAsync(int courseId, UpdateCourseDto dto, CancellationToken ct = default);
+    Task DeleteCourseAsync(int courseId, CancellationToken ct = default);
 }

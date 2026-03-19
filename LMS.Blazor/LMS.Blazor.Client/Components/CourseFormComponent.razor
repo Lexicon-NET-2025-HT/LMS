@@ -96,8 +96,6 @@
 
         try
         {
-            CourseDto? result;
-
             if (isEditMode)
             {
                 var updateDto = new UpdateCourseDto
@@ -106,7 +104,13 @@
                     Description = model.Description,
                     StartDate = model.StartDate
                 };
-                result = await CourseService.UpdateCourseAsync(Course!.Id, updateDto);
+                await CourseService.UpdateCourseAsync(Course!.Id, updateDto);
+                await OnSubmit.InvokeAsync(Course! with
+                {
+                    Name = model.Name,
+                    Description = model.Description,
+                    StartDate = model.StartDate
+                });
             }
             else
             {
@@ -116,13 +120,12 @@
                     Description = model.Description,
                     StartDate = model.StartDate
                 };
-                result = await CourseService.CreateCourseAsync(createDto);
+                var result = await CourseService.CreateCourseAsync(createDto);
+                if (result is not null)
+                    await OnSubmit.InvokeAsync(result);
+                else
+                    errorMessage = "Failed to create course. Please try again.";
             }
-
-            if (result is not null)
-                await OnSubmit.InvokeAsync(result);
-            else
-                errorMessage = "Operation failed. Please try again.";
         }
         catch (Exception ex)
         {
