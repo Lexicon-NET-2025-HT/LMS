@@ -1,4 +1,5 @@
-﻿using System;
+﻿
+using Domain.Models.Enums;
 
 namespace LMS.Shared.DTOs.Activity
 {
@@ -18,7 +19,7 @@ namespace LMS.Shared.DTOs.Activity
         /// <summary>
         /// Type of activity (e.g., "Assignment", "Quiz", "Lecture", "Discussion").
         /// </summary>
-        public required string Type { get; set; }
+        public required ActivityType Type { get; set; }
         public required DateTime StartTime { get; set; }
         public required DateTime EndTime { get; set; }
 

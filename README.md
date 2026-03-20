@@ -66,13 +66,13 @@ erDiagram
     COURSE ||--o{ MODULE : has
     MODULE ||--o{ ACTIVITY : has
     COURSE ||--o{ USER : has_students
-    USER ||--o{ DOCUMENT : uploads
+    APPLICATIONUSER ||--o{ DOCUMENT : uploads
     COURSE ||--o{ DOCUMENT : contains
     MODULE ||--o{ DOCUMENT : contains
     ACTIVITY ||--o{ DOCUMENT : contains
-    USER ||--o{ SUBMISSION : makes
+    APPLICATIONUSER ||--o{ SUBMISSION : makes
     DOCUMENT ||--o| SUBMISSION : attached_to
-    USER ||--o{ SUBMISSION : reviews
+    APPLICATIONUSER ||--o{ SUBMISSION : reviews
     COURSE ||--o{ COURSETEACHER : has
-    USER ||--o{ COURSETEACHER : teaches_in
+    APPLICATIONUSER ||--o{ COURSETEACHER : teaches_in
 ```

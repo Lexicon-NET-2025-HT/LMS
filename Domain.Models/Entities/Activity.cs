@@ -10,7 +10,7 @@ public class Activity
     public string Name { get; set; } = string.Empty;
     public string Description { get; set; } = string.Empty;
     public ActivityType Type { get; set; }
-    public DateTime StartTime { get; set; }
+    public DateTime? StartTime { get; set; } // Some activities might only have an end time
     public DateTime EndTime { get; set; }
     public ICollection<Document> Documents { get; set; } = [];
     public ICollection<Submission> Submissions { get; set; } = [];
