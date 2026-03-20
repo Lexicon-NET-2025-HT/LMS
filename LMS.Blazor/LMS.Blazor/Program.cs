@@ -1,5 +1,4 @@
 using Domain.Models.Entities;
-using LMS.Blazor.Client.Pages;
 using LMS.Blazor.Client.Services;
 using LMS.Blazor.Components;
 using LMS.Blazor.Components.Account;
@@ -39,15 +38,15 @@ public class Program
         builder.Services.AddAuthorization();
 
         var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
-       
+
         builder.Services.AddDbContext<ApplicationDbContext>(options =>
             options.UseSqlServer(connectionString));
-       
+
         builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 
         builder.Services.AddIdentityCore<ApplicationUser>(options =>
             {
-               // options.SignIn.RequireConfirmedAccount = true;
+                // options.SignIn.RequireConfirmedAccount = true;
                 options.Stores.SchemaVersion = IdentitySchemaVersions.Version3;
             })
             .AddEntityFrameworkStores<ApplicationDbContext>()
@@ -71,6 +70,7 @@ public class Program
         builder.Services.AddSingleton<ITokenStorage, TokenStorageService>();
         //  builder.Services.AddScoped<IApiService, ClientApiService>();
         builder.Services.AddScoped<IApiService, ServerNoOpApiService>();
+        builder.Services.AddScoped<ICourseService, ServerNoOpCourseService>();
 
         var app = builder.Build();
 

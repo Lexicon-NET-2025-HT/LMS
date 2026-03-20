@@ -1,103 +1,78 @@
-﻿using LMS.Services;
+﻿using AutoMapper;
+using Domain.Contracts.Repositories;
+using Domain.Models.Entities;
 using LMS.Shared.DTOs.Common;
 using LMS.Shared.DTOs.Course;
 using Service.Contracts;
-using System;
-using System.Collections.Generic;
-using System.Text;
 
-namespace LMS.Services
+namespace LMS.Services;
+
+public class CourseService : ICourseService
 {
-    /// <summary>
-    /// Course service implementation - TODO: Replace with real database operations
-    /// </summary>
-    public class CourseService : ICourseService
+    private readonly IUnitOfWork unitOfWork;
+    private readonly IMapper mapper;
+
+    public CourseService(IUnitOfWork unitOfWork, IMapper mapper)
     {
-        // TODO: Inject IUnitOfWork when entities are ready
+        this.unitOfWork = unitOfWork;
+        this.mapper = mapper;
+    }
 
-        public async Task<PagedResultDto<CourseDto>> GetAllCoursesAsync(int page, int pageSize)
+    public async Task<PagedResultDto<CourseDto>> GetAllCoursesAsync(int page, int pageSize)
+    {
+        var (courses, totalCount) = await unitOfWork.Courses.GetAllCoursesAsync(page, pageSize);
+
+        return new PagedResultDto<CourseDto>
         {
-            // TODO: Replace with real database query
-            var mockCourses = new List<CourseDto>
-        {
-            new CourseDto
-            {
-                Id = 1,
-                Name = "C# Fundamentals",
-                Description = "Learn C# programming basics",
-                StartDate = DateTime.Now.AddMonths(1),
-                TeacherIds = new() { "teacher-1" },
-                StudentCount = 25,
-                ModuleCount = 8
-            }
+            Items = mapper.Map<List<CourseDto>>(courses),
+            TotalCount = totalCount,
+            PageNumber = page,
+            PageSize = pageSize
         };
+    }
 
-            return await Task.FromResult(new PagedResultDto<CourseDto>
-            {
-                Items = mockCourses,
-                TotalCount = mockCourses.Count,
-                PageNumber = page,
-                PageSize = pageSize
-            });
-        }
+    public async Task<CourseDto?> GetCourseByIdAsync(int id)
+    {
+        var course = await unitOfWork.Courses.GetCourseAsync(id, trackChanges: false);
+        return course is null ? null : mapper.Map<CourseDto>(course);
+    }
 
-        public async Task<CourseDto?> GetCourseByIdAsync(int id)
-        {
-            // TODO: Replace with real database query
-            return await Task.FromResult(new CourseDto
-            {
-                Id = id,
-                Name = "C# Fundamentals",
-                Description = "Learn C# programming basics",
-                StartDate = DateTime.Now.AddMonths(1),
-                TeacherIds = new() { "teacher-1" },
-                StudentCount = 25,
-                ModuleCount = 8
-            });
-        }
+    public async Task<CourseDetailDto?> GetCourseDetailByIdAsync(int id)
+    {
+        var course = await unitOfWork.Courses.GetCourseAsync(id, trackChanges: false);
+        return course is null ? null : mapper.Map<CourseDetailDto>(course);
+    }
 
-        public async Task<CourseDetailDto?> GetCourseDetailByIdAsync(int id)
-        {
-            // TODO: Replace with real database query including related entities
-            return await Task.FromResult(new CourseDetailDto
-            {
-                Id = id,
-                Name = "C# Fundamentals",
-                Description = "Learn C# programming basics",
-                StartDate = DateTime.Now.AddMonths(1),
-                TeacherIds = new() { "teacher-1" },
-                StudentCount = 25,
-                ModuleCount = 8,
-                Modules = new(),
-                Students = new()
-            });
-        }
+    public async Task<CourseDto> CreateCourseAsync(CreateCourseDto dto)
+    {
+        ArgumentNullException.ThrowIfNull(dto);
 
-        public async Task<CourseDto> CreateCourseAsync(CreateCourseDto dto)
-        {
-            // TODO: Create entity and save to database
-            return await Task.FromResult(new CourseDto
-            {
-                Id = 1,
-                Name = dto.Name,
-                Description = dto.Description,
-                StartDate = dto.StartDate,
-                TeacherIds = new(),
-                StudentCount = 0,
-                ModuleCount = 0
-            });
-        }
+        var course = mapper.Map<Course>(dto);
+        unitOfWork.Courses.Create(course);
+        await unitOfWork.CompleteAsync();
 
-        public async Task UpdateCourseAsync(int id, UpdateCourseDto dto)
-        {
-            // TODO: Update entity in database
-            await Task.CompletedTask;
-        }
+        return mapper.Map<CourseDto>(course);
+    }
 
-        public async Task DeleteCourseAsync(int id)
-        {
-            // TODO: Delete entity from database
-            await Task.CompletedTask;
-        }
+    public async Task UpdateCourseAsync(int id, UpdateCourseDto dto)
+    {
+        ArgumentNullException.ThrowIfNull(dto);
+
+        var course = await unitOfWork.Courses.GetCourseAsync(id, trackChanges: true);
+        if (course is null)
+            throw new KeyNotFoundException($"Course with id {id} was not found.");
+
+        mapper.Map(dto, course);
+        await unitOfWork.CompleteAsync();
+    }
+
+    public async Task DeleteCourseAsync(int id)
+    {
+        var course = await unitOfWork.Courses.GetCourseAsync(id, trackChanges: true);
+        if (course is null)
+            throw new KeyNotFoundException($"Course with id {id} was not found.");
+
+        unitOfWork.Courses.Delete(course);
+        await unitOfWork.CompleteAsync();
     }
 }
