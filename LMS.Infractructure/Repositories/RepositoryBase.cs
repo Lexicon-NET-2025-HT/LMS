@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using System.Linq.Expressions;
 
 namespace LMS.Infractructure.Repositories;
+
 public abstract class RepositoryBase<T> : IRepositoryBase<T>, IInternalRepositoryBase<T> where T : class //Do Entitybase
 {
     protected DbSet<T> DbSet { get; }
@@ -26,4 +27,16 @@ public abstract class RepositoryBase<T> : IRepositoryBase<T>, IInternalRepositor
     public void Update(T entity) => DbSet.Update(entity);
 
     public void Delete(T entity) => DbSet.Remove(entity);
+
+    public async void CreateAsync(T entity) => await DbSet.AddAsync(entity);
+
+    Task<T> IRepositoryBase<T>.CreateAsync(T entity)
+    {
+        throw new NotImplementedException();
+    }
+
+    public async Task<T?> FindByIdAsync(int? id)
+    {
+        return await DbSet.FindAsync(id);
+    }
 }

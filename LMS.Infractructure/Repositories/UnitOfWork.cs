@@ -2,14 +2,20 @@
 using LMS.Infractructure.Data;
 
 namespace LMS.Infractructure.Repositories;
-public class UnitOfWork : IUnitOfWork
+
+public class UnitOfWork(
+    ApplicationDbContext context,
+    ICourseRepository courseRepository,
+    IModuleRepository moduleRepository,
+    IActivityRepository activityRepository,
+    IDocumentRepository documentRepository) : IUnitOfWork
 {
-    private readonly ApplicationDbContext context;
+    private readonly ApplicationDbContext _context = context ?? throw new ArgumentNullException(nameof(context));
 
-    public UnitOfWork(ApplicationDbContext context)
-    {
-        this.context = context ?? throw new ArgumentNullException(nameof(context));
-    }
+    public IDocumentRepository Documents { get; } = documentRepository;
+    public ICourseRepository Courses { get; } = courseRepository;
+    public IModuleRepository Modules { get; } = moduleRepository;
+    public IActivityRepository Activities { get; } = activityRepository;
 
-    public async Task CompleteAsync() => await context.SaveChangesAsync();
+    public async Task CompleteAsync() => await _context.SaveChangesAsync();
 }
