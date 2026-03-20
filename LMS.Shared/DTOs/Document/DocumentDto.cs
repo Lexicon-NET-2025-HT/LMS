@@ -32,6 +32,7 @@ namespace LMS.Shared.DTOs.Document
         public int? CourseId { get; set; }
         public int? ModuleId { get; set; }
         public int? ActivityId { get; set; }
+        public int? SubmissionId { get; set; }
         public required string Scope { get; set; }
     }
 }
