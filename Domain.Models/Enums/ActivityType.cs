@@ -2,9 +2,9 @@
 
 public enum ActivityType
 {
-    Lecture,
-    Exercise,
-    Assignment,
-    ELearning,
-    Other
+    Lecture = 0,
+    Exercise = 1,
+    Assignment = 2,
+    ELearning = 3,
+    Other = 4
 }
