@@ -1,42 +1,25 @@
 ﻿using Domain.Contracts.Repositories;
-using LMS.Infractructure.Data;
 using Microsoft.EntityFrameworkCore;
 using System.Linq.Expressions;
 
 namespace LMS.Infractructure.Repositories;
 
-public abstract class RepositoryBase<T> : IRepositoryBase<T>, IInternalRepositoryBase<T> where T : class //Do Entitybase
+public abstract class RepositoryBase<T>(DbSet<T> dbSet) : IRepositoryBase<T>, IInternalRepositoryBase<T> where T : class //Do Entitybase
 {
-    protected DbSet<T> DbSet { get; }
+    protected DbSet<T> DbSet { get; } = dbSet;
 
-    public RepositoryBase(ApplicationDbContext context)
-    {
-        DbSet = context.Set<T>();
-    }
-
-    public IQueryable<T> FindAll(bool trackChanges = false) =>
-        !trackChanges ? DbSet.AsNoTracking() :
-                        DbSet;
-
-    public IQueryable<T> FindByCondition(Expression<Func<T, bool>> expression, bool trackChanges = false) =>
-        !trackChanges ? DbSet.Where(expression).AsNoTracking() :
-                        DbSet.Where(expression);
-
-    public void Create(T entity) => DbSet.Add(entity);
-
+    public void Create(T entity) => DbSet.AddAsync(entity);
+    public async Task<T?> FindByIdAsync(int? id) => await DbSet.FindAsync(id);
     public void Update(T entity) => DbSet.Update(entity);
-
     public void Delete(T entity) => DbSet.Remove(entity);
 
-    public async void CreateAsync(T entity) => await DbSet.AddAsync(entity);
-
-    Task<T> IRepositoryBase<T>.CreateAsync(T entity)
+    public IQueryable<T> FindAll(bool trackChanges = false)
     {
         throw new NotImplementedException();
     }
 
-    public async Task<T?> FindByIdAsync(int? id)
+    public IQueryable<T> FindByCondition(Expression<Func<T, bool>> expression, bool trackChanges = false)
     {
-        return await DbSet.FindAsync(id);
+        throw new NotImplementedException();
     }
 }
