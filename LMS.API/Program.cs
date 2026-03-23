@@ -1,6 +1,7 @@
 using LMS.API.Extensions;
 using LMS.API.Services;
 using LMS.Infractructure.Data;
+using LMS.Infractructure.Repositories;
 
 namespace LMS.API;
 
@@ -18,6 +19,11 @@ public class Program
 
         builder.Services.AddRepositories();
         builder.Services.AddServiceLayer();
+
+        builder.Services.AddScoped<ICourseRepository, CourseRepository>();
+        builder.Services.AddScoped<IModuleRepository, ModuleRepository>();
+        builder.Services.AddScoped<IActivityRepository, ActivityRepository>();
+        builder.Services.AddScoped<IDocumentRepository, DocumentRepository>();
 
         builder.Services.ConfigureAuthentication(builder.Configuration);
         builder.Services.ConfigureIdentity();
