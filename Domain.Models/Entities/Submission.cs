@@ -2,7 +2,6 @@
 
 public class Submission : EntityBase
 {
-    public int Id { get; set; }
     public string StudentId { get; set; } = string.Empty;
     public ApplicationUser Student { get; set; } = null!;
     public int ActivityId { get; set; }

@@ -11,6 +11,8 @@ public abstract class RepositoryBase<T>(ApplicationDbContext context) : IReposit
     protected DbSet<T> DbSet { get; } = context.Set<T>();
     public async Task<T?> FindByIdAsync(int? id) => await DbSet.FindAsync(id);
 
+    public async Task<bool> ExistsAsync(int id) => await DbSet.AnyAsync(e => e.Id == id);
+
     /// <summary>
     /// Returns a queryable collection of all entities in the set.
     /// </summary>

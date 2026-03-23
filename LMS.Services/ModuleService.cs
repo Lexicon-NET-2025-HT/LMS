@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using Domain.Contracts.Repositories;
+using Domain.Models.Entities;
 using LMS.Shared.DTOs.Common;
 using LMS.Shared.DTOs.Module;
 using Service.Contracts;
@@ -45,18 +46,24 @@ namespace LMS.Services
 
         public async Task<ModuleDto> CreateModuleAsync(CreateModuleDto dto)
         {
-            // TODO: Create entity and save to database
-            return await Task.FromResult(new ModuleDto
+            ArgumentNullException.ThrowIfNull(dto);
+
+            if (!await unitOfWork.Courses.ExistsAsync(dto.CourseId))
             {
-                Id = 1,
-                CourseId = dto.CourseId,
-                CourseName = "Course Name",
-                Name = dto.Name,
-                Description = dto.Description,
-                StartDate = dto.StartDate,
-                EndDate = dto.EndDate,
-                ActivityCount = 0
-            });
+                throw new KeyNotFoundException($"Course with id {dto.CourseId} was not found.");
+            }
+
+
+            var module = mapper.Map<Module>(dto);
+            unitOfWork.Modules.Create(module);
+            await unitOfWork.CompleteAsync();
+
+            // refetch new module to verify it exists
+            var createdModule = await unitOfWork.Modules.GetModuleAsync(module.Id)
+                ?? throw new InvalidOperationException($"Module with id {module.Id} could not be loaded after creation.");
+
+            return mapper.Map<ModuleDto>(createdModule);
+
         }
 
         public async Task UpdateModuleAsync(int id, UpdateModuleDto dto)
