@@ -27,4 +27,13 @@ public class ModuleRepository(ApplicationDbContext context) : RepositoryBase<Mod
             .Include(m => m.Course)
             .FirstOrDefaultAsync();
     }
+
+    public async Task<Module?> GetModuleByNameAsync(int courseId, string name, bool trackChanges = false)
+    {
+        var query = FindByCondition(
+           m => (m.CourseId == courseId && m.Name == name),
+           trackChanges);
+
+        return query.FirstOrDefault();
+    }
 }

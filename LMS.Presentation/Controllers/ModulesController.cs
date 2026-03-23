@@ -70,6 +70,7 @@ public class ModulesController : ControllerBase
         Description = "Creates a new module with the provided details"
     )]
     [SwaggerResponse(StatusCodes.Status201Created, "Module created successfully")]
+    [SwaggerResponse(StatusCodes.Status404NotFound, "Course not found")]
     [SwaggerResponse(StatusCodes.Status400BadRequest, "Invalid input")]
     public async Task<IActionResult> CreateModule([FromBody] CreateModuleDto dto)
     {

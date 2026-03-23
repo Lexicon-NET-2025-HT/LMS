@@ -1,6 +1,7 @@
 ﻿using AutoMapper;
 using Domain.Contracts.Repositories;
 using Domain.Models.Entities;
+using Domain.Models.Exceptions;
 using LMS.Shared.DTOs.Common;
 using LMS.Shared.DTOs.Module;
 using Service.Contracts;
@@ -48,11 +49,29 @@ namespace LMS.Services
         {
             ArgumentNullException.ThrowIfNull(dto);
 
-            if (!await unitOfWork.Courses.ExistsAsync(dto.CourseId))
+            var course = await unitOfWork.Courses.FindByIdAsync(dto.CourseId);
+            if (course is null)
             {
                 throw new KeyNotFoundException($"Course with id {dto.CourseId} was not found.");
             }
+            if (course.StartDate > dto.StartDate)
+            {
+                throw new BadRequestException("Module start date cannot be earlier than course start date.");
+            }
+            if (dto.StartDate >= dto.EndDate)
+            {
+                throw new BadRequestException("End date must be greater than start date.");
+            }
 
+            var existingModule = await unitOfWork.Modules.GetModuleByNameAsync(dto.CourseId, dto.Name);
+            if (existingModule is not null)
+            {
+                throw new BadRequestException("Module name must be unique within course");
+            }
+            // TODO: add business logic for...
+            // 1 not overlapping modules
+            // 2 setting start and end times to reasonable values (08:00 - 17:00?)
+            // 3 checking for weekends? assignment tasks within a module could be set on sundays, but maybe a module never starts on a weekend
 
             var module = mapper.Map<Module>(dto);
             unitOfWork.Modules.Create(module);
@@ -68,8 +87,15 @@ namespace LMS.Services
 
         public async Task UpdateModuleAsync(int id, UpdateModuleDto dto)
         {
-            // TODO: Update entity in database
-            await Task.CompletedTask;
+            ArgumentNullException.ThrowIfNull(dto);
+
+            var module = await unitOfWork.Courses.GetCourseAsync(id, trackChanges: true);
+            if (module is null)
+            {
+                throw new KeyNotFoundException($"Module with id {id} was not found.");
+            }
+
+            await unitOfWork.CompleteAsync();
         }
 
         public async Task DeleteModuleAsync(int id)
