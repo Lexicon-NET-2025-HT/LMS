@@ -2,7 +2,7 @@
 
 namespace Domain.Models.Entities;
 
-public class Activity
+public class Activity : EntityBase
 {
     public int Id { get; set; }
     public int ModuleId { get; set; }

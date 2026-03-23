@@ -1,6 +1,6 @@
 ﻿namespace Domain.Models.Entities;
 
-public class Submission
+public class Submission : EntityBase
 {
     public int Id { get; set; }
     public string StudentId { get; set; } = string.Empty;

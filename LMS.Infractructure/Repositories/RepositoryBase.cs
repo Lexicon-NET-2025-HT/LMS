@@ -1,10 +1,12 @@
 ﻿using Domain.Contracts.Repositories;
+using Domain.Models.Entities;
 using LMS.Infractructure.Data;
 using Microsoft.EntityFrameworkCore;
 using System.Linq.Expressions;
 
 namespace LMS.Infractructure.Repositories;
-public abstract class RepositoryBase<T> : IRepositoryBase<T>, IInternalRepositoryBase<T> where T : class //Do Entitybase
+
+public abstract class RepositoryBase<T> : IRepositoryBase<T>, IInternalRepositoryBase<T> where T : EntityBase //Do Entitybase
 {
     protected DbSet<T> DbSet { get; }
 
@@ -12,11 +14,27 @@ public abstract class RepositoryBase<T> : IRepositoryBase<T>, IInternalRepositor
     {
         DbSet = context.Set<T>();
     }
-
+    /// <summary>
+    /// Returns a queryable collection of all entities in the set.
+    /// </summary>
+    /// <remarks>When change tracking is disabled, the returned entities are not tracked by the context, which
+    /// can improve performance for read-only operations.</remarks>
+    /// <param name="trackChanges">true to enable change tracking for the returned entities; otherwise, false to disable tracking and improve query
+    /// performance.</param>
+    /// <returns>An IQueryable<T> representing all entities in the set. The query may be further composed before execution.</returns>
     public IQueryable<T> FindAll(bool trackChanges = false) =>
         !trackChanges ? DbSet.AsNoTracking() :
                         DbSet;
 
+    /// <summary>
+    /// Retrieves entities that satisfy the specified condition as a queryable collection.
+    /// </summary>
+    /// <remarks>When trackChanges is set to false, the returned entities are not tracked by the context,
+    /// which can improve performance for read-only operations.</remarks>
+    /// <param name="expression">An expression that defines the condition to filter the entities.</param>
+    /// <param name="trackChanges">true to enable change tracking for the returned entities; otherwise, false to retrieve entities without
+    /// tracking.</param>
+    /// <returns>An IQueryable<T> containing entities that match the specified condition.</returns>
     public IQueryable<T> FindByCondition(Expression<Func<T, bool>> expression, bool trackChanges = false) =>
         !trackChanges ? DbSet.Where(expression).AsNoTracking() :
                         DbSet.Where(expression);

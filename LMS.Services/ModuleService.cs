@@ -1,10 +1,8 @@
-﻿using LMS.Services;
+﻿using AutoMapper;
+using Domain.Contracts.Repositories;
 using LMS.Shared.DTOs.Common;
 using LMS.Shared.DTOs.Module;
 using Service.Contracts;
-using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace LMS.Services
 {
@@ -13,65 +11,36 @@ namespace LMS.Services
     /// </summary>
     public class ModuleService : IModuleService
     {
+        private readonly IUnitOfWork unitOfWork;
+        private readonly IMapper mapper;
+        public ModuleService(IUnitOfWork unitOfWork, IMapper mapper)
+        {
+            this.unitOfWork = unitOfWork;
+            this.mapper = mapper;
+        }
         public async Task<PagedResultDto<ModuleDto>> GetAllModulesAsync(int page, int pageSize, int? courseId = null)
         {
-            // TODO: Replace with real database query
-            var mockModules = new List<ModuleDto>
-        {
-            new ModuleDto
-            {
-                Id = 1,
-                CourseId = courseId ?? 1,
-                CourseName = "C# Fundamentals",
-                Name = "Introduction to C#",
-                Description = "Learn C# basics",
-                StartDate = DateTime.Now,
-                EndDate = DateTime.Now.AddMonths(1),
-                ActivityCount = 5
-            }
-        };
+            var (modules, totalCount) = await unitOfWork.Modules.GetAllModulesAsync(page, pageSize, courseId);
 
-            return await Task.FromResult(new PagedResultDto<ModuleDto>
+            return new PagedResultDto<ModuleDto>
             {
-                Items = mockModules,
-                TotalCount = mockModules.Count,
+                Items = mapper.Map<List<ModuleDto>>(modules),
+                TotalCount = totalCount,
                 PageNumber = page,
                 PageSize = pageSize
-            });
+            };
         }
 
         public async Task<ModuleDto?> GetModuleByIdAsync(int id)
         {
-            // TODO: Replace with real database query
-            return await Task.FromResult(new ModuleDto
-            {
-                Id = id,
-                CourseId = 1,
-                CourseName = "C# Fundamentals",
-                Name = "Introduction to C#",
-                Description = "Learn C# basics",
-                StartDate = DateTime.Now,
-                EndDate = DateTime.Now.AddMonths(1),
-                ActivityCount = 5
-            });
+            var module = await unitOfWork.Modules.GetModuleAsync(id);
+            return mapper.Map<ModuleDto>(module);
         }
 
         public async Task<ModuleDetailDto?> GetModuleDetailByIdAsync(int id)
         {
-            // TODO: Replace with real database query
-            return await Task.FromResult(new ModuleDetailDto
-            {
-                Id = id,
-                CourseId = 1,
-                CourseName = "C# Fundamentals",
-                Name = "Introduction to C#",
-                Description = "Learn C# basics",
-                StartDate = DateTime.Now,
-                EndDate = DateTime.Now.AddMonths(1),
-                ActivityCount = 5,
-                Activities = new(),
-                Documents = new()
-            });
+            var module = await unitOfWork.Modules.GetModuleAsync(id);
+            return mapper.Map<ModuleDetailDto>(module);
         }
 
         public async Task<ModuleDto> CreateModuleAsync(CreateModuleDto dto)

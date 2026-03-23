@@ -1,6 +1,6 @@
 ﻿namespace Domain.Models.Entities;
 
-public class Module
+public class Module : EntityBase
 {
     public int Id { get; set; }
     public int CourseId { get; set; }

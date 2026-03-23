@@ -1,6 +1,6 @@
 ﻿namespace Domain.Models.Entities;
 
-public class Course
+public class Course : EntityBase
 {
     public int Id { get; set; }
     public string Name { get; set; } = string.Empty;
