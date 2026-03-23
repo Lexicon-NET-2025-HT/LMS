@@ -16,8 +16,8 @@
         /// Must reference an existing user.
         /// </summary>
         public required string UploadedByUserId { get; set; }
-        public int? CourseId { get; set; }
-        public int? ModuleId { get; set; }
-        public int? ActivityId { get; set; }
+        public int? CourseId { get; set; } = null;
+        public int? ModuleId { get; set; } = null;
+        public int? ActivityId { get; set; } = null;
     }
 }
