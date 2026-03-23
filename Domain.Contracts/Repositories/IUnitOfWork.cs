@@ -8,5 +8,4 @@ public interface IUnitOfWork
     IDocumentRepository Documents { get; }
 
     Task CompleteAsync();
-    ICourseRepository Courses { get; }
 }
