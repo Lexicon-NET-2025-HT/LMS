@@ -1,4 +1,5 @@
-﻿using Domain.Contracts.Repositories;
+﻿using AutoMapper;
+using Domain.Contracts.Repositories;
 using Domain.Models.Entities;
 using LMS.Shared.DTOs.Common;
 using LMS.Shared.DTOs.Document;
@@ -9,69 +10,42 @@ namespace LMS.Services
 {
     public class DocumentService(
         IUnitOfWork unitOfWork,
+        IMapper mapper,
         UserManager<ApplicationUser> userManager) : IDocumentService
     {
         private readonly UserManager<ApplicationUser> _userManager = userManager;
         private readonly IUnitOfWork _unitOfWork = unitOfWork;
+        private readonly IMapper _mapper = mapper;
 
         public async Task<DocumentDto> CreateDocumentAsync(CreateDocumentDto dto)
         {
             var user = await _userManager.FindByIdAsync(dto.UploadedByUserId) ??
                 throw new Exception($"User by id {dto.UploadedByUserId} does not exist");
 
-            var document = new Document
-            {
-                FileName = dto.FileName,
-                DisplayName = dto.DisplayName,
-                Description = dto.Description,
-                UploadedAt = DateTime.Now,
-                UploadedByUserId = dto.UploadedByUserId,
-                UploadedByUser = user,
-                Course = dto.CourseId.HasValue ? await _unitOfWork.Courses.FindByIdAsync(dto.CourseId) : null,
-                CourseId = dto.CourseId,
-                Module = dto.ModuleId.HasValue ? await _unitOfWork.Modules.FindByIdAsync(dto.ModuleId) : null,
-                ModuleId = dto.ModuleId,
-                Activity = dto.ActivityId.HasValue ? await _unitOfWork.Activities.FindByIdAsync(dto.ActivityId) : null,
-                ActivityId = dto.ActivityId
-            };
+            var document = _mapper.Map<Document>(dto);
+
+            document.UploadedByUser = user;
+            document.Course = document.CourseId.HasValue ? await _unitOfWork.Courses.FindByIdAsync(dto.CourseId) : null;
+            document.Module = document.ModuleId.HasValue ? await _unitOfWork.Modules.FindByIdAsync(dto.ModuleId) : null;
+            document.Activity = document.ActivityId.HasValue ? await _unitOfWork.Activities.FindByIdAsync(dto.CourseId) : null;
 
             _unitOfWork.Documents.Create(document);
             await _unitOfWork.CompleteAsync();
 
-            return new DocumentDto
-            {
-                Id = document.Id,
-                FileName = document.FileName,
-                DisplayName = document.DisplayName,
-                Description = document.Description,
-                UploadedAt = document.UploadedAt,
-                UploadedByUserId = document.UploadedByUserId,
-                UploadedByUserName = document.UploadedByUser.UserName ?? string.Empty,
-                CourseId = document.CourseId,
-                ModuleId = document.ModuleId,
-                ActivityId = document.ActivityId,
-                Scope = document.CourseId.HasValue ? "Course" : document.ModuleId.HasValue ? "Module" : "Activity"
-            };
+            var documentDto = _mapper.Map<DocumentDto>(document);
+            documentDto.Scope = document.CourseId.HasValue ? "Course" : document.ModuleId.HasValue ? "Module" : "Activity";
+
+            return documentDto;
         }
         public async Task<DocumentDto> GetDocumentAsync(int id)
         {
             var document = await _unitOfWork.Documents.FindByIdAsync(id) ??
                 throw new Exception($"Document with id: '{id}' does not exist");
 
-            return new DocumentDto
-            {
-                Id = document.Id,
-                FileName = document.FileName,
-                DisplayName = document.DisplayName,
-                Description = document.Description,
-                UploadedAt = document.UploadedAt,
-                UploadedByUserId = document.UploadedByUserId,
-                UploadedByUserName = document.UploadedByUser.UserName ?? string.Empty,
-                CourseId = document.CourseId,
-                ModuleId = document.ModuleId,
-                ActivityId = document.ActivityId,
-                Scope = document.CourseId.HasValue ? "Course" : document.ModuleId.HasValue ? "Module" : "Activity"
-            };
+            var documentDto = _mapper.Map<DocumentDto>(document);
+            documentDto.Scope = document.CourseId.HasValue ? "Course" : document.ModuleId.HasValue ? "Module" : "Activity";
+
+            return documentDto;
         }
         public async Task UpdateDocumentAsync(int id, UpdateDocumentDto dto)
         {

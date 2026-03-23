@@ -4,7 +4,6 @@ using LMS.Infractructure.Data;
 
 namespace LMS.Infractructure.Repositories;
 
-public class CourseRepository(ApplicationDbContext context) :
-    RepositoryBase<Course>(context.Set<Course>()), ICourseRepository
+public class CourseRepository(ApplicationDbContext context) : RepositoryBase<Course>(context), ICourseRepository
 {
 }

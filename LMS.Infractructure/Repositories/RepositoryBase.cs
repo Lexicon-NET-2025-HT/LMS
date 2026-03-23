@@ -1,12 +1,13 @@
 ﻿using Domain.Contracts.Repositories;
+using LMS.Infractructure.Data;
 using Microsoft.EntityFrameworkCore;
 using System.Linq.Expressions;
 
 namespace LMS.Infractructure.Repositories;
 
-public abstract class RepositoryBase<T>(DbSet<T> dbSet) : IRepositoryBase<T>, IInternalRepositoryBase<T> where T : class //Do Entitybase
+public abstract class RepositoryBase<T>(ApplicationDbContext context) : IRepositoryBase<T>, IInternalRepositoryBase<T> where T : class //Do Entitybase
 {
-    protected DbSet<T> DbSet { get; } = dbSet;
+    protected DbSet<T> DbSet { get; } = context.Set<T>();
 
     public void Create(T entity) => DbSet.AddAsync(entity);
     public async Task<T?> FindByIdAsync(int? id) => await DbSet.FindAsync(id);
