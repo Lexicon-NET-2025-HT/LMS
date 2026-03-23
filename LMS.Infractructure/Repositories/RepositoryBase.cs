@@ -6,19 +6,11 @@ using System.Linq.Expressions;
 
 namespace LMS.Infractructure.Repositories;
 
-public abstract class RepositoryBase<T> : IRepositoryBase<T>, IInternalRepositoryBase<T> where T : EntityBase //Do Entitybase
+public abstract class RepositoryBase<T>(ApplicationDbContext context) : IRepositoryBase<T>, IInternalRepositoryBase<T> where T : EntityBase
 {
     protected DbSet<T> DbSet { get; } = context.Set<T>();
-
-    public void Create(T entity) => DbSet.AddAsync(entity);
     public async Task<T?> FindByIdAsync(int? id) => await DbSet.FindAsync(id);
-    public void Update(T entity) => DbSet.Update(entity);
-    public void Delete(T entity) => DbSet.Remove(entity);
 
-    public IQueryable<T> FindAll(bool trackChanges = false)
-    {
-        throw new NotImplementedException();
-    }
     /// <summary>
     /// Returns a queryable collection of all entities in the set.
     /// </summary>
