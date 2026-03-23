@@ -367,3 +367,6 @@ FodyWeavers.xsd
 
 # Token storage (contains sensitive authentication tokens)
 **/App_Data/
+/REAL_BACKLOG.md
+/.gitignore
+/.gitignore
