@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Domain.Models.Enums;
+using System;
 
 namespace LMS.Shared.DTOs.Activity
 {
@@ -11,7 +12,7 @@ namespace LMS.Shared.DTOs.Activity
     {
         public string? Name { get; set; }
         public string? Description { get; set; }
-        public string? Type { get; set; }
+        public ActivityType? Type { get; set; }
         public DateTime? StartTime { get; set; }
         public DateTime? EndTime { get; set; }
     }

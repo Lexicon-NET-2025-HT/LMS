@@ -8,7 +8,7 @@
     {
         public required string StudentId { get; set; }
         public required int ActivityId { get; set; }
-        public required string Body { get; set; }
+        public string? Body { get; set; }
         public int? DocumentId { get; set; }
     }
 }

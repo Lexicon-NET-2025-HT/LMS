@@ -14,7 +14,7 @@ namespace LMS.Shared.DTOs.Submission
         public required string StudentName { get; set; }
         public required int ActivityId { get; set; }
         public required string ActivityName { get; set; }
-        public required string Body { get; set; }
+        public string? Body { get; set; }
         public int? DocumentId { get; set; }
 
         /// <summary>

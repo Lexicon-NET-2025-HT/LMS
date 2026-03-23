@@ -1,10 +1,7 @@
-﻿using LMS.Services;
+﻿using Domain.Models.Enums;
 using LMS.Shared.DTOs.Activity;
 using LMS.Shared.DTOs.Common;
 using Service.Contracts;
-using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace LMS.Services
 {
@@ -25,7 +22,7 @@ namespace LMS.Services
                 ModuleName = "Introduction to C#",
                 Name = "Variables and Data Types",
                 Description = "Learn about variables",
-                Type = "Lecture",
+                Type = ActivityType.Lecture,
                 StartTime = DateTime.Now,
                 EndTime = DateTime.Now.AddHours(2),
                 DocumentCount = 3,
@@ -52,7 +49,7 @@ namespace LMS.Services
                 ModuleName = "Introduction to C#",
                 Name = "Variables and Data Types",
                 Description = "Learn about variables",
-                Type = "Lecture",
+                Type = ActivityType.Lecture,
                 StartTime = DateTime.Now,
                 EndTime = DateTime.Now.AddHours(2),
                 DocumentCount = 3,
@@ -70,7 +67,7 @@ namespace LMS.Services
                 ModuleName = "Introduction to C#",
                 Name = "Variables and Data Types",
                 Description = "Learn about variables",
-                Type = "Lecture",
+                Type = ActivityType.Lecture,
                 StartTime = DateTime.Now,
                 EndTime = DateTime.Now.AddHours(2),
                 DocumentCount = 3,

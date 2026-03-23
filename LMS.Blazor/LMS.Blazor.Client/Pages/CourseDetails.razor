@@ -1,0 +1,204 @@
+﻿@page "/admin/courses/{CourseId:int}/details"
+@attribute [Authorize(Roles = "Teacher")]
+@using LMS.Shared.DTOs.Course
+@inject ICourseService CourseService
+@inject NavigationManager Navigation
+
+<PageTitle>Course Details</PageTitle>
+
+<div class="container-fluid py-4">
+
+    @* ---- Header ---- *@
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="mb-0">Course Details</h2>
+        <button class="btn btn-outline-secondary" @onclick="GoBack">
+            <i class="bi bi-arrow-left me-1"></i> Back to Courses
+        </button>
+    </div>
+
+    @* ---- Loading ---- *@
+    @if (isLoading)
+    {
+        <div class="text-center py-5">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+            <p class="mt-2 text-muted">Loading course details...</p>
+        </div>
+    }
+    else if (!string.IsNullOrEmpty(errorMessage))
+    {
+        <div class="alert alert-danger">
+            <p>@errorMessage</p>
+            <button class="btn btn-outline-danger btn-sm" @onclick="LoadCourseAsync">Retry</button>
+        </div>
+    }
+    else if (course is null)
+    {
+        <div class="alert alert-warning">Course not found.</div>
+    }
+    else
+    {
+        @* ---- Course Info Card ---- *@
+        <div class="card mb-4">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">@course.Name</h5>
+                <span class="badge bg-primary">@course.ModuleCount Modules</span>
+            </div>
+            <div class="card-body">
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <p class="text-muted mb-1 small">Description</p>
+                        <p>@course.Description</p>
+                    </div>
+                    <div class="col-md-3">
+                        <p class="text-muted mb-1 small">Start Date</p>
+                        <p>@course.StartDate.ToString("yyyy-MM-dd")</p>
+                    </div>
+                    <div class="col-md-3">
+                        <p class="text-muted mb-1 small">Students Enrolled</p>
+                        <p>@course.StudentCount</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        @* ---- Teachers ---- *@
+        <div class="card mb-4">
+            <div class="card-header">
+                <h6 class="mb-0">Teachers</h6>
+            </div>
+            <div class="card-body">
+                @if (!course.TeacherIds.Any())
+                {
+                    <p class="text-muted">No teachers assigned.</p>
+                }
+                else
+                {
+                    <ul class="list-group list-group-flush">
+                        @foreach (var teacherId in course.TeacherIds)
+                        {
+                            <li class="list-group-item">
+                                <i class="bi bi-person-fill me-2 text-primary"></i>@teacherId
+                            </li>
+                        }
+                    </ul>
+                }
+            </div>
+        </div>
+
+        @* ---- Modules ---- *@
+        @if (courseDetail is not null)
+        {
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h6 class="mb-0">Modules</h6>
+                </div>
+                <div class="card-body p-0">
+                    @if (!courseDetail.Modules.Any())
+                    {
+                        <p class="text-muted p-3">No modules found.</p>
+                    }
+                    else
+                    {
+                        <div class="table-responsive">
+                            <table class="table table-hover mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Name</th>
+                                        <th>Description</th>
+                                        <th>Start Date</th>
+                                        <th>End Date</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var module in courseDetail.Modules)
+                                    {
+                                        <tr>
+                                            <td>@module.Name</td>
+                                            <td class="text-truncate" style="max-width:300px">@module.Description</td>
+                                            <td>@module.StartDate.ToString("yyyy-MM-dd")</td>
+                                            <td>@module.EndDate.ToString()</td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+                </div>
+            </div>
+
+            @* ---- Students ---- *@
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h6 class="mb-0">Students (@courseDetail.Students.Count)</h6>
+                </div>
+                <div class="card-body p-0">
+                    @if (!courseDetail.Students.Any())
+                    {
+                        <p class="text-muted p-3">No students enrolled.</p>
+                    }
+                    else
+                    {
+                        <div class="table-responsive">
+                            <table class="table table-hover mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Name</th>
+                                        <th>Email</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var student in courseDetail.Students)
+                                    {
+                                        <tr>
+                                            @* <td>@student.Name</td> *@
+                                            <td>@student.UserName</td>
+                                            <td>@student.Email</td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+                </div>
+            </div>
+        }
+    }
+</div>
+
+@code {
+    [Parameter]
+    public int CourseId { get; set; }
+
+    private CourseDto? course;
+    private CourseDetailDto? courseDetail;
+    private bool isLoading;
+    private string? errorMessage;
+
+    protected override async Task OnInitializedAsync()
+        => await LoadCourseAsync();
+
+    private async Task LoadCourseAsync()
+    {
+        isLoading = true;
+        errorMessage = null;
+        StateHasChanged();
+
+        try
+        {
+            course = await CourseService.GetCourseByIdAsync(CourseId);
+            courseDetail = await CourseService.GetCourseDetailByIdAsync(CourseId);
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Failed to load course. {ex.Message}";
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private void GoBack() => Navigation.NavigateTo("/admin/courses");
+}

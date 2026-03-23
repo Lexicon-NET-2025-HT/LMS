@@ -12,4 +12,8 @@
     <NoWarn>$(NoWarn);1591</NoWarn>
   </PropertyGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\Domain.Models\Domain.Models.csproj" />
+  </ItemGroup>
+
 </Project>
