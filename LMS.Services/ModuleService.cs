@@ -49,29 +49,7 @@ namespace LMS.Services
         {
             ArgumentNullException.ThrowIfNull(dto);
 
-            var course = await unitOfWork.Courses.FindByIdAsync(dto.CourseId);
-            if (course is null)
-            {
-                throw new KeyNotFoundException($"Course with id {dto.CourseId} was not found.");
-            }
-            if (course.StartDate > dto.StartDate)
-            {
-                throw new BadRequestException("Module start date cannot be earlier than course start date.");
-            }
-            if (dto.StartDate >= dto.EndDate)
-            {
-                throw new BadRequestException("End date must be greater than start date.");
-            }
-
-            var existingModule = await unitOfWork.Modules.GetModuleByNameAsync(dto.CourseId, dto.Name);
-            if (existingModule is not null)
-            {
-                throw new BadRequestException("Module name must be unique within course");
-            }
-            // TODO: add business logic for...
-            // 1 not overlapping modules
-            // 2 setting start and end times to reasonable values (08:00 - 17:00?)
-            // 3 checking for weekends? assignment tasks within a module could be set on sundays, but maybe a module never starts on a weekend
+            await ThrowIfNotValidModule(dto.CourseId, 0, dto.StartDate, dto.EndDate, dto.Name);
 
             var module = mapper.Map<Module>(dto);
             unitOfWork.Modules.Create(module);
@@ -85,23 +63,93 @@ namespace LMS.Services
 
         }
 
+        private async Task ThrowIfNotValidModule(Module module)
+        {
+            await ThrowIfNotValidModule(module.CourseId, module.Id, module.StartDate, module.EndDate, module.Name);
+        }
+
+        private async Task ThrowIfNotValidModule(int courseId,
+                                                 int moduleId,
+                                                 DateTime moduleStartDate,
+                                                 DateTime moduleEndDate,
+                                                 string name)
+        {
+            var course = await unitOfWork.Courses.FindByIdAsync(courseId);
+            if (course is null)
+            {
+                throw new KeyNotFoundException($"Course with id {courseId} was not found.");
+            }
+            if (course.StartDate > moduleStartDate)
+            {
+                throw new BadRequestException("Module start date cannot be earlier than course start date.");
+            }
+            if (moduleStartDate >= moduleEndDate)
+            {
+                throw new BadRequestException("End date must be greater than start date.");
+            }
+
+            var existingModule = await unitOfWork.Modules.GetModuleByNameAsync(courseId, name);
+            if (existingModule is not null && existingModule.Id != moduleId)
+            {
+                throw new BadRequestException("Module name must be unique within course");
+            }
+            // TODO: add validation for...
+            // 1 not overlapping modules
+            // 2 setting start and end times to reasonable values (08:00 - 17:00?)
+            // 3 checking for weekends? assignment tasks within a module could be set on sundays, but maybe a module never starts on a weekend
+
+        }
+
         public async Task UpdateModuleAsync(int id, UpdateModuleDto dto)
         {
             ArgumentNullException.ThrowIfNull(dto);
 
-            var module = await unitOfWork.Courses.GetCourseAsync(id, trackChanges: true);
+            var module = await unitOfWork.Modules.GetModuleAsync(id, trackChanges: true);
             if (module is null)
             {
                 throw new KeyNotFoundException($"Module with id {id} was not found.");
             }
+
+            module.Name = dto.Name;
+            module.Description = dto.Description;
+            module.StartDate = module.StartDate;
+            module.EndDate = module.EndDate;
+
+            await ThrowIfNotValidModule(module);
+
+            await unitOfWork.CompleteAsync();
+        }
+
+        public async Task PatchModuleAsync(int id, PatchModuleDto dto)
+        {
+            ArgumentNullException.ThrowIfNull(dto);
+
+            var module = await unitOfWork.Modules.GetModuleAsync(id, trackChanges: true);
+            if (module is null)
+            {
+                throw new KeyNotFoundException($"Module with id {id} was not found.");
+            }
+
+            module.Name = string.IsNullOrEmpty(dto.Name) ? module.Name : dto.Name;
+            module.Description = string.IsNullOrEmpty(dto.Description) ? module.Description : dto.Description;
+            module.StartDate = dto.StartDate ?? module.StartDate;
+            module.EndDate = dto.EndDate ?? module.EndDate;
+
+            await ThrowIfNotValidModule(module.CourseId, module.Id, module.StartDate, module.EndDate, module.Name);
 
             await unitOfWork.CompleteAsync();
         }
 
         public async Task DeleteModuleAsync(int id)
         {
-            // TODO: Delete entity from database
-            await Task.CompletedTask;
+            var module = await unitOfWork.Modules.GetModuleAsync(id, trackChanges: true);
+            if (module is null)
+            {
+                throw new KeyNotFoundException($"Module with id {id} was not found.");
+            }
+
+            unitOfWork.Modules.Delete(module);
+            await unitOfWork.CompleteAsync();
         }
     }
 }
