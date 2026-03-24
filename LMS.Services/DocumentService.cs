@@ -31,9 +31,6 @@ namespace LMS.Services
             document.Module = document.ModuleId.HasValue ? await _unitOfWork.Modules.FindByIdAsync(dto.ModuleId) : null;
             document.Activity = document.ActivityId.HasValue ? await _unitOfWork.Activities.FindByIdAsync(dto.CourseId) : null;
 
-            Console.WriteLine("THIS IS MY WRITE LINE!!!");
-            Console.WriteLine(document.UploadedByUser.UserName);
-
             _unitOfWork.Documents.Create(document);
             await _unitOfWork.CompleteAsync();
 

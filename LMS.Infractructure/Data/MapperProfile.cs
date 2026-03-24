@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using Domain.Models.Entities;
+using LMS.Shared.DTOs.Activity;
 using LMS.Shared.DTOs.AuthDtos;
 using LMS.Shared.DTOs.Course;
 using LMS.Shared.DTOs.Document;
@@ -32,8 +33,15 @@ public class MapperProfile : Profile
         // Document mappings
         CreateMap<Document, DocumentDto>()
             .ForMember(dest => dest.Scope, opt => opt.MapFrom(src => 
-                src.CourseId.HasValue ? "Course" : src.ModuleId.HasValue ? "Moduel" : "Activity"));
+                src.CourseId.HasValue ? "Course" : src.ModuleId.HasValue ? "Module" : "Activity"));
 
         CreateMap<CreateDocumentDto, Document>();
+
+        // Activity mappings
+        CreateMap<CreateActivityDto, Activity>();
+
+        CreateMap<Activity, ActivityDto>()
+            .ForMember(dest => dest.DocumentCount, opt => opt.MapFrom(src => src.Documents.Count))
+            .ForMember(dest => dest.SubmissionCount, opt => opt.MapFrom(src => src.Submissions.Count));
     }
 }
