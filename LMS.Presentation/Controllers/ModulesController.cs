@@ -102,7 +102,7 @@ public class ModulesController : ControllerBase
     [SwaggerResponse(StatusCodes.Status404NotFound, "Module not found")]
     public async Task<IActionResult> PatchModule(int id, [FromBody] PatchModuleDto dto)
     {
-        await serviceManager.ModuleService.PatchModuleAsync(id, dto);
+        await serviceManager.ModuleService.UpdateModulePartiallyAsync(id, dto);
         return NoContent();
     }
 

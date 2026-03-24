@@ -13,7 +13,7 @@ namespace Service.Contracts
         Task<ModuleDetailDto?> GetModuleDetailByIdAsync(int id);
         Task<ModuleDto> CreateModuleAsync(CreateModuleDto dto);
         Task UpdateModuleAsync(int id, UpdateModuleDto dto);
-        Task PatchModuleAsync(int id, PatchModuleDto dto);
+        Task UpdateModulePartiallyAsync(int id, PatchModuleDto dto);
         Task DeleteModuleAsync(int id);
     }
 }

@@ -11,6 +11,23 @@ public abstract class RepositoryBase<T>(ApplicationDbContext context) : IReposit
     protected DbSet<T> DbSet { get; } = context.Set<T>();
     public async Task<T?> FindByIdAsync(int? id) => await DbSet.FindAsync(id);
 
+    public async Task<T> FindByIdOrThrowAsync(int id, bool trackChanges)
+    {
+        var query = DbSet.AsQueryable();
+
+        if (!trackChanges)
+        {
+            query = query.AsNoTracking();
+        }
+
+        var entity = await query.FirstOrDefaultAsync(m => m.Id == id);
+        if (entity == null)
+        {
+            throw new KeyNotFoundException($"{typeof(T).Name} with id {id} was not found.");
+        }
+        return entity;
+    }
+
     public async Task<bool> ExistsAsync(int id) => await DbSet.AnyAsync(e => e.Id == id);
 
     /// <summary>

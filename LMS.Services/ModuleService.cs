@@ -74,11 +74,8 @@ namespace LMS.Services
                                                  DateTime moduleEndDate,
                                                  string name)
         {
-            var course = await unitOfWork.Courses.FindByIdAsync(courseId);
-            if (course is null)
-            {
-                throw new KeyNotFoundException($"Course with id {courseId} was not found.");
-            }
+            var course = await unitOfWork.Courses.FindByIdOrThrowAsync(courseId, trackChanges: true);
+
             if (course.StartDate > moduleStartDate)
             {
                 throw new BadRequestException("Module start date cannot be earlier than course start date.");
@@ -104,34 +101,29 @@ namespace LMS.Services
         {
             ArgumentNullException.ThrowIfNull(dto);
 
-            var module = await unitOfWork.Modules.GetModuleAsync(id, trackChanges: true);
-            if (module is null)
-            {
-                throw new KeyNotFoundException($"Module with id {id} was not found.");
-            }
+            var module = await unitOfWork.Modules.FindByIdOrThrowAsync(id, trackChanges: true);
 
             module.Name = dto.Name;
             module.Description = dto.Description;
-            module.StartDate = module.StartDate;
-            module.EndDate = module.EndDate;
+            module.StartDate = dto.StartDate;
+            module.EndDate = dto.EndDate;
 
             await ThrowIfNotValidModule(module);
 
             await unitOfWork.CompleteAsync();
         }
 
-        public async Task PatchModuleAsync(int id, PatchModuleDto dto)
+        public async Task UpdateModulePartiallyAsync(int id, PatchModuleDto dto)
         {
             ArgumentNullException.ThrowIfNull(dto);
 
-            var module = await unitOfWork.Modules.GetModuleAsync(id, trackChanges: true);
-            if (module is null)
-            {
-                throw new KeyNotFoundException($"Module with id {id} was not found.");
-            }
+            var module = await unitOfWork.Modules.FindByIdOrThrowAsync(id, trackChanges: true);
 
             module.Name = string.IsNullOrEmpty(dto.Name) ? module.Name : dto.Name;
-            module.Description = string.IsNullOrEmpty(dto.Description) ? module.Description : dto.Description;
+            if (dto.Description is not null)
+            {
+                module.Description = dto.Description;
+            }
             module.StartDate = dto.StartDate ?? module.StartDate;
             module.EndDate = dto.EndDate ?? module.EndDate;
 
@@ -142,11 +134,7 @@ namespace LMS.Services
 
         public async Task DeleteModuleAsync(int id)
         {
-            var module = await unitOfWork.Modules.GetModuleAsync(id, trackChanges: true);
-            if (module is null)
-            {
-                throw new KeyNotFoundException($"Module with id {id} was not found.");
-            }
+            var module = await unitOfWork.Modules.FindByIdOrThrowAsync(id, trackChanges: true);
 
             unitOfWork.Modules.Delete(module);
             await unitOfWork.CompleteAsync();
