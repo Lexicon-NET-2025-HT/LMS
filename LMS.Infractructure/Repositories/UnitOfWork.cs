@@ -10,18 +10,21 @@ public class UnitOfWork : IUnitOfWork
     public IModuleRepository Modules { get; }
     public IActivityRepository Activities { get; }
     public IDocumentRepository Documents { get; }
+    public ISubmissionRepository Submissions { get; }
 
     public UnitOfWork(ApplicationDbContext context,
                       ICourseRepository courseRepository,
                       IModuleRepository moduleRepository,
                       IActivityRepository activityRepository,
-                      IDocumentRepository documentRepository)
+                      IDocumentRepository documentRepository,
+                      ISubmissionRepository submissionRepository)
     {
         this.context = context ?? throw new ArgumentNullException(nameof(context));
         Courses = courseRepository ?? throw new ArgumentNullException(nameof(courseRepository));
         Modules = moduleRepository ?? throw new ArgumentNullException(nameof(moduleRepository));
         Activities = activityRepository ?? throw new ArgumentNullException(nameof(activityRepository));
         Documents = documentRepository ?? throw new ArgumentNullException(nameof(documentRepository));
+        Submissions = submissionRepository ?? throw new ArgumentNullException(nameof(submissionRepository));
     }
 
     public async Task CompleteAsync() => await context.SaveChangesAsync();

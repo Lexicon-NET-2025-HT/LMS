@@ -5,6 +5,7 @@ using LMS.Shared.DTOs.AuthDtos;
 using LMS.Shared.DTOs.Course;
 using LMS.Shared.DTOs.Document;
 using LMS.Shared.DTOs.Module;
+using LMS.Shared.DTOs.Submission;
 
 namespace LMS.Infractructure.Data;
 
@@ -48,7 +49,12 @@ public class MapperProfile : Profile
                 src.CourseId != null ? "Course" :
                 src.ModuleId != null ? "Module" :
                 src.ActivityId != null ? "Activity" :
+                src.SubmissionId != null ? "Submission" :
                 "Unknown"));
+
+        CreateMap<Submission, SubmissionDto>()
+            .ForMember(dest => dest.StudentId, opt => opt.MapFrom(src => src.Student.Id))
+            .ForMember(dest => dest.StudentName, opt => opt.MapFrom(src => src.Student.UserName));
 
     }
 }

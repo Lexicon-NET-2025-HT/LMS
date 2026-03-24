@@ -12,5 +12,6 @@ public class Submission : EntityBase
     public bool IsLate { get; set; }
     public string FeedbackText { get; set; } = string.Empty;
     public DateTime FeedbackGivenAt { get; set; }
+    public ApplicationUser FeedbackGivenBy { get; set; } = null!;
 
 }
