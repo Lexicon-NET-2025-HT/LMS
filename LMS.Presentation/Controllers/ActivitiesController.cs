@@ -86,8 +86,8 @@ public class ActivitiesController : ControllerBase
     [SwaggerResponse(StatusCodes.Status404NotFound, "Activity not found")]
     public async Task<IActionResult> UpdateActivity(int id, [FromBody] UpdateActivityDto dto)
     {
-        await serviceManager.ActivityService.UpdateActivityAsync(id, dto);
-        return Ok(new { message = "Activity updated successfully" });
+        var activity = await serviceManager.ActivityService.UpdateActivityAsync(id, dto);
+        return Ok(activity);
     }
 
     [HttpDelete("{id}")]

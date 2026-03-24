@@ -63,22 +63,12 @@ namespace LMS.Services
 
         public async Task<ActivityDetailDto?> GetActivityDetailByIdAsync(int id)
         {
-            // TODO: Replace with real database query
-            return await Task.FromResult(new ActivityDetailDto
-            {
-                Id = id,
-                ModuleId = 1,
-                ModuleName = "Introduction to C#",
-                Name = "Variables and Data Types",
-                Description = "Learn about variables",
-                Type = ActivityType.Lecture,
-                StartTime = DateTime.Now,
-                EndTime = DateTime.Now.AddHours(2),
-                DocumentCount = 3,
-                SubmissionCount = 0,
-                Documents = new(),
-                Submissions = new()
-            });
+            var activity = await _unitOfWork.Activities.FindByIdWithDetailAsync(id) ??
+                throw new Exception($"Activity by id: '{id}', does not exist");
+
+            var activityDetailDto = _mapper.Map<ActivityDetailDto>(activity);
+
+            return activityDetailDto;
         }
 
         public async Task<ActivityDto> CreateActivityAsync(CreateActivityDto dto)
@@ -98,7 +88,7 @@ namespace LMS.Services
             return activityDto;
         }
 
-        public async Task UpdateActivityAsync(int id, UpdateActivityDto dto)
+        public async Task<ActivityDto> UpdateActivityAsync(int id, UpdateActivityDto dto)
         {
             var activity = await _unitOfWork.Activities.FindByIdAsync(id) ??
                 throw new Exception($"Activity by id: '{id}', does not exist");
@@ -111,12 +101,19 @@ namespace LMS.Services
 
             _unitOfWork.Activities.Update(activity);
             await _unitOfWork.CompleteAsync();
+
+            var activityDto = _mapper.Map<ActivityDto>(activity);
+
+            return activityDto;
         }
 
         public async Task DeleteActivityAsync(int id)
         {
-            // TODO: Delete entity from database
-            await Task.CompletedTask;
+            var activity = await _unitOfWork.Activities.FindByIdAsync(id) ??
+                throw new Exception($"Activity with id: '{id}' does not exist");
+
+            _unitOfWork.Activities.Delete(activity);
+            await _unitOfWork.CompleteAsync();
         }
     }
 }

@@ -67,8 +67,8 @@ public class DocumentsController : ControllerBase
     [SwaggerResponse(StatusCodes.Status404NotFound, "Document not found")]
     public async Task<IActionResult> UpdateDocument(int id, [FromBody] UpdateDocumentDto dto)
     {
-        await serviceManager.DocumentService.UpdateDocumentAsync(id, dto);
-        return Ok(new { message = "Document updated successfully" });
+        var document = await serviceManager.DocumentService.UpdateDocumentAsync(id, dto);
+        return Ok(document);
     }
 
     [HttpDelete("{id}")]

@@ -43,5 +43,7 @@ public class MapperProfile : Profile
         CreateMap<Activity, ActivityDto>()
             .ForMember(dest => dest.DocumentCount, opt => opt.MapFrom(src => src.Documents.Count))
             .ForMember(dest => dest.SubmissionCount, opt => opt.MapFrom(src => src.Submissions.Count));
+
+        CreateMap<Activity, ActivityDetailDto>();
     }
 }

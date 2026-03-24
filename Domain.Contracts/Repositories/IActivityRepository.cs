@@ -4,4 +4,5 @@ namespace Domain.Contracts.Repositories;
 
 public interface IActivityRepository : IRepositoryBase<Activity>
 {
+    Task<Activity?> FindByIdWithDetailAsync(int? id);
 }

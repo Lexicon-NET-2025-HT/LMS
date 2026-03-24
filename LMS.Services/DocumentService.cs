@@ -38,7 +38,7 @@ namespace LMS.Services
 
             return documentDto;
         }
-        public async Task UpdateDocumentAsync(int id, UpdateDocumentDto dto)
+        public async Task<DocumentDto> UpdateDocumentAsync(int id, UpdateDocumentDto dto)
         {
             var document = await _unitOfWork.Documents.FindByIdAsync(id) ??
                 throw new Exception($"Document with id: '{id}' does not exist");
@@ -48,6 +48,10 @@ namespace LMS.Services
 
             _unitOfWork.Documents.Update(document);
             await _unitOfWork.CompleteAsync();
+
+            var documentDto = _mapper.Map<DocumentDto>(document);
+
+            return documentDto;
         }
         public async Task DeleteDocumentAsync(int id)
         {
