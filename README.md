@@ -1,5 +1,15 @@
 # .NET LMS student project
 
+## Definition of Done (WIP)
+- [ ] Code builds successfully without errors
+- [ ] Relevant functionality is tested manually (happy path + basic edge cases)
+- [ ] No obvious bugs or broken flows in the UI
+- [ ] API endpoints return correct status codes and responses
+- [ ] Code follows agreed structure and naming conventions
+- [ ] Add description of the PR in the PR description field, including what was changed
+- [ ] At least one team member has reviewed the PR before merge
+- [ ] Changes are merged into the correct branch (e.g. `develop`/`master`)
+
 ## Database Schema
 ```mermaid
 erDiagram
@@ -65,7 +75,7 @@ erDiagram
 
     COURSE ||--o{ MODULE : has
     MODULE ||--o{ ACTIVITY : has
-    COURSE ||--o{ USER : has_students
+    COURSE ||--o{ APPLICATIONUSER : has_students
     APPLICATIONUSER ||--o{ DOCUMENT : uploads
     COURSE ||--o{ DOCUMENT : contains
     MODULE ||--o{ DOCUMENT : contains
