@@ -9,7 +9,7 @@ using Service.Contracts;
 namespace LMS.Services
 {
     /// <summary>
-    /// Module service implementation - TODO: Replace with real database operations
+    /// Module service implementation
     /// </summary>
     public class ModuleService : IModuleService
     {
