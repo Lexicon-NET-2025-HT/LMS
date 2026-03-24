@@ -1,8 +1,5 @@
 ﻿using LMS.Shared.DTOs.Common;
 using LMS.Shared.DTOs.Module;
-using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace Service.Contracts
 {
@@ -16,6 +13,7 @@ namespace Service.Contracts
         Task<ModuleDetailDto?> GetModuleDetailByIdAsync(int id);
         Task<ModuleDto> CreateModuleAsync(CreateModuleDto dto);
         Task UpdateModuleAsync(int id, UpdateModuleDto dto);
+        Task UpdateModulePartiallyAsync(int id, PatchModuleDto dto);
         Task DeleteModuleAsync(int id);
     }
 }

@@ -1,8 +1,7 @@
 ﻿namespace Domain.Models.Entities;
 
-public class Document
+public class Document : EntityBase
 {
-    public int Id { get; set; }
     public string FileName { get; set; } = string.Empty;
     public string DisplayName { get; set; } = string.Empty;
     public string Description { get; set; } = string.Empty;
