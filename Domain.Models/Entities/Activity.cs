@@ -2,9 +2,8 @@
 
 namespace Domain.Models.Entities;
 
-public class Activity
+public class Activity : EntityBase
 {
-    public int Id { get; set; }
     public int ModuleId { get; set; }
     public Module Module { get; set; } = null!;
     public string Name { get; set; } = string.Empty;

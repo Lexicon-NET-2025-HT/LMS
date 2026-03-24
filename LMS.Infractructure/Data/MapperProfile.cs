@@ -32,11 +32,13 @@
 
 using AutoMapper;
 using Domain.Models.Entities;
+using LMS.Shared.DTOs.Activity;
 using LMS.Shared.DTOs.AuthDtos;
 using LMS.Shared.DTOs.Course;
 using LMS.Shared.DTOs.Module;
 using LMS.Shared.DTOs.User;
 using LMS.Shared.DTOs.Document;
+using LMS.Shared.DTOs.Module;
 
 namespace LMS.Infractructure.Data;
 
@@ -87,11 +89,24 @@ public class MapperProfile : Profile
         CreateMap<UpdateCourseDto, Course>()
             .ForAllMembers(opt => opt.Condition((src, dest, srcMember) => srcMember != null));
 
-        // Document mappings
-        CreateMap<Document, DocumentDto>()
-            .ForMember(dest => dest.Scope, opt => opt.MapFrom(src => 
-                src.CourseId.HasValue ? "Course" : src.ModuleId.HasValue ? "Moduel" : "Activity"));
+        CreateMap<Module, ModuleDto>()
+            .ForMember(dest => dest.ActivityCount, opt => opt.MapFrom(src => src.Activities.Count));
 
-        CreateMap<CreateDocumentDto, Document>();
+        CreateMap<Module, ModuleDetailDto>();
+
+        CreateMap<CreateModuleDto, Module>();
+
+        CreateMap<Activity, ActivityDto>()
+            .ForMember(dest => dest.DocumentCount, opt => opt.MapFrom(src => src.Documents.Count))
+            .ForMember(dest => dest.SubmissionCount, opt => opt.MapFrom(src => src.Submissions.Count));
+
+        CreateMap<Document, DocumentDto>()
+            .ForMember(dest => dest.Scope, opt => opt.MapFrom(
+                src =>
+                src.CourseId != null ? "Course" :
+                src.ModuleId != null ? "Module" :
+                src.ActivityId != null ? "Activity" :
+                "Unknown"));
+
     }
 }

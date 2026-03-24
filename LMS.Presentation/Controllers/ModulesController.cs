@@ -70,6 +70,7 @@ public class ModulesController : ControllerBase
         Description = "Creates a new module with the provided details"
     )]
     [SwaggerResponse(StatusCodes.Status201Created, "Module created successfully")]
+    [SwaggerResponse(StatusCodes.Status404NotFound, "Course not found")]
     [SwaggerResponse(StatusCodes.Status400BadRequest, "Invalid input")]
     public async Task<IActionResult> CreateModule([FromBody] CreateModuleDto dto)
     {
@@ -82,12 +83,27 @@ public class ModulesController : ControllerBase
         Summary = "Update a module",
         Description = "Updates an existing module with the provided details"
     )]
-    [SwaggerResponse(StatusCodes.Status200OK, "Module updated successfully")]
+    [SwaggerResponse(StatusCodes.Status204NoContent, "Module updated successfully")]
+    [SwaggerResponse(StatusCodes.Status400BadRequest, "Bad request")]
     [SwaggerResponse(StatusCodes.Status404NotFound, "Module not found")]
     public async Task<IActionResult> UpdateModule(int id, [FromBody] UpdateModuleDto dto)
     {
         await serviceManager.ModuleService.UpdateModuleAsync(id, dto);
-        return Ok(new { message = "Module updated successfully" });
+        return NoContent();
+    }
+
+    [HttpPatch("{id}")]
+    [SwaggerOperation(
+        Summary = "Partially update a module",
+        Description = "Updates an existing module with the provided details"
+    )]
+    [SwaggerResponse(StatusCodes.Status204NoContent, "Module updated successfully")]
+    [SwaggerResponse(StatusCodes.Status400BadRequest, "Bad request")]
+    [SwaggerResponse(StatusCodes.Status404NotFound, "Module not found")]
+    public async Task<IActionResult> PatchModule(int id, [FromBody] PatchModuleDto dto)
+    {
+        await serviceManager.ModuleService.UpdateModulePartiallyAsync(id, dto);
+        return NoContent();
     }
 
     [HttpDelete("{id}")]
