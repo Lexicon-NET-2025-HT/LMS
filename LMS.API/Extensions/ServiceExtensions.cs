@@ -1,4 +1,4 @@
-﻿using LMS.Infractructure.Data;
+using LMS.Infractructure.Data;
 using LMS.Infractructure.Repositories;
 using LMS.Presentation;
 using LMS.Services;
@@ -110,5 +110,7 @@ public static class ServiceExtensions
         // Submission Service
         services.AddScoped<ISubmissionService, SubmissionService>();
         services.AddScoped(provider => new Lazy<ISubmissionService>(() => provider.GetRequiredService<ISubmissionService>()));
+
+        services.AddScoped<IStudentCourseService, StudentCourseService>();
     }
 }
