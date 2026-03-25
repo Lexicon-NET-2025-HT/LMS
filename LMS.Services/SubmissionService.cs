@@ -55,8 +55,9 @@ public class SubmissionService : ISubmissionService
         //});
     }
 
-    public async Task<SubmissionDto> CreateSubmissionAsync(CreateSubmissionDto dto)
+    public async Task<SubmissionDto> CreateSubmissionAsync(string userId, CreateSubmissionDto dto)
     {
+
         throw new NotImplementedException();
         // TODO: Create entity and save to database
         //return await Task.FromResult(new SubmissionDto

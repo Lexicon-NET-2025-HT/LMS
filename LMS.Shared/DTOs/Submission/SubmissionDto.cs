@@ -27,9 +27,6 @@ namespace LMS.Shared.DTOs.Submission
         /// Indicates whether the submission was submitted after the activity deadline.
         /// </summary>
         public required bool IsLate { get; set; }
-        public string FeedbackText { get; set; } = string.Empty;
-        public DateTime FeedbackGivenAt { get; set; }
-        public required string FeedbackGivenById { get; set; }
-        public required string FeedbackGivenByName { get; set; }
+        public int CommentCount { get; set; }
     }
 }

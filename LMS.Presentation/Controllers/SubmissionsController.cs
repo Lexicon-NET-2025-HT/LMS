@@ -1,13 +1,16 @@
 ﻿using LMS.Shared.DTOs.Submission;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Service.Contracts;
 using Swashbuckle.AspNetCore.Annotations;
+using System.Security.Claims;
 
 namespace LMS.Presentation.Controllers;
 
 [Route("api/submissions")]
 [ApiController]
+[Authorize(Roles = "Student,Teacher")]
 public class SubmissionsController : ControllerBase
 {
     private readonly IServiceManager serviceManager;
@@ -58,7 +61,9 @@ public class SubmissionsController : ControllerBase
     [SwaggerResponse(StatusCodes.Status400BadRequest, "Invalid input")]
     public async Task<IActionResult> CreateSubmission([FromBody] CreateSubmissionDto dto)
     {
-        var submission = await serviceManager.SubmissionService.CreateSubmissionAsync(dto);
+        var userId = User.FindFirst(ClaimTypes.NameIdentifier)!.Value;
+
+        var submission = await serviceManager.SubmissionService.CreateSubmissionAsync(userId, dto);
         return CreatedAtAction(nameof(GetSubmissionById), new { id = submission.Id }, submission);
     }
 

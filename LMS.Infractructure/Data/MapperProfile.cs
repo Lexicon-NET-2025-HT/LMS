@@ -6,6 +6,7 @@ using LMS.Shared.DTOs.Course;
 using LMS.Shared.DTOs.Document;
 using LMS.Shared.DTOs.Module;
 using LMS.Shared.DTOs.Submission;
+using LMS.Shared.DTOs.SubmissionComment;
 
 namespace LMS.Infractructure.Data;
 
@@ -46,18 +47,20 @@ public class MapperProfile : Profile
         CreateMap<Document, DocumentDto>()
             .ForMember(dest => dest.Scope, opt => opt.MapFrom(
                 src =>
-                src.CourseId != null ? "Course" :
-                src.ModuleId != null ? "Module" :
-                src.ActivityId != null ? "Activity" :
-                src.SubmissionId != null ? "Submission" :
+                src.CourseId != null ? nameof(Course) :
+                src.ModuleId != null ? nameof(Module) :
+                src.ActivityId != null ? nameof(Activity) :
+                src.SubmissionId != null ? nameof(Submission) :
                 "Unknown"));
 
         CreateMap<Submission, SubmissionDto>()
             .ForMember(dest => dest.StudentName, opt => opt.MapFrom(src => src.Student.UserName))
-            .ForMember(dest => dest.FeedbackGivenByName, opt => opt.MapFrom(src => src.FeedbackGivenBy != null
-                                                                                ? src.FeedbackGivenBy.UserName
-                                                                                : ""))
+            .ForMember(dest => dest.CommentCount, opt => opt.MapFrom(src => src.Comments.Count))
             .ForMember(dest => dest.ActivityName, opt => opt.MapFrom(src => src.Activity.Name));
+
+        CreateMap<SubmissionComment, SubmissionCommentDto>()
+            .ForMember(dest => dest.AuthorName,
+                opt => opt.MapFrom(src => src.Author.UserName));
 
     }
 }
