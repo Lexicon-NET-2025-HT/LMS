@@ -102,7 +102,14 @@ public class MapperProfile : Profile
 
         CreateMap<Document, DocumentDto>()
             .ForMember(dest => dest.Scope, opt => opt.MapFrom(src => 
-                src.CourseId.HasValue ? "Course" : src.ModuleId.HasValue ? "Module" : "Activity"));
+                src.CourseId.HasValue ? 
+                    "Course" : 
+                    src.ModuleId.HasValue ? 
+                        "Module" :
+                        src.ActivityId.HasValue ? 
+                            "Activity" : 
+                            "Unknown"
+            ));
 
         CreateMap<CreateDocumentDto, Document>();
 
