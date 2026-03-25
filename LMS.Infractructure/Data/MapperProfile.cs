@@ -53,8 +53,11 @@ public class MapperProfile : Profile
                 "Unknown"));
 
         CreateMap<Submission, SubmissionDto>()
-            .ForMember(dest => dest.StudentId, opt => opt.MapFrom(src => src.Student.Id))
-            .ForMember(dest => dest.StudentName, opt => opt.MapFrom(src => src.Student.UserName));
+            .ForMember(dest => dest.StudentName, opt => opt.MapFrom(src => src.Student.UserName))
+            .ForMember(dest => dest.FeedbackGivenByName, opt => opt.MapFrom(src => src.FeedbackGivenBy != null
+                                                                                ? src.FeedbackGivenBy.UserName
+                                                                                : ""))
+            .ForMember(dest => dest.ActivityName, opt => opt.MapFrom(src => src.Activity.Name));
 
     }
 }

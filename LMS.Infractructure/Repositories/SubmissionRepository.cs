@@ -8,11 +8,15 @@ namespace LMS.Infractructure.Repositories;
 
 public class SubmissionRepository(ApplicationDbContext context) : RepositoryBase<Submission>(context), ISubmissionRepository
 {
-    public async Task<(IEnumerable<Submission> Submissions, int TotalCount)> GetAllSubmissionsAsync(
-        int page, int pageSize, int? activityId, bool trackChanges = false)
+    public async Task<(IEnumerable<Submission> submissions, int totalCount)> GetAllSubmissionsAsync(int page,
+                                                                                                    int pageSize,
+                                                                                                    int? activityId,
+                                                                                                    string? studentId,
+                                                                                                    bool trackChanges = false)
     {
         var query = FindByCondition(
-            s => activityId == null || s.ActivityId == activityId.Value,
+            s => (activityId == null || s.ActivityId == activityId.Value)
+                    && (string.IsNullOrEmpty(studentId) || s.StudentId == studentId),
             trackChanges)
             .Include(s => s.Student)
             .Include(s => s.Activity)
