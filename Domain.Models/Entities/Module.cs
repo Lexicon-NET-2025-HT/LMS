@@ -1,8 +1,7 @@
 ﻿namespace Domain.Models.Entities;
 
-public class Module
+public class Module : EntityBase
 {
-    public int Id { get; set; }
     public int CourseId { get; set; }
     public Course Course { get; set; } = null!;
     public string Name { get; set; } = string.Empty;
