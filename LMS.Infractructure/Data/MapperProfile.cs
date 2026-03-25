@@ -59,7 +59,6 @@ public class MapperProfile : Profile
             .ForMember(dest => dest.CourseName, opt => opt.MapFrom(src => src.Course != null ? src.Course.Name : null));
 
         CreateMap<ApplicationUser, UserDto>()
-            .IncludeBase<ApplicationUser, UserDto>()
             .ForMember(dest => dest.CourseId, opt => opt.MapFrom(src => src.CourseId))
             .ForMember(dest => dest.CourseName, opt => opt.MapFrom(src => src.Course != null ? src.Course.Name : null));
 
