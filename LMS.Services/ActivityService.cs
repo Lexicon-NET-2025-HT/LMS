@@ -6,6 +6,7 @@ using Domain.Models.Exceptions;
 using LMS.Shared.DTOs.Activity;
 using LMS.Shared.DTOs.Common;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore.Storage;
 using Service.Contracts;
 
 namespace LMS.Services
@@ -66,6 +67,9 @@ namespace LMS.Services
             var activity = await _unitOfWork.Activities.FindByIdWithDetailAsync(id) ??
                 throw new Exception($"Activity by id: '{id}', does not exist");
 
+            Console.WriteLine("TESTTTTT");
+            Console.WriteLine(activity.GetType().Name);
+
             var activityDetailDto = _mapper.Map<ActivityDetailDto>(activity);
 
             return activityDetailDto;
@@ -88,23 +92,26 @@ namespace LMS.Services
             return activityDto;
         }
 
-        public async Task<ActivityDto> UpdateActivityAsync(int id, UpdateActivityDto dto)
+        public async Task UpdateActivityAsync(int id, UpdateActivityDto dto)
         {
             var activity = await _unitOfWork.Activities.FindByIdAsync(id) ??
-                throw new Exception($"Activity by id: '{id}', does not exist");
+                throw new NotFoundException($"Activity by id: '{id}', does not exist");
 
-            activity.Name = dto.Name ?? activity.Name;
-            activity.Description = dto.Description ?? activity.Description;
-            activity.Type = dto.Type ?? activity.Type;
-            activity.StartTime = dto.StartTime;
-            activity.EndTime = dto.EndTime ?? activity.EndTime;
+            _mapper.Map(dto, activity);
 
             _unitOfWork.Activities.Update(activity);
             await _unitOfWork.CompleteAsync();
+        }
 
-            var activityDto = _mapper.Map<ActivityDto>(activity);
+        public async Task PatchActivityAsync(int id, PatchActivityDto dto)
+        {
+            var activity = await _unitOfWork.Activities.FindByIdAsync(id) ??
+                throw new NotFoundException($"Activity by id: '{id}', does not exist");
 
-            return activityDto;
+            _mapper.Map(dto, activity);
+
+            _unitOfWork.Activities.Update(activity);
+            await _unitOfWork.CompleteAsync();
         }
 
         public async Task DeleteActivityAsync(int id)

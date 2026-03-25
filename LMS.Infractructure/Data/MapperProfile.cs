@@ -44,6 +44,16 @@ public class MapperProfile : Profile
             .ForMember(dest => dest.DocumentCount, opt => opt.MapFrom(src => src.Documents.Count))
             .ForMember(dest => dest.SubmissionCount, opt => opt.MapFrom(src => src.Submissions.Count));
 
+        CreateMap<UpdateActivityDto, Activity>();
+
+        CreateMap<PatchActivityDto, Activity>()
+            .ForAllMembers(opt => opt.Condition((src, dest, srcMember) => srcMember != null));
+
+        CreateMap<Activity, ActivityDto>()
+            .IncludeAllDerived();
+
         CreateMap<Activity, ActivityDetailDto>();
+
+        // CreateMap<THIS, INTO_THIS>();
     }
 }

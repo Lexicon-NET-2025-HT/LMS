@@ -86,8 +86,19 @@ public class ActivitiesController : ControllerBase
     [SwaggerResponse(StatusCodes.Status404NotFound, "Activity not found")]
     public async Task<IActionResult> UpdateActivity(int id, [FromBody] UpdateActivityDto dto)
     {
-        var activity = await serviceManager.ActivityService.UpdateActivityAsync(id, dto);
-        return Ok(activity);
+        await serviceManager.ActivityService.UpdateActivityAsync(id, dto);
+        return Ok(new { message = "Activity updated successfully" });
+    }
+
+    [HttpPatch("{id}")]
+    [SwaggerOperation(
+        Summary = "Partially update an activity.",
+        Description = "Partially updates an existing activity with the provided details"
+    )]
+    public async Task<IActionResult> PatchActivity(int id, [FromBody] PatchActivityDto dto)
+    {
+        await serviceManager.ActivityService.PatchActivityAsync(id, dto);
+        return Ok(new { message = "Activity patched successfully" });
     }
 
     [HttpDelete("{id}")]

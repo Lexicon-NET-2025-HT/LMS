@@ -15,7 +15,8 @@ namespace Service.Contracts
         Task<ActivityDto?> GetActivityByIdAsync(int id);
         Task<ActivityDetailDto?> GetActivityDetailByIdAsync(int id);
         Task<ActivityDto> CreateActivityAsync(CreateActivityDto dto);
-        Task<ActivityDto> UpdateActivityAsync(int id, UpdateActivityDto dto);
+        Task UpdateActivityAsync(int id, UpdateActivityDto dto);
+        Task PatchActivityAsync(int id, PatchActivityDto dto);
         Task DeleteActivityAsync(int id);
     }
 }
