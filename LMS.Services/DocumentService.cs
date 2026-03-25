@@ -7,6 +7,7 @@ using LMS.Shared.DTOs.Document;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Service.Contracts;
+using LMS.Infractructure.Extensions;
 
 namespace LMS.Services
 {
@@ -70,13 +71,9 @@ namespace LMS.Services
                 query = query.Where(d => d.CourseId == courseId.Value);
             }
 
-            var totalCount = await query.CountAsync();
-
-            var documents = await query
+            var (documents, totalCount) = await query
                 .OrderByDescending(d => d.Id)
-                .Skip((page - 1) * pageSize)
-                .Take(pageSize)
-                .ToListAsync();
+                .PagedResult(page, pageSize);
 
             var dtos = _mapper.Map<List<DocumentDto>>(documents);
 
