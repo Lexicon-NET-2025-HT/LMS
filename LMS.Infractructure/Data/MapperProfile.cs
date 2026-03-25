@@ -1,4 +1,4 @@
-﻿//using AutoMapper;
+//using AutoMapper;
 //using Domain.Models.Entities;
 //using LMS.Shared.DTOs.AuthDtos;
 //using LMS.Shared.DTOs.Course;
@@ -38,7 +38,6 @@ using LMS.Shared.DTOs.Course;
 using LMS.Shared.DTOs.Module;
 using LMS.Shared.DTOs.User;
 using LMS.Shared.DTOs.Document;
-using LMS.Shared.DTOs.Module;
 
 namespace LMS.Infractructure.Data;
 
@@ -56,6 +55,11 @@ public class MapperProfile : Profile
 
         CreateMap<ApplicationUser, StudentBasicDto>()
             .IncludeBase<ApplicationUser, UserBasicDto>()
+            .ForMember(dest => dest.CourseId, opt => opt.MapFrom(src => src.CourseId))
+            .ForMember(dest => dest.CourseName, opt => opt.MapFrom(src => src.Course != null ? src.Course.Name : null));
+
+        CreateMap<ApplicationUser, UserDto>()
+            .IncludeBase<ApplicationUser, UserDto>()
             .ForMember(dest => dest.CourseId, opt => opt.MapFrom(src => src.CourseId))
             .ForMember(dest => dest.CourseName, opt => opt.MapFrom(src => src.Course != null ? src.Course.Name : null));
 
