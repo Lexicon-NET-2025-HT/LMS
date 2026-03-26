@@ -20,6 +20,7 @@ public class SubmissionRepository(ApplicationDbContext context) : RepositoryBase
             trackChanges)
             .Include(s => s.Student)
             .Include(s => s.Activity)
+            .Include(s => s.Comments)
             .Include(s => s.Document);
 
         return await query.PagedResult(page, pageSize);
