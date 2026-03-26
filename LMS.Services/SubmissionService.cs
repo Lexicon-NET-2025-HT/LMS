@@ -87,7 +87,7 @@ public class SubmissionService : ISubmissionService
         //}
         //if (user.CourseId != activity.Module.CourseId) // TODO: only works if activity includes module and course
         //{
-        //    throw new InvalidOperationException($"User with id {submissionUserId} is not enrolled in the course for this activity.");
+        //    throw new ForbiddenException($"User with id {submissionUserId} is not enrolled in the course for this activity.");
         //}
     }
 
@@ -133,7 +133,6 @@ public class SubmissionService : ISubmissionService
 
         unitOfWork.Submissions.Delete(submission);
         await unitOfWork.CompleteAsync();
-        await Task.CompletedTask;
     }
 
     public async Task SubmitCommentAsync(int submissionId, string commenterId, SubmitCommentDto dto)
@@ -146,7 +145,6 @@ public class SubmissionService : ISubmissionService
         submission.Comments.Add(SubmissionComment.CreateNew(submission.Id, commenterId, dto.CommentText));
 
         await unitOfWork.CompleteAsync();
-        await Task.CompletedTask;
     }
 
     private async Task ThrowIfNotAuthorizedToComment(Submission submission, string commenterId)
@@ -157,10 +155,12 @@ public class SubmissionService : ISubmissionService
 
         //Activity activity = await unitOfWork.Activities.GetActivityAsync(submission.ActivityId) ??
         //    throw new KeyNotFoundException($"Activity with id {submission.ActivityId} was not found.");
+        //bool isOwner = submission.StudentId == commenterId;
+        //bool isTeacherOnCourse = user.TeachingCourses.Any(tc => tc.CourseId == activity.Module.CourseId);
 
-        //if (submission.StudentId != commenterId || !user.TeachingCourses.Any(tc => tc.CourseId == activity.Module.CourseId))
+        //if (!isOwner && !isTeacherOnCourse)
         //{
-        //    throw new InvalidOperationException($"User not allowed to comment this submission");
+        //    throw new ForbiddenException($"User not allowed to comment this submission");
         //}
     }
 
