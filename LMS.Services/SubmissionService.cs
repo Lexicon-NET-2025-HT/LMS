@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using Domain.Contracts.Repositories;
+using Domain.Models.Entities;
 using LMS.Shared.DTOs.Common;
 using LMS.Shared.DTOs.Submission;
 using Service.Contracts;
@@ -36,62 +37,125 @@ public class SubmissionService : ISubmissionService
 
     public async Task<SubmissionDto?> GetSubmissionByIdAsync(int id)
     {
-        throw new NotImplementedException();
-        // TODO: Replace with real database query
-        //return await Task.FromResult(new SubmissionDto
-        //{
-        //    Id = id,
-        //    StudentId = "student-1",
-        //    StudentName = "John Doe",
-        //    ActivityId = 1,
-        //    ActivityName = "Variables and Data Types",
-        //    Body = "My submission for this assignment...",
-        //    DocumentId = null,
-        //    Document = null,
-        //    SubmittedAt = DateTime.Now,
-        //    IsLate = false,
-        //    FeedbackText = null,
-        //    FeedbackGivenAt = null
-        //});
+        var submission = await unitOfWork.Submissions.GetSubmissionAsync(id);
+        return mapper.Map<SubmissionDto>(submission);
+    }
+    public async Task<SubmissionDetailDto?> GetSubmissionDetailByIdAsync(int id)
+    {
+        var submission = await unitOfWork.Submissions.GetSubmissionAsync(id);
+        return mapper.Map<SubmissionDetailDto>(submission);
     }
 
     public async Task<SubmissionDto> CreateSubmissionAsync(string userId, CreateSubmissionDto dto)
     {
+        ArgumentNullException.ThrowIfNull(dto);
 
-        throw new NotImplementedException();
-        // TODO: Create entity and save to database
-        //return await Task.FromResult(new SubmissionDto
-        //{
-        //    Id = 1,
-        //    StudentId = dto.StudentId,
-        //    StudentName = "Student Name",
-        //    ActivityId = dto.ActivityId,
-        //    ActivityName = "Activity Name",
-        //    Body = dto.Body,
-        //    DocumentId = dto.DocumentId,
-        //    Document = null,
-        //    SubmittedAt = DateTime.Now,
-        //    IsLate = false,
-        //    FeedbackText = null,
-        //    FeedbackGivenAt = null
-        //});
+        var activity = await unitOfWork.Activities.FindByIdOrThrowAsync(dto.ActivityId);
+
+        var submission = mapper.Map<Submission>(dto);
+        submission.StudentId = userId;
+        submission.SubmittedAt = DateTime.UtcNow;
+        submission.IsLate = activity.EndTime < DateTime.UtcNow;
+
+        await ThrowIfNotValidSubmission(submission);
+
+        unitOfWork.Submissions.Create(submission);
+        await unitOfWork.CompleteAsync();
+
+        // refetch new submission with navprops to verify it exists
+        var createdSubmission = await unitOfWork.Submissions.GetSubmissionAsync(submission.Id)
+            ?? throw new InvalidOperationException($"Submission with id {submission.Id} could not be loaded after creation.");
+
+        return mapper.Map<SubmissionDto>(createdSubmission);
     }
+
+    private async Task ThrowIfNotValidSubmission(Submission submission)
+    {
+        await ThrowIfNotValidSubmission(submission.ActivityId, submission.StudentId);
+    }
+
+    private async Task ThrowIfNotValidSubmission(int activityId, string submissionUserId)
+    {
+        // TODO: uncomment and implement properly when we have users and activities working with modules and courses
+        //var activity = await unitOfWork.Activities.GetActivityAsync(activityId) ??
+        //    throw new KeyNotFoundException($"Activity with id {activityId} was not found.");
+
+        //ApplicationUser user = await unitOfWork.Users.GetUserAsync(submissionUserId);
+        //if (user == null)
+        //{
+        //    throw new KeyNotFoundException($"User with id {submissionUserId} does not exist.");
+        //}
+        //if (user.CourseId != activity.Module.CourseId) // TODO: only works if activity includes module and course
+        //{
+        //    throw new InvalidOperationException($"User with id {submissionUserId} is not enrolled in the course for this activity.");
+        //}
+    }
+
+
 
     public async Task UpdateSubmissionAsync(int id, UpdateSubmissionDto dto)
     {
-        // TODO: Update entity in database
-        await Task.CompletedTask;
+        ArgumentNullException.ThrowIfNull(dto);
+
+        var submission = await unitOfWork.Submissions.FindByIdOrThrowAsync(id, trackChanges: true);
+
+        await InternallyUpdateSubmissionAsync(submission, dto.Body, dto.ActivityId, dto.DocumentId);
     }
 
+    public async Task UpdateSubmissionPartiallyAsync(int id, PatchSubmissionDto dto)
+    {
+        ArgumentNullException.ThrowIfNull(dto);
+
+        var submission = await unitOfWork.Submissions.GetSubmissionAsync(id, trackChanges: true) ??
+            throw new KeyNotFoundException($"Submission with id {id} does not exist.");
+
+        await InternallyUpdateSubmissionAsync(submission,
+                                              dto.Body ?? submission.Body ?? string.Empty,
+                                              dto.ActivityId ?? submission.Activity.Id,
+                                              dto.DocumentId);
+    }
+    private async Task InternallyUpdateSubmissionAsync(Submission submission, string body, int activityId, int? documentId)
+    {
+        submission.Body = body;
+        if (documentId != null)
+        {
+            submission.Document = await unitOfWork.Documents.FindByIdOrThrowAsync(documentId.Value, trackChanges: true);
+        }
+        submission.ActivityId = activityId;
+
+        await ThrowIfNotValidSubmission(submission);
+
+        await unitOfWork.CompleteAsync();
+    }
     public async Task DeleteSubmissionAsync(int id)
     {
-        // TODO: Delete entity from database
+        var submission = await unitOfWork.Submissions.FindByIdOrThrowAsync(id, trackChanges: true);
+
+        unitOfWork.Submissions.Delete(submission);
+        await unitOfWork.CompleteAsync();
         await Task.CompletedTask;
     }
 
-    public async Task SubmitFeedbackAsync(int id, SubmitFeedbackDto dto)
+    public async Task SubmitCommentAsync(int id, string commenterId, SubmitCommentDto dto)
     {
-        // TODO: Update submission with feedback
+        var submission = await unitOfWork.Submissions.GetSubmissionAsync(id, trackChanges: true) ??
+            throw new KeyNotFoundException($"Submission with id {id} does not exist.");
+
+        // TODO: uncomment and implement properly when we have users and activities working with modules and courses
+        //ApplicationUser user = await unitOfWork.Users.GetUserAsync(commenterId) ??
+        //    throw new KeyNotFoundException($"User with id {commenterId} does not exist.");
+
+        //Activity activity = await unitOfWork.Activities.GetActivityAsync(submission.ActivityId) ??
+        //    throw new KeyNotFoundException($"Activity with id {submission.ActivityId} was not found.");
+
+        //if (submission.StudentId != commenterId || !user.TeachingCourses.Any(tc => tc.CourseId == activity.Module.CourseId))
+        //{
+        //    throw new InvalidOperationException($"User not allowed to comment this submission");
+        //}
+
+        submission.Comments.Add(SubmissionComment.CreateNew(submission.Id, commenterId, dto.CommentText));
+
+        await unitOfWork.CompleteAsync();
         await Task.CompletedTask;
     }
 }

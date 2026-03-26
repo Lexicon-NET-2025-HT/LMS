@@ -14,6 +14,7 @@ public class MapperProfile : Profile
 {
     public MapperProfile()
     {
+        // user mappings
         CreateMap<UserRegistrationDto, ApplicationUser>();
 
         // Course mappings
@@ -33,6 +34,7 @@ public class MapperProfile : Profile
         CreateMap<UpdateCourseDto, Course>()
             .ForAllMembers(opt => opt.Condition((src, dest, srcMember) => srcMember != null));
 
+        // module mappings
         CreateMap<Module, ModuleDto>()
             .ForMember(dest => dest.ActivityCount, opt => opt.MapFrom(src => src.Activities.Count));
 
@@ -40,10 +42,12 @@ public class MapperProfile : Profile
 
         CreateMap<CreateModuleDto, Module>();
 
+        // activity mappings
         CreateMap<Activity, ActivityDto>()
             .ForMember(dest => dest.DocumentCount, opt => opt.MapFrom(src => src.Documents.Count))
             .ForMember(dest => dest.SubmissionCount, opt => opt.MapFrom(src => src.Submissions.Count));
 
+        // document mappings
         CreateMap<Document, DocumentDto>()
             .ForMember(dest => dest.Scope, opt => opt.MapFrom(
                 src =>
@@ -53,10 +57,20 @@ public class MapperProfile : Profile
                 src.SubmissionId != null ? nameof(Submission) :
                 "Unknown"));
 
+        // submission mappings
         CreateMap<Submission, SubmissionDto>()
             .ForMember(dest => dest.StudentName, opt => opt.MapFrom(src => src.Student.UserName))
             .ForMember(dest => dest.CommentCount, opt => opt.MapFrom(src => src.Comments.Count))
             .ForMember(dest => dest.ActivityName, opt => opt.MapFrom(src => src.Activity.Name));
+
+        CreateMap<Submission, SubmissionDetailDto>()
+            .ForMember(dest => dest.StudentName, opt => opt.MapFrom(src => src.Student.UserName))
+            .ForMember(dest => dest.ActivityName, opt => opt.MapFrom(src => src.Activity.Name));
+
+        CreateMap<CreateSubmissionDto, Submission>()
+            .ForMember(dest => dest.StudentId, opt => opt.Ignore())
+            .ForMember(dest => dest.SubmittedAt, opt => opt.Ignore())
+            .ForMember(dest => dest.IsLate, opt => opt.Ignore());
 
         CreateMap<SubmissionComment, SubmissionCommentDto>()
             .ForMember(dest => dest.AuthorName,

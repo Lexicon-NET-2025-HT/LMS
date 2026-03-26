@@ -30,6 +30,8 @@ public class SubmissionRepository(ApplicationDbContext context) : RepositoryBase
             .Include(s => s.Student)
             .Include(s => s.Activity)
             .Include(s => s.Document)
+            .Include(s => s.Comments)
+                .ThenInclude(c => c.Author)
             .FirstOrDefaultAsync();
     }
 }

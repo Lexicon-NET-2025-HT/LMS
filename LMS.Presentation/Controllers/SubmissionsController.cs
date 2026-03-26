@@ -10,7 +10,7 @@ namespace LMS.Presentation.Controllers;
 
 [Route("api/submissions")]
 [ApiController]
-[Authorize(Roles = "Student,Teacher")]
+[Authorize]
 public class SubmissionsController : ControllerBase
 {
     private readonly IServiceManager serviceManager;
@@ -52,6 +52,22 @@ public class SubmissionsController : ControllerBase
         return Ok(submission);
     }
 
+    [HttpGet("{id}/detail")]
+    [SwaggerOperation(
+        Summary = "Get submission by ID",
+        Description = "Retrieves a specific submission by its ID including its comments"
+    )]
+    [SwaggerResponse(StatusCodes.Status200OK, "Submission retrieved successfully")]
+    [SwaggerResponse(StatusCodes.Status404NotFound, "Submission not found")]
+    public async Task<IActionResult> GetSubmissionDetailsById(int id)
+    {
+        var submission = await serviceManager.SubmissionService.GetSubmissionDetailByIdAsync(id);
+        if (submission == null)
+            return NotFound(new { message = "Submission not found" });
+
+        return Ok(submission);
+    }
+
     [HttpPost]
     [SwaggerOperation(
         Summary = "Create a new submission",
@@ -77,19 +93,33 @@ public class SubmissionsController : ControllerBase
     public async Task<IActionResult> UpdateSubmission(int id, [FromBody] UpdateSubmissionDto dto)
     {
         await serviceManager.SubmissionService.UpdateSubmissionAsync(id, dto);
-        return Ok(new { message = "Submission updated successfully" });
+        return NoContent();
     }
 
-    [HttpPost("{id}/feedback")]
+    [HttpPatch("{id}")]
+    [SwaggerOperation(
+        Summary = "Partially update a submission",
+        Description = "Updates an existing submission"
+    )]
+    [SwaggerResponse(StatusCodes.Status200OK, "Submission updated successfully")]
+    [SwaggerResponse(StatusCodes.Status404NotFound, "Submission not found")]
+    public async Task<IActionResult> PatchSubmission(int id, [FromBody] PatchSubmissionDto dto)
+    {
+        await serviceManager.SubmissionService.UpdateSubmissionPartiallyAsync(id, dto);
+        return NoContent();
+    }
+
+    [HttpPost("{id}/comment")]
     [SwaggerOperation(
         Summary = "Submit feedback for a submission",
         Description = "Provides teacher feedback on a student submission"
     )]
     [SwaggerResponse(StatusCodes.Status200OK, "Feedback submitted successfully")]
     [SwaggerResponse(StatusCodes.Status404NotFound, "Submission not found")]
-    public async Task<IActionResult> SubmitFeedback(int id, [FromBody] SubmitFeedbackDto dto)
+    public async Task<IActionResult> SubmitComment(int id, [FromBody] SubmitCommentDto dto)
     {
-        await serviceManager.SubmissionService.SubmitFeedbackAsync(id, dto);
+        var userId = User.FindFirst(ClaimTypes.NameIdentifier)!.Value;
+        await serviceManager.SubmissionService.SubmitCommentAsync(id, userId, dto);
         return Ok(new { message = "Feedback submitted successfully" });
     }
 
