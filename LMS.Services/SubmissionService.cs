@@ -136,11 +136,21 @@ public class SubmissionService : ISubmissionService
         await Task.CompletedTask;
     }
 
-    public async Task SubmitCommentAsync(int id, string commenterId, SubmitCommentDto dto)
+    public async Task SubmitCommentAsync(int submissionId, string commenterId, SubmitCommentDto dto)
     {
-        var submission = await unitOfWork.Submissions.GetSubmissionAsync(id, trackChanges: true) ??
-            throw new KeyNotFoundException($"Submission with id {id} does not exist.");
+        var submission = await unitOfWork.Submissions.GetSubmissionAsync(submissionId, trackChanges: true) ??
+            throw new KeyNotFoundException($"Submission with id {submissionId} does not exist.");
 
+        await ThrowIfNotAuthorizedToComment(submission, commenterId);
+
+        submission.Comments.Add(SubmissionComment.CreateNew(submission.Id, commenterId, dto.CommentText));
+
+        await unitOfWork.CompleteAsync();
+        await Task.CompletedTask;
+    }
+
+    private async Task ThrowIfNotAuthorizedToComment(Submission submission, string commenterId)
+    {
         // TODO: uncomment and implement properly when we have users and activities working with modules and courses
         //ApplicationUser user = await unitOfWork.Users.GetUserAsync(commenterId) ??
         //    throw new KeyNotFoundException($"User with id {commenterId} does not exist.");
@@ -152,10 +162,14 @@ public class SubmissionService : ISubmissionService
         //{
         //    throw new InvalidOperationException($"User not allowed to comment this submission");
         //}
+    }
 
-        submission.Comments.Add(SubmissionComment.CreateNew(submission.Id, commenterId, dto.CommentText));
+    public async Task DeleteCommentAsync(int commentId, string commenterId)
+    {
+        // TODO: implement if needed
+        //var submission = await unitOfWork.Submissions.GetSubmissionAsync(submissionId, trackChanges: true) ??
+        //    throw new KeyNotFoundException($"Submission with id {submissionId} does not exist.");
 
-        await unitOfWork.CompleteAsync();
-        await Task.CompletedTask;
+        //await ThrowIfNotAuthorizedToComment(submission, commenterId);
     }
 }
