@@ -2,7 +2,7 @@
 
 namespace LMS.Infractructure.Extensions;
 
-internal static class QueryableExtensions
+public static class QueryableExtensions
 {
     public static async Task<(IEnumerable<T> items, int totalCount)> PagedResult<T>(
         this IQueryable<T> query,
