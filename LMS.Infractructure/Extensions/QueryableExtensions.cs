@@ -2,7 +2,7 @@
 
 namespace LMS.Infractructure.Extensions;
 
-internal static class QueryableExtensions
+public static class QueryableExtensions
 {
     /// <summary>
     /// Asynchronously retrieves a single page of items from the query and the total number of items available.

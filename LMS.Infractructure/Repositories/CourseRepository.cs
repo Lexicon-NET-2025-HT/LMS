@@ -23,9 +23,15 @@ public class CourseRepository : RepositoryBase<Course>, ICourseRepository
 
     public async Task<Course?> GetCourseAsync(int id, bool trackChanges = false)
     {
+        //return await FindByCondition(c => c.Id == id, trackChanges)
+        //    .Include(c => c.Students)
+        //    .Include(c => c.Modules)
+        //    .Include(c => c.CourseTeachers)
+        //    .FirstOrDefaultAsync();
         return await FindByCondition(c => c.Id == id, trackChanges)
             .Include(c => c.Students)
             .Include(c => c.Modules)
+                .ThenInclude(m => m.Activities)
             .Include(c => c.CourseTeachers)
             .FirstOrDefaultAsync();
     }

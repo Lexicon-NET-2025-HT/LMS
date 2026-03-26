@@ -1,4 +1,4 @@
-﻿using Bogus;
+using Bogus;
 using Domain.Models.Enums;
 using LMS.Infractructure.Data;
 using Microsoft.AspNetCore.Identity;
@@ -33,7 +33,11 @@ public class DataSeedHostingService : IHostedService
         if (!env.IsDevelopment()) return;
 
         dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-        if (await dbContext.Users.AnyAsync(cancellationToken)) return;
+        
+        bool hasUsers = await dbContext.Users.AnyAsync(cancellationToken);
+        bool hasDocuments = await dbContext.Documents.AnyAsync(cancellationToken);
+
+        if (hasUsers && hasDocuments) return;
 
         userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
         roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
@@ -43,19 +47,42 @@ public class DataSeedHostingService : IHostedService
 
         try
         {
-            await AddRolesAsync([TeacherRole, StudentRole]);
+            if (!hasUsers)
+            {
+                await AddRolesAsync([TeacherRole, StudentRole]);
 
-            var courses = FakeCourses(5);
-            await AddCoursesToDb(courses);
+                var courses = FakeCourses(5);
+                await AddCoursesToDb(courses);
 
-            var modules = FakeModules(2, 7, courses);
-            await AddModulesToDb(modules);
+                var modules = FakeModules(2, 7, courses);
+                await AddModulesToDb(modules);
 
-            var activities = FakeActivities(modules);
-            await AddActivitiesToDb(activities);
+                var activities = FakeActivities(modules);
+                await AddActivitiesToDb(activities);
 
-            await AddDemoUsersAsync(courses);
-            await AddFakedUsersAsync(20, courses);
+                await AddDemoUsersAsync(courses);
+                await AddFakedUsersAsync(20, courses);
+            }
+
+            if (!hasDocuments)
+            {
+                var courses = await dbContext.Courses.ToListAsync(cancellationToken);
+                var teachers = await dbContext.Users
+                    .Where(u => dbContext.UserRoles
+                        .Where(ur => dbContext.Roles
+                            .Where(r => r.Name == TeacherRole)
+                            .Select(r => r.Id)
+                            .Contains(ur.RoleId))
+                        .Select(ur => ur.UserId)
+                        .Contains(u.Id))
+                    .ToListAsync(cancellationToken);
+
+                if (courses.Any() && teachers.Any())
+                {
+                    var documents = FakeDocuments(courses, teachers);
+                    await AddDocumentsToDb(documents);
+                }
+            }
 
             logger.LogInformation("Seed complete");
         }
@@ -353,6 +380,52 @@ public class DataSeedHostingService : IHostedService
         }
 
         await dbContext.SaveChangesAsync();
+    }
+
+    private IEnumerable<Document> FakeDocuments(IEnumerable<Course> courses, IEnumerable<ApplicationUser> teachers)
+    {
+        var faker = new Faker("sv");
+        var fileTypes = new[] { "pdf", "docx", "pptx", "xlsx", "txt" };
+        var displayNames = new[]
+        {
+            "Lecture Notes", "Course Material", "Assignment Brief",
+            "Study Guide", "Exam Prep", "Lab Instructions", "Reading List"
+        };
+
+        var documents = new List<Document>();
+        var teacherList = teachers.ToList();
+
+        foreach (var course in courses)
+        {
+            int docCount = random.Next(2, 5);
+            var teacher = faker.PickRandom(teacherList);
+
+            for (int i = 0; i < docCount; i++)
+            {
+                var name = faker.PickRandom(displayNames);
+                var ext = faker.PickRandom(fileTypes);
+                documents.Add(new Document
+                {
+                    CourseId = course.Id,
+                    DisplayName = name,
+                    FileName = $"{name.ToLower().Replace(' ', '-')}-{i + 1}.{ext}",
+                    Description = faker.Lorem.Sentence(),
+                    UploadedAt = faker.Date.Recent(30),
+                    UploadedByUserId = teacher.Id
+                });
+            }
+        }
+
+        return documents;
+    }
+
+    private async Task AddDocumentsToDb(IEnumerable<Document> documents)
+    {
+        if (!await dbContext.Documents.AnyAsync())
+        {
+            await dbContext.Documents.AddRangeAsync(documents);
+            await dbContext.SaveChangesAsync();
+        }
     }
 
     private static DateTime EnsureWeekday(DateTime date, int atHour = 8)
