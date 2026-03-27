@@ -104,12 +104,35 @@ public class MapperProfile : Profile
             .ForMember(dest => dest.SubmissionCount, opt => opt.MapFrom(src => src.Submissions.Count));
 
         CreateMap<Document, DocumentDto>()
-            .ForMember(dest => dest.Scope, opt => opt.MapFrom(
-                src =>
-                src.CourseId != null ? "Course" :
-                src.ModuleId != null ? "Module" :
-                src.ActivityId != null ? "Activity" :
-                "Unknown"));
+            .ForMember(dest => dest.Scope, opt => opt.MapFrom(src => 
+                src.CourseId.HasValue ? 
+                    "Course" : 
+                    src.ModuleId.HasValue ? 
+                        "Module" :
+                        src.ActivityId.HasValue ? 
+                            "Activity" : 
+                            "Unknown"
+            ));
 
+        CreateMap<CreateDocumentDto, Document>();
+
+        // Activity mappings
+        CreateMap<CreateActivityDto, Activity>();
+
+        CreateMap<Activity, ActivityDto>()
+            .ForMember(dest => dest.DocumentCount, opt => opt.MapFrom(src => src.Documents.Count))
+            .ForMember(dest => dest.SubmissionCount, opt => opt.MapFrom(src => src.Submissions.Count));
+
+        CreateMap<UpdateActivityDto, Activity>();
+
+        CreateMap<PatchActivityDto, Activity>()
+            .ForAllMembers(opt => opt.Condition((src, dest, srcMember) => srcMember != null));
+
+        CreateMap<Activity, ActivityDto>()
+            .IncludeAllDerived();
+
+        CreateMap<Activity, ActivityDetailDto>();
+
+        // CreateMap<THIS, INTO_THIS>();
     }
 }
