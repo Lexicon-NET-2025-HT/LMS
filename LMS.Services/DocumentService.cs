@@ -1,46 +1,61 @@
 using AutoMapper;
 using Domain.Contracts.Repositories;
+using Domain.Contracts.Storage;
 using Domain.Models.Entities;
 using Domain.Models.Exceptions;
+using LMS.Infractructure.Extensions;
 using LMS.Shared.DTOs.Common;
 using LMS.Shared.DTOs.Document;
 using Microsoft.AspNetCore.Identity;
-using Microsoft.EntityFrameworkCore;
 using Service.Contracts;
-using LMS.Infractructure.Extensions;
 
 namespace LMS.Services
 {
     public class DocumentService(
         IUnitOfWork unitOfWork,
         IMapper mapper,
+        IFileStorage fileStorage,
         UserManager<ApplicationUser> userManager) : IDocumentService
     {
         private readonly UserManager<ApplicationUser> _userManager = userManager;
         private readonly IUnitOfWork _unitOfWork = unitOfWork;
         private readonly IMapper _mapper = mapper;
-
-        public async Task<DocumentDto> CreateDocumentAsync(CreateDocumentDto dto)
+        private readonly IFileStorage _fileStorage = fileStorage;
+        public async Task<DocumentDto> CreateDocumentAsync(string userId, CreateDocumentDto dto)
         {
-            var user = await _userManager.FindByIdAsync(dto.UploadedByUserId) ??
-                throw new Exception($"User by id {dto.UploadedByUserId} does not exist");
+            if (dto.FileStream == null || dto.FileStream.Length == 0)
+            {
+                throw new ArgumentException("File is missing.");
+            }
+
+            if (dto.CourseId is null &&
+                dto.ModuleId is null &&
+                dto.ActivityId is null &&
+                dto.SubmissionId is null)
+            {
+                throw new ArgumentException("Document must belong to a course, module, activity or submission.");
+            }
+
+            //DisplayName = request.File.FileName,
+            //ContentType = request.File.ContentType,
+            //FileSize = request.File.Length
+            var user = await _userManager.FindByIdAsync(userId) ??
+                throw new Exception($"User by id {userId} does not exist");
+
+            var savedFileResult = await _fileStorage.SaveAsync(dto.FileStream, dto.FileName);
 
             var document = _mapper.Map<Document>(dto);
-
             document.UploadedByUser = user;
-            document.Course = document.CourseId.HasValue ? await _unitOfWork.Courses.FindByIdAsync(dto.CourseId) : null;
-            document.Module = document.ModuleId.HasValue ? await _unitOfWork.Modules.FindByIdAsync(dto.ModuleId) : null;
-            document.Activity = document.ActivityId.HasValue ? await _unitOfWork.Activities.FindByIdAsync(dto.CourseId) : null;
-
-            Console.WriteLine("THIS IS MY WRITE LINE!!!");
-            Console.WriteLine(document.UploadedByUser.UserName);
+            document.UploadedAt = DateTime.UtcNow;
+            document.FileSize = savedFileResult.FileSize;
 
             _unitOfWork.Documents.Create(document);
             await _unitOfWork.CompleteAsync();
 
-            var documentDto = _mapper.Map<DocumentDto>(document);
+            var createdDocument = await _unitOfWork.Documents.FindByIdAsync(document.Id) ??
+                throw new Exception("Failed to retrieve the created document.");
 
-            return documentDto;
+            return _mapper.Map<DocumentDto>(document);
         }
         public async Task UpdateDocumentAsync(int id, UpdateDocumentDto dto)
         {

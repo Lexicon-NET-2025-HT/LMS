@@ -99,7 +99,7 @@ namespace LMS.Infractructure.Data
             {
                 entity.HasKey(d => d.Id);
 
-                entity.Property(d => d.FileName)
+                entity.Property(d => d.StoredFileName)
                     .IsRequired()
                     .HasMaxLength(255);
 

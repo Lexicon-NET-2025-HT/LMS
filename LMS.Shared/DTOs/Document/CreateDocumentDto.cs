@@ -7,17 +7,14 @@
     /// </summary>
     public record CreateDocumentDto
     {
-        public required string FileName { get; set; }
-        public required string DisplayName { get; set; }
-        public required string Description { get; set; }
-
-        /// <summary>
-        /// User ID of the person uploading the document.
-        /// Must reference an existing user.
-        /// </summary>
-        public required string UploadedByUserId { get; set; }
-        public int? CourseId { get; set; } = null;
-        public int? ModuleId { get; set; } = null;
-        public int? ActivityId { get; set; } = null;
+        public string FileName { get; init; } = string.Empty;
+        public string Description { get; init; } = string.Empty;
+        public Stream FileStream { get; init; } = null!;
+        public string ContentType { get; init; } = string.Empty;
+        public long FileSize { get; init; }
+        public int? CourseId { get; init; }
+        public int? ModuleId { get; init; }
+        public int? ActivityId { get; init; }
+        public int? SubmissionId { get; init; }
     }
 }

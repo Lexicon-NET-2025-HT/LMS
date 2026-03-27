@@ -35,9 +35,9 @@ using Domain.Models.Entities;
 using LMS.Shared.DTOs.Activity;
 using LMS.Shared.DTOs.AuthDtos;
 using LMS.Shared.DTOs.Course;
+using LMS.Shared.DTOs.Document;
 using LMS.Shared.DTOs.Module;
 using LMS.Shared.DTOs.User;
-using LMS.Shared.DTOs.Document;
 
 namespace LMS.Infractructure.Data;
 
@@ -110,6 +110,13 @@ public class MapperProfile : Profile
                 src.ModuleId != null ? "Module" :
                 src.ActivityId != null ? "Activity" :
                 "Unknown"));
+
+        CreateMap<CreateDocumentDto, Document>()
+            .ForMember(dest => dest.DisplayName, opt => opt.MapFrom(src => src.FileName))
+            .ForMember(dest => dest.StoredFileName, opt => opt.Ignore())
+            .ForMember(dest => dest.FileSize, opt => opt.Ignore())
+            .ForMember(dest => dest.UploadedAt, opt => opt.Ignore())
+            .ForMember(dest => dest.UploadedByUser, opt => opt.Ignore());
 
     }
 }

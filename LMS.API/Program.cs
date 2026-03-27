@@ -25,6 +25,8 @@ public class Program
         builder.Services.AddScoped<IActivityRepository, ActivityRepository>();
         builder.Services.AddScoped<IDocumentRepository, DocumentRepository>();
 
+        builder.Services.AddFileStorage(builder.Environment);
+
         builder.Services.ConfigureAuthentication(builder.Configuration);
         builder.Services.ConfigureIdentity();
 
@@ -54,6 +56,8 @@ public class Program
 
         app.UseAuthentication();
         app.UseAuthorization();
+
+        app.UseDocumentFileStorage();
 
         app.MapControllers();
 
