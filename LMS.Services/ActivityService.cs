@@ -25,37 +25,21 @@ namespace LMS.Services
 
         public async Task<PagedResultDto<ActivityDto>> GetAllActivitiesAsync(int page, int pageSize, int? moduleId = null)
         {
-            // TODO: Replace with real database query
-            var mockActivities = new List<ActivityDto>
-        {
-            new ActivityDto
-            {
-                Id = 1,
-                ModuleId = moduleId ?? 1,
-                ModuleName = "Introduction to C#",
-                Name = "Variables and Data Types",
-                Description = "Learn about variables",
-                Type = ActivityType.Lecture,
-                StartTime = DateTime.Now,
-                EndTime = DateTime.Now.AddHours(2),
-                DocumentCount = 3,
-                SubmissionCount = 0
-            }
-        };
+            var (activities, totalCount) = await _unitOfWork.Activities.GetAllActivitiesAsync(page, pageSize, moduleId);
 
-            return await Task.FromResult(new PagedResultDto<ActivityDto>
+            return new PagedResultDto<ActivityDto>
             {
-                Items = mockActivities,
-                TotalCount = mockActivities.Count,
+                Items = _mapper.Map<List<ActivityDto>>(activities),
+                TotalCount = totalCount,
                 PageNumber = page,
                 PageSize = pageSize
-            });
+            };
         }
 
         public async Task<ActivityDto?> GetActivityByIdAsync(int id)
         {
             var activity = await _unitOfWork.Activities.FindByIdAsync(id) ??
-                throw new Exception($"Activity by id: '{id}', does not exist");
+                throw new NotFoundException($"Activity by id: '{id}', does not exist");
 
             var activityDto = _mapper.Map<ActivityDto>(activity);
 
@@ -65,7 +49,7 @@ namespace LMS.Services
         public async Task<ActivityDetailDto?> GetActivityDetailByIdAsync(int id)
         {
             var activity = await _unitOfWork.Activities.FindByIdWithDetailAsync(id) ??
-                throw new Exception($"Activity by id: '{id}', does not exist");
+                throw new NotFoundException($"Activity by id: '{id}', does not exist");
 
             Console.WriteLine("TESTTTTT");
             Console.WriteLine(activity.GetType().Name);
@@ -78,7 +62,7 @@ namespace LMS.Services
         public async Task<ActivityDto> CreateActivityAsync(CreateActivityDto dto)
         {
             var module = await _unitOfWork.Modules.FindByIdAsync(dto.ModuleId) ??
-                throw new Exception($"Module by id: '{dto.ModuleId}', does not exist");
+                throw new NotFoundException($"Module by id: '{dto.ModuleId}', does not exist");
 
             var activity = _mapper.Map<Activity>(dto);
 
@@ -117,7 +101,7 @@ namespace LMS.Services
         public async Task DeleteActivityAsync(int id)
         {
             var activity = await _unitOfWork.Activities.FindByIdAsync(id) ??
-                throw new Exception($"Activity with id: '{id}' does not exist");
+                throw new NotFoundException($"Activity with id: '{id}' does not exist");
 
             _unitOfWork.Activities.Delete(activity);
             await _unitOfWork.CompleteAsync();
