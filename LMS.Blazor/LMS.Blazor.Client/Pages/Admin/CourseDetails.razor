@@ -1,10 +1,14 @@
 ﻿@page "/admin/courses/{CourseId:int}/details"
 @attribute [Authorize(Roles = "Teacher")]
+@using LMS.Shared.DTOs.Activity
 @using LMS.Shared.DTOs.Course
 @using LMS.Shared.DTOs.Module
 @using LMS.Shared.DTOs.User
 @inject ICourseService CourseService
 @inject NavigationManager Navigation
+@using Domain.Models.Enums
+@inject IModuleService ModuleService
+@inject IActivityService ActivityService
 
 <PageTitle>Course Details</PageTitle>
 
@@ -141,32 +145,19 @@
                                             <div class="d-flex gap-1 flex-shrink-0">
                                                 <button class="btn btn-sm btn-outline-primary"
                                                         title="Toggle Activities"
-                                                        @onclick="() => ToggleActivities(module.Id)">
+                                                        @onclick="() => ToggleActivitiesAsync(module.Id)">
                                                     <i class="bi bi-list-ul"></i>
                                                     <span class="d-none d-md-inline ms-1">Activities</span>
                                                 </button>
                                                 <button class="btn btn-sm btn-outline-danger"
                                                         title="Remove Module"
-                                                        @onclick="() => RemoveModule(module.Id)">
+                                                        @onclick="() => RemoveModuleAsync(module.Id)">
                                                     <i class="bi bi-trash"></i>
                                                 </button>
                                             </div>
                                         </div>
                                     </div>
                                 </div>
-                              @*   <div class="d-flex gap-1 flex-shrink-0">
-                                    <button class="btn btn-sm btn-outline-primary"
-                                            title="Toggle Activities"
-                                            @onclick="() => ToggleActivities(module.Id)">
-                                        <i class="bi bi-list-ul"></i>
-                                        <span class="d-none d-md-inline ms-1">Activities</span>
-                                    </button>
-                                    <button class="btn btn-sm btn-outline-danger"
-                                            title="Remove Module"
-                                            @onclick="() => RemoveModule(module.Id)">
-                                        <i class="bi bi-trash"></i>
-                                    </button>
-                                </div> *@
                             </div>
 
                             @* Activities sub-panel *@
@@ -184,9 +175,10 @@
                                         <div class="col-12 col-sm-6 col-xl-2">
                                             <label class="form-label small fw-semibold mb-1">Type</label>
                                             <select class="form-select form-select-sm" @bind="newActivityType">
-                                                <option value="Lecture">Lecture</option>
-                                                <option value="Exercise">Exercise</option>
-                                                <option value="ELearning">E-Learning</option>
+                                                @foreach (var type in Enum.GetValues<ActivityType>())
+                                                {
+                                                    <option value="@type">@type</option>
+                                                }
                                             </select>
                                         </div>
                                         <div class="col-12 col-sm-6 col-xl-3">
@@ -202,13 +194,13 @@
                                         <div class="col-12 col-xl-1 d-flex gap-1">
                                             <button class="btn btn-sm btn-primary flex-fill"
                                                     title="Add Activity"
-                                                    @onclick="() => AddActivity(module.Id, ActivityKind.Activity)">
+                                                    @onclick="() => AddActivityAsync(module.Id, ActivityKind.Activity)">
                                                 <i class="bi bi-plus-lg"></i>
                                                 <span class="d-none d-xl-inline ms-1">Activity</span>
                                             </button>
                                             <button class="btn btn-sm btn-outline-primary flex-fill"
                                                     title="Add Assignment"
-                                                    @onclick="() => AddActivity(module.Id, ActivityKind.Assignment)">
+                                                    @onclick="() => AddActivityAsync(module.Id, ActivityKind.Assignment)">
                                                 <i class="bi bi-plus-lg"></i>
                                                 <span class="d-none d-xl-inline ms-1">Assignment</span>
                                             </button>
@@ -217,7 +209,7 @@
 
                                     @* Activity list *@
                                     @{
-                                        var acts = activities.Where(a => a.ModuleId == module.Id).ToList();
+                                        var acts = moduleActivities.TryGetValue(module.Id, out var list) ? list : [];
                                     }
                                     @if (!acts.Any())
                                     {
@@ -242,11 +234,11 @@
                                                         <tr>
                                                             <td>@act.Name</td>
                                                             <td><span class="badge bg-info text-dark">@act.Type</span></td>
-                                                            <td>@act.Start?.ToString("yyyy-MM-dd HH:mm")</td>
-                                                            <td>@act.End.ToString("yyyy-MM-dd HH:mm")</td>
+                                                            <td>@act.StartTime.ToString("yyyy-MM-dd HH:mm")</td>
+                                                            <td>@act.EndTime.ToString("yyyy-MM-dd HH:mm")</td>
                                                             <td>
                                                                 <button class="btn btn-sm btn-outline-danger"
-                                                                        @onclick="() => RemoveActivity(act.TempId)">
+                                                                        @onclick="() => RemoveActivityAsync(act.Id, module.Id)">
                                                                     <i class="bi bi-trash"></i>
                                                                 </button>
                                                             </td>
@@ -384,45 +376,11 @@
                 </div>
             }
 
-            <div class="card-body p-0">
-                @if (!documents.Any())
-                {
-                    <p class="text-muted p-3 mb-0">No documents uploaded yet.</p>
-                }
-                else
-                {
-                    <div class="table-responsive">
-                        <table class="table table-hover mb-0">
-                            <thead class="table-light">
-                                <tr>
-                                    <th>Name</th>
-                                    <th class="d-none d-sm-table-cell">File</th>
-                                    <th></th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @foreach (var doc in documents)
-                                {
-                                    <tr>
-                                        <td>@doc.DisplayName</td>
-                                        <td class="d-none d-sm-table-cell"><span class="text-muted small">@doc.FileName</span></td>
-                                        <td class="text-end">
-                                            <button class="btn btn-sm btn-outline-danger"
-                                                    title="Remove Document"
-                                                    @onclick="() => RemoveDocument(doc.TempId)">
-                                                <i class="bi bi-trash"></i>
-                                            </button>
-                                        </td>
-                                    </tr>
-                                }
-                            </tbody>
-                        </table>
-                    </div>
-                    <div class="alert alert-warning py-1 px-2 m-2 small">
-                        <i class="bi bi-exclamation-triangle me-1"></i>
-                        Documents are stored locally. Upload to API when backend is ready.
-                    </div>
-                }
+            <div class="card-body">
+                <div class="alert alert-info mb-0">
+                    <i class="bi bi-info-circle me-2"></i>
+                    Document upload requires authentication context and is not yet available.
+                </div>
             </div>
         </div>
     }
@@ -444,14 +402,16 @@
     private string? moduleError;
     private int? expandedModuleId;
     private NewModuleModel newModule = new();
+    private bool isAddingModule;
+    private Dictionary<int, List<ActivityDto>> moduleActivities = new();
 
     // ---- Activity state ----
-    private List<LocalActivity> activities = [];
     private string newActivityName = string.Empty;
-    private string newActivityType = "Lecture";
-    private DateTime? newActivityStart;
+    private ActivityType newActivityType = ActivityType.Lecture;
+    private DateTime newActivityStart = DateTime.Today.AddHours(9);
     private DateTime newActivityEnd = DateTime.Today.AddHours(17);
-    private int activityCounter = 0;
+    private bool isAddingActivity;
+    private string? activityError;
 
     // ---- Student state ----
     private List<StudentBasicDto> availableStudents = [];
@@ -460,12 +420,10 @@
     private string? studentError;
 
     // ---- Document state ----
-    private List<LocalDocument> documents = [];
     private bool showUploadDocument;
     private string newDocName = string.Empty;
     private string pickedFileName = string.Empty;
     private string? documentError;
-    private int documentCounter = 0;
 
     // ---- Lifecycle ----
     protected override async Task OnInitializedAsync()
@@ -488,15 +446,9 @@
                 students = detail.Students;
             }
 
-            // Mock available students for enroll dropdown
-            // TODO: replace with real GET /api/users?role=Student when ready
-            availableStudents =
-            [
-                new() { Id = "mock-1", UserName = "alice@test.com", Email = "alice@test.com" },
-                new() { Id = "mock-2", UserName = "bob@test.com", Email = "bob@test.com" },
-                new() { Id = "mock-3", UserName = "charlie@test.com", Email = "charlie@test.com" },
-                new() { Id = "mock-4", UserName = "diana@test.com", Email = "diana@test.com" },
-            ];
+            // TODO: Replace with real GET /api/users?role=Student
+            // No user listing endpoint exists yet
+            availableStudents = [];
         }
         catch (Exception ex)
         {
@@ -518,128 +470,159 @@
             moduleError = "Name is required.";
             return;
         }
-
-        // TODO: replace with real POST /api/modules when ready
-        modules.Add(new ModuleDto
+        if (newModule.EndDate is null || newModule.EndDate <= newModule.StartDate)
         {
-            Id = modules.Count + 1,
-            CourseId = CourseId,
-            CourseName = course?.Name ?? string.Empty,
-            Name = newModule.Name,
-            Description = newModule.Description,
-            StartDate = newModule.StartDate,
-            EndDate = newModule.EndDate,
-            ActivityCount = 0
-        });
-
-        successMessage = $"Module '{newModule.Name}' added (locally).";
-        newModule = new();
-        showAddModule = false;
-        await Task.CompletedTask;
-    }
-
-    private void RemoveModule(int moduleId)
-    {
-        modules.RemoveAll(m => m.Id == moduleId);
-        activities.RemoveAll(a => a.ModuleId == moduleId);
-        if (expandedModuleId == moduleId) expandedModuleId = null;
-    }
-
-    private void ToggleActivities(int moduleId)
-        => expandedModuleId = expandedModuleId == moduleId ? null : moduleId;
-
-    // ---- Activity actions ----
-    private void AddActivity(int moduleId, ActivityKind kind)
-    {
-        if (string.IsNullOrWhiteSpace(newActivityName)) return;
-
-        var type = kind == ActivityKind.Assignment ? "Assignment" : newActivityType;
-
-        activities.Add(new LocalActivity
-        {
-            TempId = ++activityCounter,
-            ModuleId = moduleId,
-            Name = newActivityName,
-            Type = type,
-            Start = newActivityStart,
-            End = newActivityEnd
-        });
-
-        // Update count on module
-        var mod = modules.FirstOrDefault(m => m.Id == moduleId);
-        if (mod is not null)
-            modules[modules.IndexOf(mod)] = mod with { ActivityCount = mod.ActivityCount + 1 };
-
-        successMessage = $"'{newActivityName}' added locally.";
-        newActivityName = string.Empty;
-    }
-
-    private void RemoveActivity(int tempId)
-    {
-        var act = activities.FirstOrDefault(a => a.TempId == tempId);
-        if (act is null) return;
-
-        var mod = modules.FirstOrDefault(m => m.Id == act.ModuleId);
-        if (mod is not null)
-            modules[modules.IndexOf(mod)] = mod with { ActivityCount = Math.Max(0, mod.ActivityCount - 1) };
-
-        activities.Remove(act);
-    }
-
-    // ---- Student actions ----
-    private void EnrollStudent()
-    {
-        studentError = null;
-
-        if (string.IsNullOrEmpty(selectedStudentId))
-        {
-            studentError = "Please select a student.";
+            moduleError = "End date must be after start date.";
             return;
         }
 
-        var student = availableStudents.FirstOrDefault(s => s.Id == selectedStudentId);
-        if (student is null) return;
+        isAddingModule = true;
+        try
+        {
+            var dto = new CreateModuleDto
+            {
+                CourseId = CourseId,
+                Name = newModule.Name,
+                Description = newModule.Description,
+                StartDate = newModule.StartDate,
+                EndDate = newModule.EndDate.Value
+            };
 
-        // TODO: replace with real PUT /api/courses/{id}/enroll when ready
-        students.Add(student with { CourseId = CourseId, CourseName = course?.Name });
-        successMessage = $"{student.UserName} enrolled (locally).";
-        selectedStudentId = string.Empty;
-        showEnrollStudent = false;
+            var created = await ModuleService.CreateModuleAsync(dto);
+            if (created is not null)
+            {
+                modules.Add(created);
+                successMessage = $"Module '{created.Name}' created.";
+                newModule = new();
+                showAddModule = false;
+            }
+            else
+            {
+                moduleError = "Failed to create module. Please try again.";
+            }
+        }
+        catch (Exception ex)
+        {
+            moduleError = $"Error: {ex.Message}";
+        }
+        finally
+        {
+            isAddingModule = false;
+        }
+    }
+
+    private async Task RemoveModuleAsync(int moduleId)
+    {
+        await ModuleService.DeleteModuleAsync(moduleId);
+        modules.RemoveAll(m => m.Id == moduleId);
+        if (expandedModuleId == moduleId) expandedModuleId = null;
+        successMessage = "Module removed.";
+    }
+
+    private async Task ToggleActivitiesAsync(int moduleId)
+    {
+        if (expandedModuleId == moduleId)
+        {
+            expandedModuleId = null;
+            return;
+        }
+
+        expandedModuleId = moduleId;
+
+        if (!moduleActivities.ContainsKey(moduleId))
+        {
+            var result = await ActivityService.GetAllActivitiesAsync(moduleId: moduleId);
+            moduleActivities[moduleId] = result?.Items ?? [];
+        }
+    }
+
+    // ---- Activity actions ----
+    private async Task AddActivityAsync(int moduleId, ActivityKind kind)
+    {
+        activityError = null;
+
+        if (string.IsNullOrWhiteSpace(newActivityName))
+        {
+            activityError = "Activity name is required.";
+            return;
+        }
+
+        var type = kind == ActivityKind.Assignment
+            ? ActivityType.Assignment
+            : newActivityType;
+
+        isAddingActivity = true;
+        try
+        {
+            var dto = new CreateActivityDto
+            {
+                ModuleId = moduleId,
+                Name = newActivityName,
+                Description = string.Empty,
+                Type = type,
+                StartTime = newActivityStart,
+                EndTime = newActivityEnd
+            };
+
+            var created = await ActivityService.CreateActivityAsync(dto);
+            if (created is not null)
+            {
+                if (moduleActivities.TryGetValue(moduleId, out var list))
+                    list.Add(created);
+
+                var mod = modules.FirstOrDefault(m => m.Id == moduleId);
+                if (mod is not null)
+                    modules[modules.IndexOf(mod)] = mod with { ActivityCount = mod.ActivityCount + 1 };
+
+                successMessage = $"Activity '{created.Name}' created.";
+                newActivityName = string.Empty;
+            }
+            else
+            {
+                activityError = "Failed to create activity. Please try again.";
+            }
+        }
+        catch (Exception ex)
+        {
+            activityError = $"Error: {ex.Message}";
+        }
+        finally
+        {
+            isAddingActivity = false;
+        }
+    }
+
+    private async Task RemoveActivityAsync(int activityId, int moduleId)
+    {
+        await ActivityService.DeleteActivityAsync(activityId);
+
+        if (moduleActivities.TryGetValue(moduleId, out var list))
+            list.RemoveAll(a => a.Id == activityId);
+
+        var mod = modules.FirstOrDefault(m => m.Id == moduleId);
+        if (mod is not null)
+            modules[modules.IndexOf(mod)] = mod with { ActivityCount = Math.Max(0, mod.ActivityCount - 1) };
+
+        successMessage = "Activity removed.";
+    }
+
+    // ---- Student actions ---- (TODO: no user listing endpoint yet)
+    private void EnrollStudent()
+    {
+        studentError = "Student enrollment requires a user listing endpoint — not yet available.";
     }
 
     private void RemoveStudent(string studentId)
         => students.RemoveAll(s => s.Id == studentId);
 
-    // ---- Document actions ----
+    // ---- Document actions ---- (TODO: requires auth context for UploadedByUserId)
     private void HandleFilePicked(ChangeEventArgs e)
         => pickedFileName = e.Value?.ToString() ?? string.Empty;
 
     private void AddDocument()
     {
-        documentError = null;
-
-        if (string.IsNullOrWhiteSpace(newDocName))
-        {
-            documentError = "Display name is required.";
-            return;
-        }
-
-        // TODO: replace with real POST /api/documents when ready
-        documents.Add(new LocalDocument
-        {
-            TempId = ++documentCounter,
-            DisplayName = newDocName,
-            FileName = string.IsNullOrEmpty(pickedFileName) ? "no-file-selected" : pickedFileName
-        });
-
-        successMessage = $"Document '{newDocName}' added (locally).";
-        newDocName = string.Empty;
-        pickedFileName = string.Empty;
-        showUploadDocument = false;
+        documentError = "Document upload requires backend auth context — not yet wired up.";
     }
-
-    private void RemoveDocument(int tempId)
-        => documents.RemoveAll(d => d.TempId == tempId);
 
     private void GoBack() => Navigation.NavigateTo("/admin/courses");
 
@@ -650,23 +633,6 @@
         public string Description { get; set; } = string.Empty;
         public DateTime StartDate { get; set; } = DateTime.Today;
         public DateTime? EndDate { get; set; } = DateTime.Today.AddDays(14);
-    }
-
-    private class LocalActivity
-    {
-        public int TempId { get; set; }
-        public int ModuleId { get; set; }
-        public string Name { get; set; } = string.Empty;
-        public string Type { get; set; } = string.Empty;
-        public DateTime? Start { get; set; }
-        public DateTime End { get; set; }
-    }
-
-    private class LocalDocument
-    {
-        public int TempId { get; set; }
-        public string DisplayName { get; set; } = string.Empty;
-        public string FileName { get; set; } = string.Empty;
     }
 
     private enum ActivityKind { Activity, Assignment }
