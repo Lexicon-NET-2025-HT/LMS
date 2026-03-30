@@ -1,0 +1,51 @@
+﻿@using LMS.Shared.DTOs.Module
+
+<BbDialog @bind-Open="Open">
+    <BbDialogContent>
+        <BbDialogHeader>
+            <BbDialogTitle>@(IsEditing ? "Edit Module" : "Create New Module")</BbDialogTitle>
+            <BbDialogDescription>
+                @(IsEditing ? "Update the module details below." : "Fill in details for the new module.")
+            </BbDialogDescription>
+        </BbDialogHeader>
+
+        <div class="d-flex flex-column gap-3 py-3">
+            <div>
+                <label class="form-label fw-medium" style="font-size:0.85rem;">Module Name</label>
+                <BbInput @bind-Value="Module.Name" Placeholder="e.g. Core C# Programming" />
+            </div>
+            <div>
+                <label class="form-label fw-medium" style="font-size:0.85rem;">Description</label>
+                <BbTextarea @bind-Value="Module.Description"
+                            Placeholder="Brief overview of what this module covers..." Rows="3" />
+            </div>
+            <div class="row g-2">
+                <div class="col-6">
+                    <label class="form-label fw-medium" style="font-size:0.85rem;">Start Date</label>
+                    <BbInput Value="@Module.StartDate.ToString("yyyy-MM-dd")"
+                             ValueChanged="@((string v) => Module.StartDate = DateTime.Parse(v))"
+                             Style="width:100%;" />
+                </div>
+                <div class="col-6">
+                    <label class="form-label fw-medium" style="font-size:0.85rem;">End Date</label>
+                    <BbInput Value="@(Module.EndDate?.ToString("yyyy-MM-dd") ?? "")"
+                             ValueChanged="@((string v) => Module.EndDate = string.IsNullOrEmpty(v) ? null : DateTime.Parse(v))"
+                             Style="width:100%;" />
+                </div>
+            </div>
+        </div>
+
+        <BbDialogFooter>
+            <BbButton Variant="ButtonVariant.Outline" OnClick="@(() => Open = false)">Cancel</BbButton>
+            <BbButton OnClick="OnSave">@(IsEditing ? "Save Changes" : "Create Module")</BbButton>
+        </BbDialogFooter>
+    </BbDialogContent>
+</BbDialog>
+
+@code {
+    [Parameter] public bool Open { get; set; }
+    [Parameter] public EventCallback<bool> OpenChanged { get; set; }
+    [Parameter] public bool IsEditing { get; set; }
+    [Parameter, EditorRequired] public ModuleDto Module { get; set; } = default!;
+    [Parameter] public EventCallback OnSave { get; set; }
+}
