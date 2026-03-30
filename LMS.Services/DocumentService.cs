@@ -23,7 +23,7 @@ namespace LMS.Services
         private readonly IFileStorage _fileStorage = fileStorage;
         public async Task<DocumentDto> CreateDocumentAsync(string userId, CreateDocumentDto dto)
         {
-            if (dto.FileStream == null || dto.FileStream.Length == 0)
+            if (dto.File == null)
             {
                 throw new ArgumentException("File is missing.");
             }
@@ -42,12 +42,14 @@ namespace LMS.Services
             var user = await _userManager.FindByIdAsync(userId) ??
                 throw new Exception($"User by id {userId} does not exist");
 
-            var savedFileResult = await _fileStorage.SaveAsync(dto.FileStream, dto.FileName);
+            var savedFileResult = await _fileStorage.SaveAsync(dto.File);
 
             var document = _mapper.Map<Document>(dto);
+
             document.UploadedByUser = user;
             document.UploadedAt = DateTime.UtcNow;
             document.FileSize = savedFileResult.FileSize;
+            document.StoredFileName = savedFileResult.FileName;
 
             _unitOfWork.Documents.Create(document);
             await _unitOfWork.CompleteAsync();

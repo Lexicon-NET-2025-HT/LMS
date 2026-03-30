@@ -1,5 +1,6 @@
 ﻿using Domain.Contracts.Storage;
 using LMS.Infrastructure.Options;
+using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Options;
 
 namespace LMS.Infrastructure.Storage;
@@ -14,27 +15,26 @@ public class LocalFileStorage : IFileStorage
     }
 
     public async Task<FileSaveResult> SaveAsync(
-        Stream stream,
-        string fileName,
+        IFormFile file,
         CancellationToken cancellationToken = default)
     {
-        if (stream is null)
-            throw new ArgumentNullException(nameof(stream));
+        if (file is null)
+            throw new ArgumentNullException(nameof(file));
 
-        if (string.IsNullOrWhiteSpace(fileName))
-            throw new ArgumentException("File name is required.", nameof(fileName));
+        if (string.IsNullOrWhiteSpace(file.FileName))
+            throw new ArgumentException("File name is required.", nameof(file.FileName));
 
         if (string.IsNullOrWhiteSpace(_options.UploadRootPath))
             throw new InvalidOperationException("FileStorageOptions.UploadRootPath is not configured.");
 
         Directory.CreateDirectory(_options.UploadRootPath);
 
-        var extension = Path.GetExtension(fileName);
+        var extension = Path.GetExtension(file.FileName);
         var storedFileName = $"{Guid.NewGuid()}{extension}";
         var fullPath = Path.Combine(_options.UploadRootPath, storedFileName);
 
         await using var fileStream = new FileStream(fullPath, FileMode.Create);
-        await stream.CopyToAsync(fileStream, cancellationToken);
+        await file.CopyToAsync(fileStream, cancellationToken);
 
         return new FileSaveResult(
             FileName: storedFileName,

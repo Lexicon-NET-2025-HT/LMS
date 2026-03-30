@@ -1,4 +1,3 @@
-using LMS.Presentation.Requests;
 using LMS.Shared.DTOs.Document;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
@@ -56,18 +55,8 @@ public class DocumentsController : ControllerBase
     )]
     [SwaggerResponse(StatusCodes.Status201Created, "Document created successfully")]
     [SwaggerResponse(StatusCodes.Status400BadRequest, "Invalid input")]
-    public async Task<IActionResult> CreateDocument([FromForm] UploadDocumentRequest request)
+    public async Task<IActionResult> CreateDocument([FromForm] CreateDocumentDto dto)
     {
-        // AutoMapper doesn't know of UploadDocumentRequest, create manually:
-        var dto = new CreateDocumentDto
-        {
-            FileStream = request.File.OpenReadStream(),
-            Description = request.Description,
-            CourseId = request.CourseId,
-            ModuleId = request.ModuleId,
-            ActivityId = request.ActivityId,
-            SubmissionId = request.SubmissionId
-        };
         var userId = User.FindFirst(ClaimTypes.NameIdentifier)!.Value;
         var document = await serviceManager.DocumentService.CreateDocumentAsync(userId, dto);
         return CreatedAtAction(nameof(GetDocumentById), new { id = document.Id }, document);

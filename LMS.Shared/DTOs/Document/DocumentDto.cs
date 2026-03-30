@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace LMS.Shared.DTOs.Document
+﻿namespace LMS.Shared.DTOs.Document
 {
     /// <summary>
     /// Represents a document attached to a course, module, or activity.
@@ -9,7 +7,15 @@ namespace LMS.Shared.DTOs.Document
     public record DocumentDto
     {
         public required int Id { get; set; }
+        /// <summary>
+        /// Original filename as uploaded by the user. This is not the name used for storage, which is typically a unique identifier to avoid conflicts.
+        /// </summary>
         public required string FileName { get; set; }
+        /// <summary>
+        /// Publicly accessible URL or path to access the stored document.
+        /// </summary>
+        public required string Path { get; set; }
+        public long FileSize { get; set; }
         public required string DisplayName { get; set; }
         public required string Description { get; set; }
 

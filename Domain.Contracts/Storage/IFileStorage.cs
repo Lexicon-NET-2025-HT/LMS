@@ -1,6 +1,8 @@
-﻿namespace Domain.Contracts.Storage;
+﻿using Microsoft.AspNetCore.Http;
+
+namespace Domain.Contracts.Storage;
 
 public interface IFileStorage
 {
-    Task<FileSaveResult> SaveAsync(Stream stream, string fileName, CancellationToken cancellationToken = default);
+    Task<FileSaveResult> SaveAsync(IFormFile file, CancellationToken cancellationToken = default);
 }

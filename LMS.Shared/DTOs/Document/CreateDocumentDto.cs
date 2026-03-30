@@ -1,4 +1,6 @@
-﻿namespace LMS.Shared.DTOs.Document
+﻿using Microsoft.AspNetCore.Http;
+
+namespace LMS.Shared.DTOs.Document
 {
     /// <summary>
     /// Data transfer object for creating a new document.
@@ -7,11 +9,8 @@
     /// </summary>
     public record CreateDocumentDto
     {
-        public string FileName { get; init; } = string.Empty;
         public string Description { get; init; } = string.Empty;
-        public Stream FileStream { get; init; } = null!;
-        public string ContentType { get; init; } = string.Empty;
-        public long FileSize { get; init; }
+        public IFormFile File { get; init; } = null!;
         public int? CourseId { get; init; }
         public int? ModuleId { get; init; }
         public int? ActivityId { get; init; }

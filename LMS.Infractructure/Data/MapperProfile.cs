@@ -1,37 +1,6 @@
-//using AutoMapper;
-//using Domain.Models.Entities;
-//using LMS.Shared.DTOs.AuthDtos;
-//using LMS.Shared.DTOs.Course;
-
-//namespace LMS.Infractructure.Data;
-
-//public class MapperProfile : Profile
-//{
-//    public MapperProfile()
-//    {
-//        CreateMap<UserRegistrationDto, ApplicationUser>();
-
-//        // Course mappings
-//        CreateMap<Course, CourseDto>()
-//            .ForMember(dest => dest.StudentCount, opt => opt.MapFrom(src => src.Students.Count))
-//            .ForMember(dest => dest.ModuleCount, opt => opt.MapFrom(src => src.Modules.Count))
-//            .ForMember(dest => dest.TeacherIds, opt => opt.MapFrom(src =>
-//                src.CourseTeachers.Select(ct => ct.TeacherId).ToList()));
-//        CreateMap<Course, CourseDetailDto>()
-//            .ForMember(dest => dest.StudentCount, opt => opt.MapFrom(src => src.Students.Count))
-//            .ForMember(dest => dest.ModuleCount, opt => opt.MapFrom(src => src.Modules.Count))
-//            .ForMember(dest => dest.TeacherIds, opt => opt.MapFrom(src =>
-//                src.CourseTeachers.Select(ct => ct.TeacherId).ToList()));
-
-//        CreateMap<CreateCourseDto, Course>();
-
-//        CreateMap<UpdateCourseDto, Course>()
-//            .ForAllMembers(opt => opt.Condition((src, dest, srcMember) => srcMember != null));
-//    }
-//}
-
 using AutoMapper;
 using Domain.Models.Entities;
+using LMS.Infractructure.Data.MappingResolvers;
 using LMS.Shared.DTOs.Activity;
 using LMS.Shared.DTOs.AuthDtos;
 using LMS.Shared.DTOs.Course;
@@ -109,10 +78,12 @@ public class MapperProfile : Profile
                 src.CourseId != null ? "Course" :
                 src.ModuleId != null ? "Module" :
                 src.ActivityId != null ? "Activity" :
-                "Unknown"));
+                "Unknown"))
+            .ForMember(dest => dest.Path,
+                opt => opt.MapFrom<DocumentPathResolver>());
 
         CreateMap<CreateDocumentDto, Document>()
-            .ForMember(dest => dest.DisplayName, opt => opt.MapFrom(src => src.FileName))
+            .ForMember(dest => dest.DisplayName, opt => opt.MapFrom(src => src.File.FileName))
             .ForMember(dest => dest.StoredFileName, opt => opt.Ignore())
             .ForMember(dest => dest.FileSize, opt => opt.Ignore())
             .ForMember(dest => dest.UploadedAt, opt => opt.Ignore())
