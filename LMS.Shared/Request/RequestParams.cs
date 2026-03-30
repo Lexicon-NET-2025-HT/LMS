@@ -8,7 +8,7 @@ public abstract class RequestParams
     [Range(1, int.MaxValue)]
     public int Page { get; set; } = 1;
 
-    [Range(2, 20)]
+    [Range(2, 100)]
     public int PageSize { get; set; } = 10;
 
 }
