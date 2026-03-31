@@ -36,6 +36,6 @@ public class ModuleService : IModuleService
     public Task<ModuleDto?> CreateModuleAsync(CreateModuleDto dto, CancellationToken ct = default)
         => _apiService.PostAsync<ModuleDto>(Base, dto, ct);
 
-    public Task<bool> DeleteModuleAsync(int id, CancellationToken ct = default)
+    public Task DeleteModuleAsync(int id, CancellationToken ct = default)
         => _apiService.DeleteAsync($"{Base}/{id}", ct);
 }

@@ -9,5 +9,5 @@ public interface IModuleService
     Task<ModuleDto?> GetModuleByIdAsync(int id, CancellationToken ct = default);
     Task<ModuleDetailDto?> GetModuleDetailByIdAsync(int id, CancellationToken ct = default);
     Task<ModuleDto?> CreateModuleAsync(CreateModuleDto dto, CancellationToken ct = default);
-    Task<bool> DeleteModuleAsync(int id, CancellationToken ct = default);
+    Task DeleteModuleAsync(int id, CancellationToken ct = default);
 }
