@@ -157,18 +157,37 @@ namespace LMS.Infractructure.Data
                 entity.Property(s => s.Body)
                     .HasMaxLength(5000);
 
-                entity.Property(s => s.FeedbackText)
-                    .HasMaxLength(5000);
-
-                entity.HasOne(s => s.Student)
-                    .WithMany(u => u.Submissions)
-                    .HasForeignKey(s => s.StudentId)
-                    .OnDelete(DeleteBehavior.Restrict);
 
                 entity.HasOne(s => s.Activity)
                     .WithMany(a => a.Submissions)
                     .HasForeignKey(s => s.ActivityId)
                     .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasOne(s => s.Student)
+                    .WithMany(u => u.Submissions)
+                    .HasForeignKey(s => s.StudentId)
+                    .OnDelete(DeleteBehavior.Restrict);
+            });
+
+            // SubmissionComment
+            builder.Entity<SubmissionComment>(entity =>
+            {
+                entity.HasKey(c => c.Id);
+
+                entity.Property(c => c.Text)
+                    .IsRequired()
+                    .HasMaxLength(5000);
+
+                entity.HasOne(c => c.Submission)
+                    .WithMany(s => s.Comments)
+                    .HasForeignKey(c => c.SubmissionId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasOne(c => c.Author)
+                    .WithMany(u => u.SubmissionComments)
+                    .HasForeignKey(c => c.AuthorId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
             });
         }
 

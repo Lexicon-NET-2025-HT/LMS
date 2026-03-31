@@ -5,8 +5,8 @@
     /// Used in POST /api/submissions/{id}/feedback requests.
     /// Only teachers can provide feedback.
     /// </summary>
-    public record SubmitFeedbackDto
+    public record SubmitCommentDto
     {
-        public required string FeedbackText { get; set; }
+        public required string CommentText { get; set; }
     }
 }
