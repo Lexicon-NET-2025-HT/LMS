@@ -32,9 +32,6 @@ namespace LMS.Services
             document.Module = document.ModuleId.HasValue ? await _unitOfWork.Modules.FindByIdAsync(dto.ModuleId) : null;
             document.Activity = document.ActivityId.HasValue ? await _unitOfWork.Activities.FindByIdAsync(dto.CourseId) : null;
 
-            Console.WriteLine("THIS IS MY WRITE LINE!!!");
-            Console.WriteLine(document.UploadedByUser.UserName);
-
             _unitOfWork.Documents.Create(document);
             await _unitOfWork.CompleteAsync();
 
@@ -42,7 +39,7 @@ namespace LMS.Services
 
             return documentDto;
         }
-        public async Task UpdateDocumentAsync(int id, UpdateDocumentDto dto)
+        public async Task<DocumentDto> UpdateDocumentAsync(int id, UpdateDocumentDto dto)
         {
             var document = await _unitOfWork.Documents.FindByIdAsync(id) ??
                 throw new Exception($"Document with id: '{id}' does not exist");
@@ -52,6 +49,10 @@ namespace LMS.Services
 
             _unitOfWork.Documents.Update(document);
             await _unitOfWork.CompleteAsync();
+
+            var documentDto = _mapper.Map<DocumentDto>(document);
+
+            return documentDto;
         }
         public async Task DeleteDocumentAsync(int id)
         {

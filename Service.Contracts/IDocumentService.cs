@@ -14,7 +14,7 @@ namespace Service.Contracts
         Task<PagedResultDto<DocumentDto>> GetAllDocumentsAsync(int page, int pageSize, int? courseId = null);
         Task<DocumentDto?> GetDocumentByIdAsync(int id);
         Task<DocumentDto> CreateDocumentAsync(CreateDocumentDto dto);
-        Task UpdateDocumentAsync(int id, UpdateDocumentDto dto);
+        Task<DocumentDto> UpdateDocumentAsync(int id, UpdateDocumentDto dto);
         Task DeleteDocumentAsync(int id);
     }
 }

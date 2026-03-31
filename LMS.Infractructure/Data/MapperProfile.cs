@@ -86,6 +86,25 @@ public class MapperProfile : Profile
                 src.SubmissionId != null ? nameof(Submission) :
                 "Unknown"));
 
+        CreateMap<CreateDocumentDto, Document>();
+
+        // Activity mappings
+        CreateMap<CreateActivityDto, Activity>();
+
+        CreateMap<Activity, ActivityDto>()
+            .ForMember(dest => dest.DocumentCount, opt => opt.MapFrom(src => src.Documents.Count))
+            .ForMember(dest => dest.SubmissionCount, opt => opt.MapFrom(src => src.Submissions.Count));
+
+        CreateMap<UpdateActivityDto, Activity>();
+
+        CreateMap<PatchActivityDto, Activity>()
+            .ForAllMembers(opt => opt.Condition((src, dest, srcMember) => srcMember != null));
+
+        CreateMap<Activity, ActivityDto>()
+            .IncludeAllDerived();
+
+        CreateMap<Activity, ActivityDetailDto>();
+
         // submission mappings
         CreateMap<Submission, SubmissionDto>()
             .ForMember(dest => dest.StudentName, opt => opt.MapFrom(src => src.Student.UserName))
