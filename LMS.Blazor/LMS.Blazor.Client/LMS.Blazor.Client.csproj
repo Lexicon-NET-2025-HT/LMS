@@ -10,6 +10,8 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="BlazorBlueprint.Components" Version="3.9.2" />
+    <PackageReference Include="BlazorBlueprint.Primitives" Version="3.9.2" />
     <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly" Version="10.0.3" />
     <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.Authentication" Version="10.0.3" />
   </ItemGroup>

@@ -1,0 +1,25 @@
+﻿@using BlazorBlueprint.Primitives.Table
+@using LMS.Shared.DTOs.Activity
+
+<BbTable TData="ActivityDto" Data="Activities">
+    <BbTableHeader>
+        <BbTableRow TData="ActivityDto">
+            <BbTableHeaderCell TData="ActivityDto">Name</BbTableHeaderCell>
+            <BbTableHeaderCell TData="ActivityDto">Description</BbTableHeaderCell>
+        </BbTableRow>
+    </BbTableHeader>
+    <BbTableBody>
+        @foreach (var activity in Activities)
+        {
+            <BbTableRow TData="ActivityDto">
+                <BbTableCell> @activity.Name </BbTableCell>
+                <BbTableCell> @activity.Description </BbTableCell>
+            </BbTableRow>
+        }
+    </BbTableBody>
+</BbTable>
+
+@code {
+    [Parameter, EditorRequired]
+    public List<ActivityDto> Activities { get; set; } = [];
+}
