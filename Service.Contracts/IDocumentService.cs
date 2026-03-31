@@ -8,10 +8,10 @@ namespace Service.Contracts
     /// </summary>
     public interface IDocumentService
     {
-        Task<PagedResultDto<DocumentDto>> GetAllDocumentsAsync(int page, int pageSize, int? courseId = null);
-        Task<DocumentDto?> GetDocumentByIdAsync(int id);
+        Task<PagedResultDto<DocumentDto>> GetAllDocumentsAsync(string userId, int page, int pageSize, int? courseId = null);
+        Task<DocumentDto?> GetDocumentByIdAsync(int id, string userId);
         Task<DocumentDto> CreateDocumentAsync(string userId, CreateDocumentDto dto);
         Task UpdateDocumentAsync(int id, UpdateDocumentDto dto);
-        Task DeleteDocumentAsync(int id);
+        Task DeleteDocumentAsync(int id, string userId);
     }
 }

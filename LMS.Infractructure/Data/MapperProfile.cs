@@ -80,7 +80,8 @@ public class MapperProfile : Profile
                 src.ActivityId != null ? "Activity" :
                 "Unknown"))
             .ForMember(dest => dest.Path,
-                opt => opt.MapFrom<DocumentPathResolver>());
+                opt => opt.MapFrom<DocumentPathResolver>())
+            .ForMember(dest => dest.UploadedByUserName, opt => opt.MapFrom(src => src.UploadedByUser!.UserName));
 
         CreateMap<CreateDocumentDto, Document>()
             .ForMember(dest => dest.DisplayName, opt => opt.MapFrom(src => src.File.FileName))

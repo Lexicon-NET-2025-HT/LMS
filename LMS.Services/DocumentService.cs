@@ -3,7 +3,6 @@ using Domain.Contracts.Repositories;
 using Domain.Contracts.Storage;
 using Domain.Models.Entities;
 using Domain.Models.Exceptions;
-using LMS.Infractructure.Extensions;
 using LMS.Shared.DTOs.Common;
 using LMS.Shared.DTOs.Document;
 using Microsoft.AspNetCore.Identity;
@@ -25,7 +24,7 @@ namespace LMS.Services
         {
             if (dto.File == null)
             {
-                throw new ArgumentException("File is missing.");
+                throw new BadRequestException("File is missing.");
             }
 
             if (dto.CourseId is null &&
@@ -33,14 +32,14 @@ namespace LMS.Services
                 dto.ActivityId is null &&
                 dto.SubmissionId is null)
             {
-                throw new ArgumentException("Document must belong to a course, module, activity or submission.");
+                throw new BadRequestException("Document must belong to a course, module, activity or submission.");
             }
 
             //DisplayName = request.File.FileName,
             //ContentType = request.File.ContentType,
             //FileSize = request.File.Length
             var user = await _userManager.FindByIdAsync(userId) ??
-                throw new Exception($"User by id {userId} does not exist");
+                throw new UnauthorizedAccessException($"User by id {userId} does not exist");
 
             var savedFileResult = await _fileStorage.SaveAsync(dto.File);
 
@@ -54,15 +53,14 @@ namespace LMS.Services
             _unitOfWork.Documents.Create(document);
             await _unitOfWork.CompleteAsync();
 
-            var createdDocument = await _unitOfWork.Documents.FindByIdAsync(document.Id) ??
-                throw new Exception("Failed to retrieve the created document.");
+            var createdDocument = await _unitOfWork.Documents.GetDocumentAsync(document.Id);
 
             return _mapper.Map<DocumentDto>(document);
         }
         public async Task UpdateDocumentAsync(int id, UpdateDocumentDto dto)
         {
             var document = await _unitOfWork.Documents.FindByIdAsync(id) ??
-                throw new Exception($"Document with id: '{id}' does not exist");
+                throw new NotFoundException($"Document with id: '{id}' does not exist");
 
             document.DisplayName = dto.DisplayName ?? string.Empty;
             document.Description = dto.Description ?? string.Empty;
@@ -70,27 +68,55 @@ namespace LMS.Services
             _unitOfWork.Documents.Update(document);
             await _unitOfWork.CompleteAsync();
         }
-        public async Task DeleteDocumentAsync(int id)
+
+        public async Task DeleteDocumentAsync(int id, string userId)
         {
-            var document = await _unitOfWork.Documents.FindByIdAsync(id) ??
-                throw new Exception($"Document with id: '{id}' does not exist");
+            var document = await unitOfWork.Documents.GetDocumentWithOwnershipChainAsync(id)
+                ?? throw new NotFoundException($"Document with id: '{id}' does not exist");
+
+            await ThrowIfNoAccess(userId, document);
+
+            // TODO: option to soft delete instead of hard delete, add IsDeleted property to Document entity and filter it out in queries
+
+            // remove the file from storage if it exists
+            if (!string.IsNullOrWhiteSpace(document.StoredFileName))
+            {
+                var success = await _fileStorage.DeleteAsync(document.StoredFileName);
+                if (!success)
+                {
+                    // log the failure to delete the file, but do not prevent the document record from being deleted
+                    // consider implementing a retry mechanism or marking the document for cleanup if file deletion fails
+                }
+            }
 
             _unitOfWork.Documents.Delete(document);
             await _unitOfWork.CompleteAsync();
         }
 
-        public async Task<PagedResultDto<DocumentDto>> GetAllDocumentsAsync(int page, int pageSize, int? courseId = null)
+        private async Task ThrowIfNoAccess(string userId, Document document)
         {
-            var query = _unitOfWork.Documents.FindAll(trackChanges: false);
-
-            if (courseId.HasValue)
+            if (document.UploadedByUserId != userId)
             {
-                query = query.Where(d => d.CourseId == courseId.Value);
-            }
+                var course = ResolveCourse(document);
 
-            var (documents, totalCount) = await query
-                .OrderByDescending(d => d.Id)
-                .PagedResult(page, pageSize);
+                if (course == null)
+                {
+                    // pretend the file doesn't exist to prevent data leakage
+                    throw new NotFoundException("Document is not linked to a course.");
+                }
+
+                if (!IsTeacherForCourse(userId, course))
+                {
+                    // pretend the file doesn't exist to prevent data leakage
+                    throw new NotFoundException($"Document with id {document.Id} does not exist");
+                }
+
+            }
+        }
+
+        public async Task<PagedResultDto<DocumentDto>> GetAllDocumentsAsync(string userId, int page, int pageSize, int? courseId = null)
+        {
+            (var documents, int totalCount) = await _unitOfWork.Documents.GetAllDocumentsAsync(page, pageSize, courseId);
 
             var dtos = _mapper.Map<List<DocumentDto>>(documents);
 
@@ -102,14 +128,29 @@ namespace LMS.Services
                 PageSize = pageSize
             };
         }
-        public async Task<DocumentDto?> GetDocumentByIdAsync(int id)
+
+        public async Task<DocumentDto?> GetDocumentByIdAsync(int id, string userId)
         {
-            var document = await _unitOfWork.Documents.FindByIdAsync(id) ??
-                throw new NotFoundException($"Document with id: '{id}' does not exist");
+            var document = await _unitOfWork.Documents.GetDocumentAsync(id, false)
+                ?? throw new NotFoundException($"Document with id {id} does not exist");
 
-            var documentDto = _mapper.Map<DocumentDto>(document);
+            await ThrowIfNoAccess(userId, document);
 
-            return documentDto;
+            return _mapper.Map<DocumentDto>(document);
         }
+
+        private static Course? ResolveCourse(Document d)
+        {
+            return d.Course
+                ?? d.Module?.Course
+                ?? d.Activity?.Module?.Course
+                ?? d.Submission?.Activity?.Module?.Course;
+        }
+
+        private static bool IsTeacherForCourse(string userId, Course course)
+        {
+            return course.CourseTeachers.Any(t => t.TeacherId == userId);
+        }
+
     }
 }

@@ -8,10 +8,6 @@
     {
         public required int Id { get; set; }
         /// <summary>
-        /// Original filename as uploaded by the user. This is not the name used for storage, which is typically a unique identifier to avoid conflicts.
-        /// </summary>
-        public required string FileName { get; set; }
-        /// <summary>
         /// Publicly accessible URL or path to access the stored document.
         /// </summary>
         public required string Path { get; set; }

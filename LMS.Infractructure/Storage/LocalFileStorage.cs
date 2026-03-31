@@ -42,4 +42,16 @@ public class LocalFileStorage : IFileStorage
             FileSize: fileStream.Length
         );
     }
+    public async Task<bool> DeleteAsync(string storedFileName, CancellationToken cancellationToken = default)
+    {
+        var filePath = Path.Combine(_options.UploadRootPath, storedFileName);
+
+        if (File.Exists(filePath))
+        {
+            File.Delete(filePath);
+            return true;
+        }
+        return false;
+    }
+
 }

@@ -5,4 +5,5 @@ namespace Domain.Contracts.Storage;
 public interface IFileStorage
 {
     Task<FileSaveResult> SaveAsync(IFormFile file, CancellationToken cancellationToken = default);
+    Task<bool> DeleteAsync(string storedFileName, CancellationToken cancellationToken = default);
 }

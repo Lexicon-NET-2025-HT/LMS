@@ -4,20 +4,16 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Service.Contracts;
 using Swashbuckle.AspNetCore.Annotations;
-using System.Security.Claims;
 
 namespace LMS.Presentation.Controllers;
 
 [Route("api/documents")]
 [ApiController]
 [Authorize]
-public class DocumentsController : ControllerBase
+public class DocumentsController : LmsControllerBase
 {
-    private readonly IServiceManager serviceManager;
-
-    public DocumentsController(IServiceManager serviceManager)
+    DocumentsController(IServiceManager serviceManager) : base(serviceManager)
     {
-        this.serviceManager = serviceManager;
     }
 
     [HttpGet]
@@ -28,7 +24,7 @@ public class DocumentsController : ControllerBase
     [SwaggerResponse(StatusCodes.Status200OK, "Documents retrieved successfully")]
     public async Task<IActionResult> GetAllDocuments([FromQuery] int page = 1, [FromQuery] int pageSize = 10, [FromQuery] int? courseId = null)
     {
-        var result = await serviceManager.DocumentService.GetAllDocumentsAsync(page, pageSize, courseId);
+        var result = await serviceManager.DocumentService.GetAllDocumentsAsync(UserId, page, pageSize, courseId);
         return Ok(result);
     }
 
@@ -41,7 +37,7 @@ public class DocumentsController : ControllerBase
     [SwaggerResponse(StatusCodes.Status404NotFound, "Document not found")]
     public async Task<IActionResult> GetDocumentById(int id)
     {
-        var document = await serviceManager.DocumentService.GetDocumentByIdAsync(id);
+        var document = await serviceManager.DocumentService.GetDocumentByIdAsync(id, UserId);
         if (document == null)
             return NotFound(new { message = "Document not found" });
 
@@ -57,8 +53,7 @@ public class DocumentsController : ControllerBase
     [SwaggerResponse(StatusCodes.Status400BadRequest, "Invalid input")]
     public async Task<IActionResult> CreateDocument([FromForm] CreateDocumentDto dto)
     {
-        var userId = User.FindFirst(ClaimTypes.NameIdentifier)!.Value;
-        var document = await serviceManager.DocumentService.CreateDocumentAsync(userId, dto);
+        var document = await serviceManager.DocumentService.CreateDocumentAsync(UserId, dto);
         return CreatedAtAction(nameof(GetDocumentById), new { id = document.Id }, document);
     }
 
@@ -84,7 +79,7 @@ public class DocumentsController : ControllerBase
     [SwaggerResponse(StatusCodes.Status404NotFound, "Document not found")]
     public async Task<IActionResult> DeleteDocument(int id)
     {
-        await serviceManager.DocumentService.DeleteDocumentAsync(id);
+        await serviceManager.DocumentService.DeleteDocumentAsync(id, UserId);
         return Ok(new { message = "Document deleted successfully" });
     }
 }
