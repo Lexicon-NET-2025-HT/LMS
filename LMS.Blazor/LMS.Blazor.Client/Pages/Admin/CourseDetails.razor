@@ -9,6 +9,7 @@
 @using Domain.Models.Enums
 @inject IModuleService ModuleService
 @inject IActivityService ActivityService
+@inject IUserService UserService
 
 <PageTitle>Course Details</PageTitle>
 
@@ -290,7 +291,7 @@
                             </select>
                         </div>
                         <div class="col-12 col-md-auto d-flex gap-1">
-                            <button class="btn btn-sm btn-success" @onclick="EnrollStudent">Enroll</button>
+                            <button class="btn btn-sm btn-success" @onclick="EnrollStudentAsync">Enroll</button>
                             <button class="btn btn-sm btn-secondary" @onclick="() => showEnrollStudent = false">✕</button>
                         </div>
                     </div>
@@ -326,7 +327,7 @@
                                         <td class="text-end text-nowrap">
                                             <button class="btn btn-sm btn-outline-danger"
                                                     title="Remove Student"
-                                                    @onclick="() => RemoveStudent(student.Id)">
+                                                    @onclick="() => RemoveStudentAsync(student.Id)">
                                                 <i class="bi bi-person-dash"></i>
                                             </button>
                                         </td>
@@ -437,18 +438,19 @@
 
         try
         {
-            course = await CourseService.GetCourseByIdAsync(CourseId);
             var detail = await CourseService.GetCourseDetailByIdAsync(CourseId);
 
             if (detail is not null)
             {
+                // Cast CourseDetailDto (which inherits CourseDto) directly —
+                // no need to call GetCourseByIdAsync separately
+                course = detail;
                 modules = detail.Modules;
                 students = detail.Students;
             }
 
-            // TODO: Replace with real GET /api/users?role=Student
-            // No user listing endpoint exists yet
-            availableStudents = [];
+            // Load unenrolled students for the enroll dropdown
+            availableStudents = await UserService.GetUsersWithoutCourseAsync() ?? [];
         }
         catch (Exception ex)
         {
@@ -606,14 +608,82 @@
         successMessage = "Activity removed.";
     }
 
-    // ---- Student actions ---- (TODO: no user listing endpoint yet)
-    private void EnrollStudent()
+    // ---- Student actions ----
+    private async Task EnrollStudentAsync()
     {
-        studentError = "Student enrollment requires a user listing endpoint — not yet available.";
+        studentError = null;
+
+        if (string.IsNullOrWhiteSpace(selectedStudentId))
+        {
+            studentError = "Please select a student.";
+            return;
+        }
+
+        try
+        {
+            var success = await UserService.EnrollUserInCourseAsync(selectedStudentId, CourseId);
+
+            if (!success)
+            {
+                studentError = "Failed to enroll student.";
+                return;
+            }
+
+            await RefreshStudentsAsync();
+
+            selectedStudentId = string.Empty;
+            showEnrollStudent = false;
+            successMessage = "Student enrolled successfully.";
+        }
+        catch (Exception ex)
+        {
+            studentError = $"Error: {ex.Message}";
+        }
     }
 
-    private void RemoveStudent(string studentId)
-        => students.RemoveAll(s => s.Id == studentId);
+    private async Task RemoveStudentAsync(string studentId)
+    {
+        studentError = null;
+
+        try
+        {
+            var success = await UserService.RemoveUserFromCourseAsync(studentId);
+
+            if (!success)
+            {
+                studentError = "Failed to remove student from course.";
+                return;
+            }
+
+            await RefreshStudentsAsync();
+            successMessage = "Student removed from course.";
+        }
+        catch (Exception ex)
+        {
+            studentError = $"Error: {ex.Message}";
+        }
+    }
+
+    private async Task RefreshStudentsAsync()
+    {
+        // Re-fetch enrolled students for this course
+        var enrolled = await UserService.GetUsersByCourseAsync(CourseId);
+        students = enrolled?
+            .Select(s => new StudentBasicDto
+            {
+                Id = s.Id,
+                UserName = s.Name,
+                Email = s.Email,
+                CourseId = CourseId,
+                CourseName = course?.Name
+            })
+            .ToList() ?? [];
+
+        // Re-fetch available (unenrolled) students
+        availableStudents = await UserService.GetUsersWithoutCourseAsync() ?? [];
+
+        StateHasChanged();
+    }
 
     // ---- Document actions ---- (TODO: requires auth context for UploadedByUserId)
     private void HandleFilePicked(ChangeEventArgs e)
