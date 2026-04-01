@@ -41,10 +41,8 @@ public class ModulesController : ControllerBase
     [SwaggerResponse(StatusCodes.Status404NotFound, "Module not found")]
     public async Task<IActionResult> GetModuleById(int id)
     {
+        // TODO: Validate user access
         var module = await serviceManager.ModuleService.GetModuleByIdAsync(id);
-        if (module == null)
-            return NotFound(new { message = "Module not found" });
-
         return Ok(module);
     }
 
@@ -57,10 +55,8 @@ public class ModulesController : ControllerBase
     [SwaggerResponse(StatusCodes.Status404NotFound, "Module not found")]
     public async Task<IActionResult> GetModuleDetail(int id)
     {
+        // TODO: Validate user access
         var module = await serviceManager.ModuleService.GetModuleDetailByIdAsync(id);
-        if (module == null)
-            return NotFound(new { message = "Module not found" });
-
         return Ok(module);
     }
 
@@ -74,6 +70,7 @@ public class ModulesController : ControllerBase
     [SwaggerResponse(StatusCodes.Status400BadRequest, "Invalid input")]
     public async Task<IActionResult> CreateModule([FromBody] CreateModuleDto dto)
     {
+        // TODO: Validate user access
         var module = await serviceManager.ModuleService.CreateModuleAsync(dto);
         return CreatedAtAction(nameof(GetModuleById), new { id = module.Id }, module);
     }
@@ -88,6 +85,7 @@ public class ModulesController : ControllerBase
     [SwaggerResponse(StatusCodes.Status404NotFound, "Module not found")]
     public async Task<IActionResult> UpdateModule(int id, [FromBody] UpdateModuleDto dto)
     {
+        // TODO: Validate user access
         await serviceManager.ModuleService.UpdateModuleAsync(id, dto);
         return NoContent();
     }
@@ -102,6 +100,7 @@ public class ModulesController : ControllerBase
     [SwaggerResponse(StatusCodes.Status404NotFound, "Module not found")]
     public async Task<IActionResult> PatchModule(int id, [FromBody] PatchModuleDto dto)
     {
+        // TODO: Validate user access
         await serviceManager.ModuleService.UpdateModulePartiallyAsync(id, dto);
         return NoContent();
     }
@@ -115,6 +114,7 @@ public class ModulesController : ControllerBase
     [SwaggerResponse(StatusCodes.Status404NotFound, "Module not found")]
     public async Task<IActionResult> DeleteModule(int id)
     {
+        // TODO: Validate user access
         await serviceManager.ModuleService.DeleteModuleAsync(id);
         return Ok(new { message = "Module deleted successfully" });
     }

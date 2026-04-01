@@ -39,9 +39,6 @@ public class DocumentsController : ControllerBase
     public async Task<IActionResult> GetDocumentById(int id)
     {
         var document = await serviceManager.DocumentService.GetDocumentByIdAsync(id);
-        if (document == null)
-            return NotFound(new { message = "Document not found" });
-
         return Ok(document);
     }
 

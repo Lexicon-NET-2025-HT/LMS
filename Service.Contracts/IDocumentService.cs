@@ -1,8 +1,5 @@
 using LMS.Shared.DTOs.Common;
 using LMS.Shared.DTOs.Document;
-using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace Service.Contracts
 {
@@ -12,7 +9,7 @@ namespace Service.Contracts
     public interface IDocumentService
     {
         Task<PagedResultDto<DocumentDto>> GetAllDocumentsAsync(int page, int pageSize, int? courseId = null);
-        Task<DocumentDto?> GetDocumentByIdAsync(int id);
+        Task<DocumentDto> GetDocumentByIdAsync(int id);
         Task<DocumentDto> CreateDocumentAsync(CreateDocumentDto dto);
         Task<DocumentDto> UpdateDocumentAsync(int id, UpdateDocumentDto dto);
         Task DeleteDocumentAsync(int id);

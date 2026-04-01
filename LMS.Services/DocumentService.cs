@@ -2,12 +2,11 @@ using AutoMapper;
 using Domain.Contracts.Repositories;
 using Domain.Models.Entities;
 using Domain.Models.Exceptions;
+using LMS.Infractructure.Extensions;
 using LMS.Shared.DTOs.Common;
 using LMS.Shared.DTOs.Document;
 using Microsoft.AspNetCore.Identity;
-using Microsoft.EntityFrameworkCore;
 using Service.Contracts;
-using LMS.Infractructure.Extensions;
 
 namespace LMS.Services
 {
@@ -86,7 +85,7 @@ namespace LMS.Services
                 PageSize = pageSize
             };
         }
-        public async Task<DocumentDto?> GetDocumentByIdAsync(int id)
+        public async Task<DocumentDto> GetDocumentByIdAsync(int id)
         {
             var document = await _unitOfWork.Documents.FindByIdAsync(id) ??
                 throw new NotFoundException($"Document with id: '{id}' does not exist");
