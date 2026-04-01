@@ -66,7 +66,7 @@ public class DocumentsController : LmsControllerBase
     [SwaggerResponse(StatusCodes.Status404NotFound, "Document not found")]
     public async Task<IActionResult> UpdateDocument(int id, [FromBody] UpdateDocumentDto dto)
     {
-        await serviceManager.DocumentService.UpdateDocumentAsync(id, UserId, dto);
+        var document = await serviceManager.DocumentService.UpdateDocumentAsync(id, UserId, dto);
         return Ok(document);
     }
 

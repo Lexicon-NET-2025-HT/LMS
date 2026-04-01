@@ -220,7 +220,7 @@ public class DocumentService(
     /// <exception cref="NotFoundException">
     /// Thrown if the document does not exist.
     /// </exception>
-    public async Task UpdateDocumentAsync(int id, string userId, UpdateDocumentDto dto)
+    public async Task<DocumentDto> UpdateDocumentAsync(int id, string userId, UpdateDocumentDto dto)
     {
         var document = await _unitOfWork.Documents.GetDocumentAsync(id, trackChanges: true) ??
             throw new NotFoundException($"Document with id {id} does not exist");
@@ -236,6 +236,8 @@ public class DocumentService(
 
         _unitOfWork.Documents.Update(document);
         await _unitOfWork.CompleteAsync();
+        var updatedDocument = await _unitOfWork.Documents.GetDocumentWithAccessRelationsAsync(document.Id);
+        return _mapper.Map<DocumentDto>(updatedDocument);
     }
 
     /// <summary>
