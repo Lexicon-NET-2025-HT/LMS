@@ -74,6 +74,7 @@ public class Program
         //  builder.Services.AddScoped<IApiService, ClientApiService>();
         builder.Services.AddScoped<IApiService, ServerNoOpApiService>();
         builder.Services.AddScoped<ICourseService, ServerNoOpCourseService>();
+        builder.Services.AddScoped<IActivityService, ActivityService>();
 
         var app = builder.Build();
 
