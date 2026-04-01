@@ -1,5 +1,4 @@
-﻿using System;
-using LMS.Shared.DTOs.Document;
+﻿using LMS.Shared.DTOs.Document;
 
 namespace LMS.Shared.DTOs.Submission
 {
@@ -14,7 +13,7 @@ namespace LMS.Shared.DTOs.Submission
         public required string StudentName { get; set; }
         public required int ActivityId { get; set; }
         public required string ActivityName { get; set; }
-        public string? Body { get; set; }
+        public string Body { get; set; } = string.Empty;
         public int? DocumentId { get; set; }
 
         /// <summary>
@@ -28,7 +27,6 @@ namespace LMS.Shared.DTOs.Submission
         /// Indicates whether the submission was submitted after the activity deadline.
         /// </summary>
         public required bool IsLate { get; set; }
-        public string? FeedbackText { get; set; }
-        public DateTime? FeedbackGivenAt { get; set; }
+        public int CommentCount { get; set; }
     }
 }

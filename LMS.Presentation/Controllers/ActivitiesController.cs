@@ -90,6 +90,17 @@ public class ActivitiesController : ControllerBase
         return Ok(new { message = "Activity updated successfully" });
     }
 
+    [HttpPatch("{id}")]
+    [SwaggerOperation(
+        Summary = "Partially update an activity.",
+        Description = "Partially updates an existing activity with the provided details"
+    )]
+    public async Task<IActionResult> PatchActivity(int id, [FromBody] PatchActivityDto dto)
+    {
+        await serviceManager.ActivityService.PatchActivityAsync(id, dto);
+        return Ok(new { message = "Activity patched successfully" });
+    }
+
     [HttpDelete("{id}")]
     [SwaggerOperation(
         Summary = "Delete an activity",

@@ -1,4 +1,4 @@
-﻿using LMS.Shared.DTOs.Document;
+using LMS.Shared.DTOs.Document;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Service.Contracts;
@@ -20,12 +20,12 @@ public class DocumentsController : ControllerBase
     [HttpGet]
     [SwaggerOperation(
         Summary = "Get all documents",
-        Description = "Retrieves a paginated list of all documents"
+        Description = "Retrieves a paginated list of all documents, optionally filtered by course"
     )]
     [SwaggerResponse(StatusCodes.Status200OK, "Documents retrieved successfully")]
-    public async Task<IActionResult> GetAllDocuments([FromQuery] int page = 1, [FromQuery] int pageSize = 10)
+    public async Task<IActionResult> GetAllDocuments([FromQuery] int page = 1, [FromQuery] int pageSize = 10, [FromQuery] int? courseId = null)
     {
-        var result = await serviceManager.DocumentService.GetAllDocumentsAsync(page, pageSize);
+        var result = await serviceManager.DocumentService.GetAllDocumentsAsync(page, pageSize, courseId);
         return Ok(result);
     }
 
@@ -67,8 +67,8 @@ public class DocumentsController : ControllerBase
     [SwaggerResponse(StatusCodes.Status404NotFound, "Document not found")]
     public async Task<IActionResult> UpdateDocument(int id, [FromBody] UpdateDocumentDto dto)
     {
-        await serviceManager.DocumentService.UpdateDocumentAsync(id, dto);
-        return Ok(new { message = "Document updated successfully" });
+        var document = await serviceManager.DocumentService.UpdateDocumentAsync(id, dto);
+        return Ok(document);
     }
 
     [HttpDelete("{id}")]

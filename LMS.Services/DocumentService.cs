@@ -1,12 +1,13 @@
-﻿using AutoMapper;
+using AutoMapper;
 using Domain.Contracts.Repositories;
 using Domain.Models.Entities;
 using Domain.Models.Exceptions;
 using LMS.Shared.DTOs.Common;
 using LMS.Shared.DTOs.Document;
 using Microsoft.AspNetCore.Identity;
-using Microsoft.EntityFrameworkCore.Migrations.Operations;
+using Microsoft.EntityFrameworkCore;
 using Service.Contracts;
+using LMS.Infractructure.Extensions;
 
 namespace LMS.Services
 {
@@ -31,9 +32,6 @@ namespace LMS.Services
             document.Module = document.ModuleId.HasValue ? await _unitOfWork.Modules.FindByIdAsync(dto.ModuleId) : null;
             document.Activity = document.ActivityId.HasValue ? await _unitOfWork.Activities.FindByIdAsync(dto.CourseId) : null;
 
-            Console.WriteLine("THIS IS MY WRITE LINE!!!");
-            Console.WriteLine(document.UploadedByUser.UserName);
-
             _unitOfWork.Documents.Create(document);
             await _unitOfWork.CompleteAsync();
 
@@ -41,7 +39,7 @@ namespace LMS.Services
 
             return documentDto;
         }
-        public async Task UpdateDocumentAsync(int id, UpdateDocumentDto dto)
+        public async Task<DocumentDto> UpdateDocumentAsync(int id, UpdateDocumentDto dto)
         {
             var document = await _unitOfWork.Documents.FindByIdAsync(id) ??
                 throw new Exception($"Document with id: '{id}' does not exist");
@@ -51,6 +49,10 @@ namespace LMS.Services
 
             _unitOfWork.Documents.Update(document);
             await _unitOfWork.CompleteAsync();
+
+            var documentDto = _mapper.Map<DocumentDto>(document);
+
+            return documentDto;
         }
         public async Task DeleteDocumentAsync(int id)
         {
@@ -61,32 +63,28 @@ namespace LMS.Services
             await _unitOfWork.CompleteAsync();
         }
 
-        public async Task<PagedResultDto<DocumentDto>> GetAllDocumentsAsync(int page, int pageSize)
+        public async Task<PagedResultDto<DocumentDto>> GetAllDocumentsAsync(int page, int pageSize, int? courseId = null)
         {
-            // TODO: Replace with real database query
-            var mockDocuments = new List<DocumentDto>
-            {
-                new DocumentDto
-                {
-                    Id = 1,
-                    FileName = "lecture-notes.pdf",
-                    DisplayName = "Lecture Notes",
-                    Description = "Notes for C# variables",
-                    UploadedAt = DateTime.Now,
-                    UploadedByUserId = "teacher-1",
-                    UploadedByUserName = "Dr. Smith",
-                    ActivityId = 1,
-                    Scope = "Activity"
-                }
-            };
+            var query = _unitOfWork.Documents.FindAll(trackChanges: false);
 
-            return await Task.FromResult(new PagedResultDto<DocumentDto>
+            if (courseId.HasValue)
             {
-                Items = mockDocuments,
-                TotalCount = mockDocuments.Count,
+                query = query.Where(d => d.CourseId == courseId.Value);
+            }
+
+            var (documents, totalCount) = await query
+                .OrderByDescending(d => d.Id)
+                .PagedResult(page, pageSize);
+
+            var dtos = _mapper.Map<List<DocumentDto>>(documents);
+
+            return new PagedResultDto<DocumentDto>
+            {
+                Items = dtos,
+                TotalCount = totalCount,
                 PageNumber = page,
                 PageSize = pageSize
-            });
+            };
         }
         public async Task<DocumentDto?> GetDocumentByIdAsync(int id)
         {
