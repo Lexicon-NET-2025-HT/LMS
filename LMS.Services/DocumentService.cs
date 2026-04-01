@@ -133,14 +133,6 @@ public class DocumentService(
             throw new BadRequestException("File is missing.");
         }
 
-        if (dto.CourseId is null &&
-            dto.ModuleId is null &&
-            dto.ActivityId is null &&
-            dto.SubmissionId is null)
-        {
-            throw new BadRequestException("Document must belong to a course, module, activity or submission.");
-        }
-
         var user = await _userManager.FindByIdAsync(userId) ??
             throw new UnauthorizedAccessException($"User by id {userId} does not exist");
 
@@ -167,49 +159,25 @@ public class DocumentService(
 
     private async Task ValidateCreateAccessAsync(string userId, CreateDocumentDto dto)
     {
-        if (dto.CourseId is not null)
+        if (dto.SubmissionId is not null)
         {
-            var course = await _unitOfWork.Courses.GetCourseAsync(dto.CourseId.Value)
-                ?? throw new NotFoundException($"Course with id {dto.CourseId.Value} was not found.");
+            // TODO: avoid this duplicated logic with EnsureDocumentAccess, refactor it and make it more generic, maybe move it to its own service
+            var submission = await _unitOfWork.Submissions.GetSubmissionWithRelationsAsync(dto.SubmissionId.Value)
+                ?? throw new NotFoundException($"Submission with id {dto.SubmissionId.Value} was not found.");
 
-            EnsureTeacherForCourse(userId, course);
+            if (submission.StudentId == userId)
+            {
+                return; // owner allowed direkt
+            }
+
+            EnsureTeacherForCourse(userId, submission.Activity.Module.Course);
+            return;
         }
 
-        if (dto.ModuleId is not null)
-        {
-            var module = await _unitOfWork.Modules.GetModuleAsync(dto.ModuleId.Value)
-                ?? throw new NotFoundException($"Module with id {dto.ModuleId.Value} was not found.");
+        // alla andra fall
+        var course = await ResolveCourseForDocumentAsync(dto);
+        EnsureTeacherForCourse(userId, course);
 
-            EnsureTeacherForCourse(userId, module.Course);
-        }
-
-        if (dto.ActivityId is not null)
-        {
-            var activity = await _unitOfWork.Activities.GetActivityWithRelationsAsync(dto.ActivityId.Value)
-                ?? throw new NotFoundException($"Activity with id {dto.ActivityId.Value} was not found.");
-
-            EnsureTeacherForCourse(userId, activity.Module.Course);
-        }
-
-        // TODO: await SubmissionRepository
-
-        //if (dto.SubmissionId is not null)
-        //{
-        //    var submission = await _unitOfWork.Submissions.GetSubmissionWithCourseAndStudentAsync(dto.SubmissionId.Value)
-        //        ?? throw new NotFoundException($"Submission with id {dto.SubmissionId.Value} was not found.");
-
-        //    var isTeacher = submission.Activity.Module.Course.CourseTeachers
-        //        .Any(t => t.TeacherId == userId);
-
-        //    var isOwner = submission.StudentId == userId;
-
-        //    if (!isTeacher && !isOwner)
-        //    {
-        //        throw new ForbiddenException("You do not have access to upload a document to this submission.");
-        //    }
-        //}
-
-        throw new BadRequestException("Document must belong to a course, module, activity or submission.");
     }
 
     /// <summary>
@@ -286,13 +254,7 @@ public class DocumentService(
         {
             var course = ResolveCourse(document);
 
-            if (course == null)
-            {
-                // pretend the file doesn't exist to prevent data leakage
-                throw new NotFoundException("Document is not linked to a course.");
-            }
-
-            if (!IsTeacherForCourse(userId, course))
+            if (course == null || !IsTeacherForCourse(userId, course))
             {
                 // pretend the file doesn't exist to prevent data leakage
                 throw new NotFoundException($"Document with id {document.Id} does not exist");
@@ -311,6 +273,43 @@ public class DocumentService(
             ?? d.Module?.Course
             ?? d.Activity?.Module?.Course
             ?? d.Submission?.Activity?.Module?.Course;
+    }
+
+    private async Task<Course> ResolveCourseForDocumentAsync(CreateDocumentDto dto)
+    {
+        // TODO: refactor this and ResolveCourse, make it more generic and take e special dto with only
+        // ActivityId, ModuleId, CourseId and SubmissionId, and move it to its own service
+        if (dto.CourseId is not null)
+        {
+            return await _unitOfWork.Courses.GetCourseAsync(dto.CourseId.Value)
+                ?? throw new NotFoundException($"Course with id {dto.CourseId.Value} was not found.");
+        }
+
+        if (dto.ModuleId is not null)
+        {
+            var module = await _unitOfWork.Modules.GetModuleAsync(dto.ModuleId.Value)
+                ?? throw new NotFoundException($"Module with id {dto.ModuleId.Value} was not found.");
+
+            return module.Course;
+        }
+
+        if (dto.ActivityId is not null)
+        {
+            var activity = await _unitOfWork.Activities.GetActivityWithRelationsAsync(dto.ActivityId.Value)
+                ?? throw new NotFoundException($"Activity with id {dto.ActivityId.Value} was not found.");
+
+            return activity.Module.Course;
+        }
+
+        if (dto.SubmissionId is not null)
+        {
+            var submission = await _unitOfWork.Submissions.GetSubmissionWithRelationsAsync(dto.SubmissionId.Value)
+                ?? throw new NotFoundException($"Submission with id {dto.SubmissionId.Value} was not found.");
+
+            return submission.Activity.Module.Course;
+        }
+
+        throw new BadRequestException("Document must belong to a course, module, activity or submission.");
     }
 
     /// <summary>
