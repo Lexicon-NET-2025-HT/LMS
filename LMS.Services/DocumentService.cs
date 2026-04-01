@@ -185,7 +185,7 @@ public class DocumentService(
 
         if (dto.ActivityId is not null)
         {
-            var activity = await _unitOfWork.Activities.GetActivity(dto.ActivityId.Value)
+            var activity = await _unitOfWork.Activities.GetActivityWithRelationsAsync(dto.ActivityId.Value)
                 ?? throw new NotFoundException($"Activity with id {dto.ActivityId.Value} was not found.");
 
             EnsureTeacherForCourse(userId, activity.Module.Course);
