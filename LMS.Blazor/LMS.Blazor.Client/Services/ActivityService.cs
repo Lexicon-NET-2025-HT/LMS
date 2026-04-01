@@ -9,7 +9,8 @@ public class ActivityService(IApiService apiService) : IActivityService
 
     public async Task<PagedResultDto<ActivityDto>?> GetAllActivitiesAsync(
         int page = 1, 
-        int pageSize = 10, 
+        int pageSize = 10,
+        int? moduleId = null,
         CancellationToken ct = default)
     {
         return await apiService.GetAsync<PagedResultDto<ActivityDto>>($"{Base}?page={page}&pageSize={pageSize}", ct);
