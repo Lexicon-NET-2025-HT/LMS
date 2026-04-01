@@ -67,7 +67,7 @@ public class DocumentsController : LmsControllerBase
     public async Task<IActionResult> UpdateDocument(int id, [FromBody] UpdateDocumentDto dto)
     {
         await serviceManager.DocumentService.UpdateDocumentAsync(id, UserId, dto);
-        return Ok(new { message = "Document updated successfully" });
+        return Ok(document);
     }
 
     [HttpDelete("{id}")]

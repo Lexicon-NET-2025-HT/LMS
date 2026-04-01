@@ -1,0 +1,94 @@
+@page "/modules"
+@using LMS.Blazor.Client.Components.Module
+@using LMS.Blazor.Client.Components.Course
+@using LMS.Shared.DTOs.Module
+@using LMS.Blazor.Client.Helpers
+
+<div class="py-5" style="margin: 0 !important; margin-left: -1.5rem !important; max-width: none !important; padding-left: 0 !important;">
+
+    <div class="row g-0" style="margin: 0 !important;">
+        <aside class="col-auto mb-5 pe-4" style="min-width: 180px; margin-left: 0 !important;">
+            <CourseNav />
+        </aside>
+
+        <main class="col-md-10">
+            <BbBreadcrumb Class="mb-4">
+                <BbBreadcrumbItem><BbBreadcrumbLink Href="/">Home</BbBreadcrumbLink></BbBreadcrumbItem>
+                <BbBreadcrumbSeparator />
+                <BbBreadcrumbItem><BbBreadcrumbPage>Modules</BbBreadcrumbPage></BbBreadcrumbItem>
+            </BbBreadcrumb>
+
+            <div class="d-flex justify-content-between align-items-start mb-5 flex-wrap gap-3">
+                <div>
+                    <h1 class="fw-bold mb-1" style="font-size:1.8rem;">System Development .NET</h1>
+                    <p class="text-muted mb-0">@modules.Count modules · @modules.Count(IsActive) active now</p>
+                </div>
+                <div class="d-flex align-items-center gap-3">
+                    <BbButton Variant="ButtonVariant.Outline" Size="ButtonSize.Small" OnClick="ToggleRole">
+                        @(isTeacher ? "Switch to Student" : "Switch to Teacher")
+                    </BbButton>
+                    @if (isTeacher)
+                    {
+                        <BbButton Size="ButtonSize.Small" OnClick="OpenCreateDialog">+ Add Module</BbButton>
+                    }
+                </div>
+            </div>
+
+            <ModuleGrid Modules="modules"
+                        IsTeacher="isTeacher"
+                        GradientIndex="gradientIndex"
+                        OnCycleGradient="CycleGradient"
+                        OnEdit="OpenEditDialog"
+                        OnDelete="DeleteModule"
+                        OnViewActivities="ViewActivities" />
+
+            <ModuleDialog @bind-Open="isDialogOpen"
+                          IsEditing="isEditing"
+                          Module="editingModule"
+                          OnSave="SaveModule" />
+        </main>
+    </div>
+</div>
+
+@code {
+    private bool isTeacher, isDialogOpen, isEditing;
+    private Dictionary<int, int> gradientIndex = new();
+
+    private ModuleDto editingModule = new() { Id = 0, Name = "", Description = "", CourseId = 1, CourseName = "Dev .NET", StartDate = DateTime.Now };
+
+    private List<ModuleDto> modules = new()
+    {
+        new() { Id=1, CourseId=1, CourseName="Dev .NET", Name="Introduction to .NET",
+            Description="Getting started with the .NET ecosystem, tooling, and project structure.",
+            StartDate=DateTime.Now.AddDays(-10), EndDate=DateTime.Now.AddDays(-5), ActivityCount=4 },
+        new() { Id=2, CourseId=1, CourseName="Dev .NET", Name="C# Fundamentals",
+            Description="Deep dive into OOP principles, collections, LINQ, and async patterns.",
+            StartDate=DateTime.Now.AddDays(-4), EndDate=DateTime.Now.AddDays(10), ActivityCount=8 },
+        new() { Id=3, CourseId=1, CourseName="Dev .NET", Name="Entity Framework Core",
+            Description="Code-first database design, migrations, and querying with EF Core.",
+            StartDate=DateTime.Now.AddDays(12), EndDate=DateTime.Now.AddDays(25), ActivityCount=6 },
+    };
+
+    private void ToggleRole() => isTeacher = !isTeacher;
+    private void CycleGradient(int id) => gradientIndex[id] = (gradientIndex.GetValueOrDefault(id, id % ModuleStyles.Gradients.Length) + 1) % ModuleStyles.Gradients.Length;
+    private void DeleteModule(int id) => modules.RemoveAll(m => m.Id == id);
+    private void ViewActivities(int id) { /* NavigationManager.NavigateTo(...) */ }
+    private bool IsActive(ModuleDto m) => m.StartDate <= DateTime.Now && (!m.EndDate.HasValue || m.EndDate >= DateTime.Now);
+
+    private void OpenCreateDialog()
+    {
+        isEditing = false;
+        editingModule = new() { Id = 0, Name = "", Description = "", CourseId = 1, CourseName = "Dev .NET", StartDate = DateTime.Now };
+        isDialogOpen = true;
+    }
+
+    private void OpenEditDialog(ModuleDto m) { isEditing = true; editingModule = m with { }; isDialogOpen = true; }
+
+    private void SaveModule()
+    {
+        if (isEditing) { var i = modules.FindIndex(m => m.Id == editingModule.Id); if (i != -1) modules[i] = editingModule; }
+        else { editingModule.Id = modules.Max(m => m.Id) + 1; modules.Add(editingModule); }
+        isDialogOpen = false;
+    }
+
+}

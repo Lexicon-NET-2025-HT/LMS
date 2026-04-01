@@ -24,6 +24,7 @@ public class Program
         builder.Services.AddScoped<IModuleRepository, ModuleRepository>();
         builder.Services.AddScoped<IActivityRepository, ActivityRepository>();
         builder.Services.AddScoped<IDocumentRepository, DocumentRepository>();
+        builder.Services.AddScoped<ISubmissionRepository, SubmissionRepository>();
 
         builder.Services.AddFileStorage(builder.Environment);
 

@@ -12,7 +12,7 @@ public abstract class RepositoryBase<T>(ApplicationDbContext context) : IReposit
     protected DbSet<T> DbSet { get; } = context.Set<T>();
     public async Task<T?> FindByIdAsync(int? id) => await DbSet.FindAsync(id);
 
-    public async Task<T> FindByIdOrThrowAsync(int id, bool trackChanges)
+    public async Task<T> FindByIdOrThrowAsync(int id, bool trackChanges = false)
     {
         var query = DbSet.AsQueryable();
 
