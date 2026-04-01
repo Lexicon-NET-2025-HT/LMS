@@ -17,12 +17,15 @@ public class UsersController : ControllerBase
         _serviceManager = serviceManager;
     }
 
-    // GET api/users
+    // GET api/users?page=1&pageSize=10
     [HttpGet]
-    [SwaggerOperation(Summary = "Get all students")]
-    public async Task<IActionResult> GetAllUsers(CancellationToken cancellationToken)
+    [SwaggerOperation(Summary = "Get all students (paged)")]
+    public async Task<IActionResult> GetAllUsers(
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 10,
+        CancellationToken cancellationToken = default)
     {
-        var result = await _serviceManager.UserService.GetAllStudentsAsync(cancellationToken);
+        var result = await _serviceManager.UserService.GetAllStudentsAsync(page, pageSize, cancellationToken);
         return Ok(result);
     }
 
@@ -45,21 +48,27 @@ public class UsersController : ControllerBase
         return Ok(result);
     }
 
-    // GET api/users/without-course
+    // GET api/users/without-course?page=1&pageSize=10
     [HttpGet("without-course")]
-    [SwaggerOperation(Summary = "Get students not enrolled in any course")]
-    public async Task<IActionResult> GetUsersWithoutCourse(CancellationToken cancellationToken)
+    [SwaggerOperation(Summary = "Get students not enrolled in any course (paged)")]
+    public async Task<IActionResult> GetUsersWithoutCourse(
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 10,
+        CancellationToken cancellationToken = default)
     {
-        var result = await _serviceManager.UserService.GetUsersWithoutCourseAsync(cancellationToken);
+        var result = await _serviceManager.UserService.GetUsersWithoutCourseAsync(page, pageSize, cancellationToken);
         return Ok(result);
     }
 
-    // GET api/users/teachers
+    // GET api/users/teachers?page=1&pageSize=10
     [HttpGet("teachers")]
-    [SwaggerOperation(Summary = "Get all teachers")]
-    public async Task<IActionResult> GetTeachers(CancellationToken cancellationToken)
+    [SwaggerOperation(Summary = "Get all teachers (paged)")]
+    public async Task<IActionResult> GetTeachers(
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 10,
+        CancellationToken cancellationToken = default)
     {
-        var result = await _serviceManager.UserService.GetTeachersAsync(cancellationToken);
+        var result = await _serviceManager.UserService.GetTeachersAsync(page, pageSize, cancellationToken);
         return Ok(result);
     }
 
@@ -106,7 +115,6 @@ public class UsersController : ControllerBase
     {
         try
         {
-            // Pass the ClaimsPrincipal to the service — keeps the controller free of UserManager
             var currentUserId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value
                 ?? throw new InvalidOperationException("No authenticated user.");
             await _serviceManager.UserService.DeleteUserAsync(currentUserId, id, cancellationToken);
