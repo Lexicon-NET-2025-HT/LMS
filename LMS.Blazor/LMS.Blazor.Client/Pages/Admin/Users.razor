@@ -133,7 +133,7 @@
                                 {
                                     <tr>
                                         <td class="text-truncate" style="max-width:160px;">
-                                            @user.UserName
+                                            @user.Name
                                         </td>
                                         <td class="d-none d-sm-table-cell text-truncate" style="max-width:220px;">
                                             @user.Email
@@ -229,10 +229,10 @@
 
     private TabKey activeTab = TabKey.AllStudents;
 
-    private List<StudentBasicDto> allStudents = [];
-    private List<StudentBasicDto> unenrolled = [];
+    private List<UserDto> allStudents = [];
+    private List<UserDto> unenrolled = [];
+    private List<UserDto> teachers = [];
     private List<StudentBasicDto> byCourse = [];
-    private List<StudentBasicDto> teachers = [];
     private List<CourseDto> courses = [];
 
     private int selectedCourseId = 0;
@@ -242,18 +242,26 @@
     private string? errorMessage;
     private string? pendingDeleteId;
 
-    // helpers table tabs
+    // ── Helpers ───────────────────────────────────────────────────────────────
 
-    private List<StudentBasicDto> CurrentList => activeTab switch
+    private List<UserDto> CurrentList => activeTab switch
     {
         TabKey.AllStudents => allStudents,
-        TabKey.ByCourse => byCourse,
+        TabKey.ByCourse => byCourse.Select(u => new UserDto
+        {
+            Id = u.Id,
+            Name = u.UserName,
+            Email = u.Email,
+            Role = "Student",
+            CourseId = u.CourseId,
+            CourseName = u.CourseName
+        }).ToList(),
         TabKey.Unenrolled => unenrolled,
         TabKey.Teachers => teachers,
         _ => []
     };
 
-    private List<StudentBasicDto> FilteredList
+    private List<UserDto> FilteredList
     {
         get
         {
@@ -263,13 +271,13 @@
             var q = searchQuery.Trim();
             return CurrentList
                 .Where(u =>
-                    u.UserName.Contains(q, StringComparison.OrdinalIgnoreCase) ||
+                    u.Name.Contains(q, StringComparison.OrdinalIgnoreCase) ||
                     u.Email.Contains(q, StringComparison.OrdinalIgnoreCase))
                 .ToList();
         }
     }
 
-    // Lifecycle
+    // ── Lifecycle ─────────────────────────────────────────────────────────────
 
     protected override async Task OnInitializedAsync()
     {
@@ -277,7 +285,7 @@
         await LoadCurrentTabAsync();
     }
 
-    // Tab switching
+    // ── Tab switching ─────────────────────────────────────────────────────────
 
     private async Task SwitchTabAsync(TabKey tab)
     {
@@ -298,21 +306,20 @@
             switch (activeTab)
             {
                 case TabKey.AllStudents:
-                    allStudents = await UserService.GetAllUsersAsync() ?? [];
+                    allStudents = (await UserService.GetAllUsersAsync(page: 1, pageSize: 100))?.Items ?? [];
                     break;
 
                 case TabKey.ByCourse:
-                    // list loads when user picks a course
                     if (selectedCourseId > 0)
                         await LoadByCourseAsync();
                     break;
 
                 case TabKey.Unenrolled:
-                    unenrolled = await UserService.GetUsersWithoutCourseAsync() ?? [];
+                    unenrolled = (await UserService.GetUsersWithoutCourseAsync(page: 1, pageSize: 100))?.Items ?? [];
                     break;
 
                 case TabKey.Teachers:
-                    teachers = await UserService.GetTeachersAsync() ?? [];
+                    teachers = (await UserService.GetTeachersAsync(page: 1, pageSize: 100))?.Items ?? [];
                     break;
             }
         }
@@ -335,8 +342,6 @@
 
         try
         {
-            // GetUsersByCourse returns StudentDto; map to StudentBasicDto so the
-            // table can show the course badge and unenroll button uniformly.
             var raw = await UserService.GetUsersByCourseAsync(selectedCourseId) ?? [];
             var courseName = courses.FirstOrDefault(c => c.Id == selectedCourseId)?.Name;
 
@@ -372,8 +377,9 @@
         }
     }
 
-    // Actions
-    private async Task RemoveFromCourseAsync(StudentBasicDto user)
+    // ── Actions ───────────────────────────────────────────────────────────────
+
+    private async Task RemoveFromCourseAsync(UserDto user)
     {
         errorMessage = null;
         successMessage = null;
@@ -382,12 +388,12 @@
 
         if (ok)
         {
-            successMessage = $"{user.UserName} removed from course.";
+            successMessage = $"{user.Name} removed from course.";
             await LoadCurrentTabAsync();
         }
         else
         {
-            errorMessage = $"Failed to remove {user.UserName} from course.";
+            errorMessage = $"Failed to remove {user.Name} from course.";
         }
     }
 
@@ -402,7 +408,7 @@
 
         if (ok)
         {
-            successMessage = $"User '{user?.UserName ?? userId}' deleted.";
+            successMessage = $"User '{user?.Name ?? userId}' deleted.";
             await LoadCurrentTabAsync();
         }
         else

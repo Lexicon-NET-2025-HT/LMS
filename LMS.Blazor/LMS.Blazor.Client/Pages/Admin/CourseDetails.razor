@@ -442,15 +442,22 @@
 
             if (detail is not null)
             {
-                // Cast CourseDetailDto (which inherits CourseDto) directly —
-                // no need to call GetCourseByIdAsync separately
                 course = detail;
                 modules = detail.Modules;
                 students = detail.Students;
             }
 
-            // Load unenrolled students for the enroll dropdown
-            availableStudents = await UserService.GetUsersWithoutCourseAsync() ?? [];
+            var result = await UserService.GetUsersWithoutCourseAsync();
+            availableStudents = result?.Items
+                .Select(u => new StudentBasicDto
+                {
+                    Id = u.Id,
+                    UserName = u.Name,
+                    Email = u.Email,
+                    CourseId = u.CourseId,
+                    CourseName = u.CourseName
+                })
+                .ToList() ?? [];
         }
         catch (Exception ex)
         {
@@ -623,13 +630,16 @@
         {
             var success = await UserService.EnrollUserInCourseAsync(selectedStudentId, CourseId);
 
+            await RefreshStudentsAsync();
+
             if (!success)
             {
-                studentError = "Failed to enroll student.";
-                return;
+                if (!students.Any(s => s.Id == selectedStudentId))
+                {
+                    studentError = "Failed to enroll student.";
+                    return;
+                }
             }
-
-            await RefreshStudentsAsync();
 
             selectedStudentId = string.Empty;
             showEnrollStudent = false;
@@ -649,13 +659,17 @@
         {
             var success = await UserService.RemoveUserFromCourseAsync(studentId);
 
+            await RefreshStudentsAsync();
+
             if (!success)
             {
-                studentError = "Failed to remove student from course.";
-                return;
+                if (students.Any(s => s.Id == studentId))
+                {
+                    studentError = "Failed to remove student from course.";
+                    return;
+                }
             }
 
-            await RefreshStudentsAsync();
             successMessage = "Student removed from course.";
         }
         catch (Exception ex)
@@ -666,7 +680,6 @@
 
     private async Task RefreshStudentsAsync()
     {
-        // Re-fetch enrolled students for this course
         var enrolled = await UserService.GetUsersByCourseAsync(CourseId);
         students = enrolled?
             .Select(s => new StudentBasicDto
@@ -679,13 +692,22 @@
             })
             .ToList() ?? [];
 
-        // Re-fetch available (unenrolled) students
-        availableStudents = await UserService.GetUsersWithoutCourseAsync() ?? [];
+        var result = await UserService.GetUsersWithoutCourseAsync();
+        availableStudents = result?.Items
+            .Select(u => new StudentBasicDto
+            {
+                Id = u.Id,
+                UserName = u.Name,
+                Email = u.Email,
+                CourseId = u.CourseId,
+                CourseName = u.CourseName
+            })
+            .ToList() ?? [];
 
         StateHasChanged();
     }
 
-    // ---- Document actions ---- (TODO: requires auth context for UploadedByUserId)
+    // ---- Document actions ----
     private void HandleFilePicked(ChangeEventArgs e)
         => pickedFileName = e.Value?.ToString() ?? string.Empty;
 
