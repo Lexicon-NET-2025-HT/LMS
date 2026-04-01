@@ -12,7 +12,7 @@ namespace LMS.Presentation.Controllers;
 [Authorize]
 public class DocumentsController : LmsControllerBase
 {
-    DocumentsController(IServiceManager serviceManager) : base(serviceManager)
+    public DocumentsController(IServiceManager serviceManager) : base(serviceManager)
     {
     }
 
@@ -22,9 +22,9 @@ public class DocumentsController : LmsControllerBase
         Description = "Retrieves a paginated list of all documents, optionally filtered by course"
     )]
     [SwaggerResponse(StatusCodes.Status200OK, "Documents retrieved successfully")]
-    public async Task<IActionResult> GetAllDocuments([FromQuery] int page = 1, [FromQuery] int pageSize = 10, [FromQuery] int? courseId = null)
+    public async Task<IActionResult> GetDocuments([FromQuery] DocumentQueryDto dto, [FromQuery] int page = 1, [FromQuery] int pageSize = 10)
     {
-        var result = await serviceManager.DocumentService.GetAllDocumentsAsync(UserId, page, pageSize, courseId);
+        var result = await serviceManager.DocumentService.GetDocumentsAsync(UserId, page, pageSize, dto);
         return Ok(result);
     }
 
@@ -81,5 +81,31 @@ public class DocumentsController : LmsControllerBase
     {
         await serviceManager.DocumentService.DeleteDocumentAsync(id, UserId);
         return Ok(new { message = "Document deleted successfully" });
+    }
+
+    [HttpGet("{id:int}/file")]
+    [SwaggerOperation(
+        Summary = "Download a document file",
+        Description = "Returns the file associated with the specified document if the user has access."
+    )]
+    [SwaggerResponse(StatusCodes.Status200OK, "Document retrieved successfully")]
+    [SwaggerResponse(StatusCodes.Status404NotFound, "Document not found")]
+    public async Task<IActionResult> GetDocumentFile(int id, [FromQuery] bool download = false)
+    {
+        var file = await serviceManager.DocumentService.DownloadDocumentAsync(id, UserId);
+
+        var canDisplayInline =
+            file.ContentType.StartsWith("image/", StringComparison.OrdinalIgnoreCase) ||
+            file.ContentType.Equals("application/pdf", StringComparison.OrdinalIgnoreCase);
+
+        var dispositionType = download || !canDisplayInline ? "attachment" : "inline";
+
+        var safeFileName = Uri.EscapeDataString(file.FileDownloadName);
+
+        Response.Headers["Content-Disposition"] =
+            $"{dispositionType}; filename*=UTF-8''{safeFileName}";
+
+        return File(file.Stream, file.ContentType);
+
     }
 }

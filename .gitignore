@@ -372,5 +372,5 @@ FodyWeavers.xsd
 /.gitignore
 
 # Ignore the uploads folder, but keep the .gitkeep file to ensure the folder is created in new clones
-LMS.API/wwwroot/uploads/*
-!LMS.API/wwwroot/uploads/.gitkeep
+LMS.API/AppData/UploadedDocuments/*
+!LMS.API/AppData/UploadedDocuments/.gitkeep

@@ -10,16 +10,20 @@ public static class FileStorageServiceExtensions
         this IServiceCollection services,
         IWebHostEnvironment environment)
     {
-        var uploadRootPath = Path.Combine(environment.ContentRootPath, "wwwroot", "uploads");
-
-        services.Configure<FileStorageOptions>(options =>
         {
-            options.UploadRootPath = uploadRootPath;
-            options.RequestBasePath = "/uploads";
-        });
+            var uploadRootPath = Path.Combine(
+                environment.ContentRootPath,
+                "AppData",
+                "UploadedDocuments");
 
-        services.AddScoped<IFileStorage, LocalFileStorage>();
+            services.Configure<FileStorageOptions>(options =>
+            {
+                options.UploadRootPath = uploadRootPath;
+            });
 
-        return services;
+            services.AddScoped<IFileStorage, LocalFileStorage>();
+
+            return services;
+        }
     }
 }

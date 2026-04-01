@@ -2,6 +2,5 @@
 
 public record FileSaveResult(
     string FileName,
-    string PublicPath,
     long FileSize
 );

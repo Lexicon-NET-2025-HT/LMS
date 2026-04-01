@@ -1,6 +1,5 @@
 using AutoMapper;
 using Domain.Models.Entities;
-using LMS.Infractructure.Data.MappingResolvers;
 using LMS.Shared.DTOs.Activity;
 using LMS.Shared.DTOs.AuthDtos;
 using LMS.Shared.DTOs.Course;
@@ -79,8 +78,7 @@ public class MapperProfile : Profile
                 src.ModuleId != null ? "Module" :
                 src.ActivityId != null ? "Activity" :
                 "Unknown"))
-            .ForMember(dest => dest.Path,
-                opt => opt.MapFrom<DocumentPathResolver>())
+            .ForMember(dest => dest.FileUrl, opt => opt.MapFrom(src => $"/api/documents/{src.Id}/file"))
             .ForMember(dest => dest.UploadedByUserName, opt => opt.MapFrom(src => src.UploadedByUser!.UserName));
 
         CreateMap<CreateDocumentDto, Document>()

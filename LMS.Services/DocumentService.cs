@@ -33,7 +33,7 @@ public class DocumentService(
     /// <param name="pageSize">The number of items per page.</param>
     /// <param name="dto">Filter criteria for the document query.</param>
     /// <returns>A paged result containing accessible documents.</returns>
-    public async Task<PagedResultDto<DocumentDto>> GetAllDocumentsAsync(string userId, int page, int pageSize, DocumentQueryDto dto)
+    public async Task<PagedResultDto<DocumentDto>> GetDocumentsAsync(string userId, int page, int pageSize, DocumentQueryDto dto)
     {
         var user = await _userManager.FindByIdAsync(userId) ??
             throw new UnauthorizedAccessException($"User by id {userId} does not exist");
@@ -83,6 +83,41 @@ public class DocumentService(
     }
 
     /// <summary>
+    /// Retrieves a document file if the user has access.
+    /// </summary>
+    /// <param name="id">The document identifier.</param>
+    /// <param name="userId">The user requesting the file.</param>
+    /// <returns>The file stream and metadata.</returns>
+    /// <exception cref="NotFoundException">
+    /// Thrown if the document or file does not exist, or the user is not authorized.
+    /// </exception>
+    public async Task<DocumentDownloadDto> DownloadDocumentAsync(int id, string userId)
+    {
+        var document = await _unitOfWork.Documents.GetDocumentWithAccessRelationsAsync(id)
+            ?? throw new NotFoundException($"Document with id {id} does not exist");
+
+        await EnsureDocumentAccess(userId, document);
+
+        if (string.IsNullOrWhiteSpace(document.StoredFileName))
+        {
+            throw new NotFoundException("File not found.");
+        }
+
+        var stream = await _fileStorage.OpenReadAsync(document.StoredFileName);
+
+        var contentType = string.IsNullOrWhiteSpace(document.ContentType)
+            ? "application/octet-stream"
+            : document.ContentType;
+
+        return new DocumentDownloadDto
+        {
+            Stream = stream,
+            ContentType = contentType,
+            FileDownloadName = document.DisplayName ?? "download"
+        };
+    }
+
+    /// <summary>
     /// Creates a new document and stores its associated file.
     /// </summary>
     /// <param name="userId">The user creating the document.</param>
@@ -109,6 +144,8 @@ public class DocumentService(
         var user = await _userManager.FindByIdAsync(userId) ??
             throw new UnauthorizedAccessException($"User by id {userId} does not exist");
 
+        await ValidateCreateAccessAsync(userId, dto);
+
         var savedFileResult = await _fileStorage.SaveAsync(dto.File);
 
         var document = _mapper.Map<Document>(dto);
@@ -118,12 +155,61 @@ public class DocumentService(
         document.FileSize = savedFileResult.FileSize;
         document.StoredFileName = savedFileResult.FileName;
 
+        var course = ResolveCourse(document);
+
         _unitOfWork.Documents.Create(document);
         await _unitOfWork.CompleteAsync();
 
         var createdDocument = await _unitOfWork.Documents.GetDocumentWithAccessRelationsAsync(document.Id);
 
         return _mapper.Map<DocumentDto>(createdDocument);
+    }
+
+    private async Task ValidateCreateAccessAsync(string userId, CreateDocumentDto dto)
+    {
+        if (dto.CourseId is not null)
+        {
+            var course = await _unitOfWork.Courses.GetCourseAsync(dto.CourseId.Value)
+                ?? throw new NotFoundException($"Course with id {dto.CourseId.Value} was not found.");
+
+            EnsureTeacherForCourse(userId, course);
+        }
+
+        if (dto.ModuleId is not null)
+        {
+            var module = await _unitOfWork.Modules.GetModuleAsync(dto.ModuleId.Value)
+                ?? throw new NotFoundException($"Module with id {dto.ModuleId.Value} was not found.");
+
+            EnsureTeacherForCourse(userId, module.Course);
+        }
+
+        if (dto.ActivityId is not null)
+        {
+            var activity = await _unitOfWork.Activities.GetActivity(dto.ActivityId.Value)
+                ?? throw new NotFoundException($"Activity with id {dto.ActivityId.Value} was not found.");
+
+            EnsureTeacherForCourse(userId, activity.Module.Course);
+        }
+
+        // TODO: await SubmissionRepository
+
+        //if (dto.SubmissionId is not null)
+        //{
+        //    var submission = await _unitOfWork.Submissions.GetSubmissionWithCourseAndStudentAsync(dto.SubmissionId.Value)
+        //        ?? throw new NotFoundException($"Submission with id {dto.SubmissionId.Value} was not found.");
+
+        //    var isTeacher = submission.Activity.Module.Course.CourseTeachers
+        //        .Any(t => t.TeacherId == userId);
+
+        //    var isOwner = submission.StudentId == userId;
+
+        //    if (!isTeacher && !isOwner)
+        //    {
+        //        throw new ForbiddenException("You do not have access to upload a document to this submission.");
+        //    }
+        //}
+
+        throw new BadRequestException("Document must belong to a course, module, activity or submission.");
     }
 
     /// <summary>
@@ -234,6 +320,14 @@ public class DocumentService(
     private static bool IsTeacherForCourse(string userId, Course course)
     {
         return course.CourseTeachers.Any(t => t.TeacherId == userId);
+    }
+
+    private static void EnsureTeacherForCourse(string userId, Course course)
+    {
+        if (!IsTeacherForCourse(userId, course))
+        {
+            throw new ForbiddenException("Only teachers for this course allowed for this operation.");
+        }
     }
 
     /// <summary>
