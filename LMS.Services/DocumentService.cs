@@ -3,154 +3,273 @@ using Domain.Contracts.Repositories;
 using Domain.Contracts.Storage;
 using Domain.Models.Entities;
 using Domain.Models.Exceptions;
+using LMS.Infractructure.Extensions;
 using LMS.Shared.DTOs.Common;
 using LMS.Shared.DTOs.Document;
 using Microsoft.AspNetCore.Identity;
 using Service.Contracts;
 
-namespace LMS.Services
+namespace LMS.Services;
+/// <summary>
+/// Provides operations for managing documents, including retrieval, creation, update, deletion,
+/// and access control based on user roles and course relationships.
+/// </summary>
+public class DocumentService(
+    IUnitOfWork unitOfWork,
+    IMapper mapper,
+    IFileStorage fileStorage,
+    UserManager<ApplicationUser> userManager) : IDocumentService
 {
-    public class DocumentService(
-        IUnitOfWork unitOfWork,
-        IMapper mapper,
-        IFileStorage fileStorage,
-        UserManager<ApplicationUser> userManager) : IDocumentService
+    private readonly UserManager<ApplicationUser> _userManager = userManager;
+    private readonly IUnitOfWork _unitOfWork = unitOfWork;
+    private readonly IMapper _mapper = mapper;
+    private readonly IFileStorage _fileStorage = fileStorage;
+
+    /// <summary>
+    /// Retrieves a paged list of documents accessible to the specified user.
+    /// </summary>
+    /// <param name="userId">The user requesting the documents.</param>
+    /// <param name="page">The page number to retrieve.</param>
+    /// <param name="pageSize">The number of items per page.</param>
+    /// <param name="dto">Filter criteria for the document query.</param>
+    /// <returns>A paged result containing accessible documents.</returns>
+    public async Task<PagedResultDto<DocumentDto>> GetAllDocumentsAsync(string userId, int page, int pageSize, DocumentQueryDto dto)
     {
-        private readonly UserManager<ApplicationUser> _userManager = userManager;
-        private readonly IUnitOfWork _unitOfWork = unitOfWork;
-        private readonly IMapper _mapper = mapper;
-        private readonly IFileStorage _fileStorage = fileStorage;
-        public async Task<DocumentDto> CreateDocumentAsync(string userId, CreateDocumentDto dto)
+        var user = await _userManager.FindByIdAsync(userId) ??
+            throw new UnauthorizedAccessException($"User by id {userId} does not exist");
+
+        var isTeacher = await _userManager.IsInRoleAsync(user, "Teacher");
+
+        var query = ApplyDocumentAccessFilter(
+            _unitOfWork.Documents.BuildBasicQuery(dto),
+            userId,
+            isTeacher,
+            isTeacher ? user.TeachingCourses.Select(tc => tc.CourseId).ToList() :
+                new List<int> { user.CourseId ?? 0 });
+
+
+        var (documents, totalCount) = await query
+            .OrderByDescending(d => d.UploadedAt)
+            .PagedResult(page, pageSize);
+
+        var dtos = _mapper.Map<List<DocumentDto>>(documents);
+
+        return new PagedResultDto<DocumentDto>
         {
-            if (dto.File == null)
+            Items = dtos,
+            TotalCount = totalCount,
+            PageNumber = page,
+            PageSize = pageSize
+        };
+    }
+
+    /// <summary>
+    /// Retrieves a document by its identifier if the user has access.
+    /// </summary>
+    /// <param name="id">The document identifier.</param>
+    /// <param name="userId">The user requesting the document.</param>
+    /// <returns>The document if accessible.</returns>
+    /// <exception cref="NotFoundException">
+    /// Thrown if the document does not exist or the user is not authorized to access it.
+    /// </exception>
+    public async Task<DocumentDto?> GetDocumentByIdAsync(int id, string userId)
+    {
+        var document = await _unitOfWork.Documents.GetDocumentWithAccessRelationsAsync(id, false)
+            ?? throw new NotFoundException($"Document with id {id} does not exist");
+
+        await EnsureDocumentAccess(userId, document);
+
+        return _mapper.Map<DocumentDto>(document);
+    }
+
+    /// <summary>
+    /// Creates a new document and stores its associated file.
+    /// </summary>
+    /// <param name="userId">The user creating the document.</param>
+    /// <param name="dto">The document creation data.</param>
+    /// <returns>The created document.</returns>
+    /// <exception cref="BadRequestException">
+    /// Thrown if the file is missing or no ownership relation is specified.
+    /// </exception>
+    public async Task<DocumentDto> CreateDocumentAsync(string userId, CreateDocumentDto dto)
+    {
+        if (dto.File == null)
+        {
+            throw new BadRequestException("File is missing.");
+        }
+
+        if (dto.CourseId is null &&
+            dto.ModuleId is null &&
+            dto.ActivityId is null &&
+            dto.SubmissionId is null)
+        {
+            throw new BadRequestException("Document must belong to a course, module, activity or submission.");
+        }
+
+        var user = await _userManager.FindByIdAsync(userId) ??
+            throw new UnauthorizedAccessException($"User by id {userId} does not exist");
+
+        var savedFileResult = await _fileStorage.SaveAsync(dto.File);
+
+        var document = _mapper.Map<Document>(dto);
+
+        document.UploadedByUser = user;
+        document.UploadedAt = DateTime.UtcNow;
+        document.FileSize = savedFileResult.FileSize;
+        document.StoredFileName = savedFileResult.FileName;
+
+        _unitOfWork.Documents.Create(document);
+        await _unitOfWork.CompleteAsync();
+
+        var createdDocument = await _unitOfWork.Documents.GetDocumentWithAccessRelationsAsync(document.Id);
+
+        return _mapper.Map<DocumentDto>(createdDocument);
+    }
+
+    /// <summary>
+    /// Updates an existing document.
+    /// </summary>
+    /// <param name="id">The document identifier.</param>
+    /// <param name="dto">The updated document data.</param>
+    /// <exception cref="NotFoundException">
+    /// Thrown if the document does not exist.
+    /// </exception>
+    public async Task UpdateDocumentAsync(int id, string userId, UpdateDocumentDto dto)
+    {
+        var document = await _unitOfWork.Documents.GetDocumentAsync(id, trackChanges: true) ??
+            throw new NotFoundException($"Document with id {id} does not exist");
+
+        await EnsureDocumentAccess(userId, document);
+
+        document.DisplayName = dto.DisplayName ?? string.Empty;
+        document.Description = dto.Description ?? string.Empty;
+        document.CourseId = dto.CourseId.HasValue ? dto.CourseId.Value : null;
+        document.ModuleId = dto.ModuleId.HasValue ? dto.ModuleId.Value : null;
+        document.ActivityId = dto.ActivityId.HasValue ? dto.ActivityId.Value : null;
+        document.SubmissionId = dto.SubmissionId.HasValue ? dto.SubmissionId.Value : null;
+
+        _unitOfWork.Documents.Update(document);
+        await _unitOfWork.CompleteAsync();
+    }
+
+    /// <summary>
+    /// Deletes a document if the user has access.
+    /// </summary>
+    /// <param name="id">The document identifier.</param>
+    /// <param name="userId">The user requesting deletion.</param>
+    /// <exception cref="NotFoundException">
+    /// Thrown if the document does not exist or the user is not authorized.
+    /// </exception>
+    public async Task DeleteDocumentAsync(int id, string userId)
+    {
+        var document = await _unitOfWork.Documents.GetDocumentWithAccessRelationsAsync(id)
+            ?? throw new NotFoundException($"Document with id: '{id}' does not exist");
+
+        await EnsureDocumentAccess(userId, document);
+
+        // TODO: option to soft delete instead of hard delete, add IsDeleted property to Document entity and filter it out in queries
+
+        // remove the file from storage if it exists
+        if (!string.IsNullOrWhiteSpace(document.StoredFileName))
+        {
+            var success = await _fileStorage.DeleteAsync(document.StoredFileName);
+            if (!success)
             {
-                throw new BadRequestException("File is missing.");
+                // log the failure to delete the file, but do not prevent the document record from being deleted
+                // consider implementing a retry mechanism or marking the document for cleanup if file deletion fails
+            }
+        }
+
+        _unitOfWork.Documents.Delete(document);
+        await _unitOfWork.CompleteAsync();
+    }
+
+    /// <summary>
+    /// Ensures that the user has access to the specified document.
+    /// </summary>
+    /// <param name="userId">The user identifier.</param>
+    /// <param name="document">The document to check.</param>
+    /// <exception cref="NotFoundException">
+    /// Thrown if the user is not authorized to access the document.
+    /// </exception>
+    private async Task EnsureDocumentAccess(string userId, Document document)
+    {
+        if (document.UploadedByUserId != userId)
+        {
+            var course = ResolveCourse(document);
+
+            if (course == null)
+            {
+                // pretend the file doesn't exist to prevent data leakage
+                throw new NotFoundException("Document is not linked to a course.");
             }
 
-            if (dto.CourseId is null &&
-                dto.ModuleId is null &&
-                dto.ActivityId is null &&
-                dto.SubmissionId is null)
+            if (!IsTeacherForCourse(userId, course))
             {
-                throw new BadRequestException("Document must belong to a course, module, activity or submission.");
-            }
-
-            //DisplayName = request.File.FileName,
-            //ContentType = request.File.ContentType,
-            //FileSize = request.File.Length
-            var user = await _userManager.FindByIdAsync(userId) ??
-                throw new UnauthorizedAccessException($"User by id {userId} does not exist");
-
-            var savedFileResult = await _fileStorage.SaveAsync(dto.File);
-
-            var document = _mapper.Map<Document>(dto);
-
-            document.UploadedByUser = user;
-            document.UploadedAt = DateTime.UtcNow;
-            document.FileSize = savedFileResult.FileSize;
-            document.StoredFileName = savedFileResult.FileName;
-
-            _unitOfWork.Documents.Create(document);
-            await _unitOfWork.CompleteAsync();
-
-            var createdDocument = await _unitOfWork.Documents.GetDocumentAsync(document.Id);
-
-            return _mapper.Map<DocumentDto>(document);
-        }
-        public async Task UpdateDocumentAsync(int id, UpdateDocumentDto dto)
-        {
-            var document = await _unitOfWork.Documents.FindByIdAsync(id) ??
-                throw new NotFoundException($"Document with id: '{id}' does not exist");
-
-            document.DisplayName = dto.DisplayName ?? string.Empty;
-            document.Description = dto.Description ?? string.Empty;
-
-            _unitOfWork.Documents.Update(document);
-            await _unitOfWork.CompleteAsync();
-        }
-
-        public async Task DeleteDocumentAsync(int id, string userId)
-        {
-            var document = await unitOfWork.Documents.GetDocumentWithOwnershipChainAsync(id)
-                ?? throw new NotFoundException($"Document with id: '{id}' does not exist");
-
-            await ThrowIfNoAccess(userId, document);
-
-            // TODO: option to soft delete instead of hard delete, add IsDeleted property to Document entity and filter it out in queries
-
-            // remove the file from storage if it exists
-            if (!string.IsNullOrWhiteSpace(document.StoredFileName))
-            {
-                var success = await _fileStorage.DeleteAsync(document.StoredFileName);
-                if (!success)
-                {
-                    // log the failure to delete the file, but do not prevent the document record from being deleted
-                    // consider implementing a retry mechanism or marking the document for cleanup if file deletion fails
-                }
-            }
-
-            _unitOfWork.Documents.Delete(document);
-            await _unitOfWork.CompleteAsync();
-        }
-
-        private async Task ThrowIfNoAccess(string userId, Document document)
-        {
-            if (document.UploadedByUserId != userId)
-            {
-                var course = ResolveCourse(document);
-
-                if (course == null)
-                {
-                    // pretend the file doesn't exist to prevent data leakage
-                    throw new NotFoundException("Document is not linked to a course.");
-                }
-
-                if (!IsTeacherForCourse(userId, course))
-                {
-                    // pretend the file doesn't exist to prevent data leakage
-                    throw new NotFoundException($"Document with id {document.Id} does not exist");
-                }
-
+                // pretend the file doesn't exist to prevent data leakage
+                throw new NotFoundException($"Document with id {document.Id} does not exist");
             }
         }
+    }
 
-        public async Task<PagedResultDto<DocumentDto>> GetAllDocumentsAsync(string userId, int page, int pageSize, int? courseId = null)
+    /// <summary>
+    /// Resolves the course associated with a document.
+    /// </summary>
+    /// <param name="d">The document.</param>
+    /// <returns>The associated course, if any.</returns>
+    private static Course? ResolveCourse(Document d)
+    {
+        return d.Course
+            ?? d.Module?.Course
+            ?? d.Activity?.Module?.Course
+            ?? d.Submission?.Activity?.Module?.Course;
+    }
+
+    /// <summary>
+    /// Determines whether a user is a teacher for a given course.
+    /// </summary>
+    /// <param name="userId">The user identifier.</param>
+    /// <param name="course">The course.</param>
+    /// <returns><c>true</c> if the user is a teacher for the course; otherwise, <c>false</c>.</returns>
+    private static bool IsTeacherForCourse(string userId, Course course)
+    {
+        return course.CourseTeachers.Any(t => t.TeacherId == userId);
+    }
+
+    /// <summary>
+    /// Applies access control rules to a document query.
+    /// </summary>
+    /// <param name="query">The document query.</param>
+    /// <param name="userId">The user identifier.</param>
+    /// <param name="isTeacher">Indicates whether the user is a teacher.</param>
+    /// <param name="allowedCourseIds">The course IDs the user has access to.</param>
+    /// <returns>A filtered query containing only accessible documents.</returns>
+    private IQueryable<Document> ApplyDocumentAccessFilter(IQueryable<Document> query,
+                                                           string userId,
+                                                           bool isTeacher,
+                                                           List<int> allowedCourseIds)
+    {
+        if (isTeacher)
         {
-            (var documents, int totalCount) = await _unitOfWork.Documents.GetAllDocumentsAsync(page, pageSize, courseId);
-
-            var dtos = _mapper.Map<List<DocumentDto>>(documents);
-
-            return new PagedResultDto<DocumentDto>
-            {
-                Items = dtos,
-                TotalCount = totalCount,
-                PageNumber = page,
-                PageSize = pageSize
-            };
+            return query.Where(d =>
+                (d.SubmissionId == null && (
+                    (d.CourseId != null && allowedCourseIds.Contains(d.CourseId.Value)) ||
+                    (d.Module != null && allowedCourseIds.Contains(d.Module.CourseId)) ||
+                    (d.Activity != null && allowedCourseIds.Contains(d.Activity.Module.CourseId))
+                ))
+                ||
+                (d.Submission != null && allowedCourseIds.Contains(d.Submission.Activity.Module.CourseId))
+            );
         }
 
-        public async Task<DocumentDto?> GetDocumentByIdAsync(int id, string userId)
-        {
-            var document = await _unitOfWork.Documents.GetDocumentAsync(id, false)
-                ?? throw new NotFoundException($"Document with id {id} does not exist");
-
-            await ThrowIfNoAccess(userId, document);
-
-            return _mapper.Map<DocumentDto>(document);
-        }
-
-        private static Course? ResolveCourse(Document d)
-        {
-            return d.Course
-                ?? d.Module?.Course
-                ?? d.Activity?.Module?.Course
-                ?? d.Submission?.Activity?.Module?.Course;
-        }
-
-        private static bool IsTeacherForCourse(string userId, Course course)
-        {
-            return course.CourseTeachers.Any(t => t.TeacherId == userId);
-        }
-
+        return query.Where(d =>
+            (d.SubmissionId == null && (
+                (d.CourseId != null && allowedCourseIds.Contains(d.CourseId.Value)) ||
+                (d.Module != null && allowedCourseIds.Contains(d.Module.CourseId)) ||
+                (d.Activity != null && allowedCourseIds.Contains(d.Activity.Module.CourseId))
+            ))
+            ||
+            (d.Submission != null && d.Submission.StudentId == userId)
+        );
     }
 }
