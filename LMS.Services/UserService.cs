@@ -1,6 +1,6 @@
-﻿// LMS.Services/UserService.cs
-using Domain.Models.Entities;
+﻿using Domain.Models.Entities;
 using LMS.Infractructure.Data;
+using LMS.Shared.DTOs.Common;
 using LMS.Shared.DTOs.User;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -19,8 +19,7 @@ public class UserService : IUserService
         _db = db;
     }
 
-    // ── helpers ───────────────────────────────────────────────────────────────
-
+    // helpers
     private async Task<string?> GetRoleIdAsync(string roleName, CancellationToken ct) =>
         await _db.Roles
             .Where(r => r.Name == roleName)
@@ -31,40 +30,73 @@ public class UserService : IUserService
         _db.Users.Where(u =>
             _db.UserRoles.Any(ur => ur.UserId == u.Id && ur.RoleId == roleId));
 
-    private static StudentBasicDto MapToDto(ApplicationUser u) => new()
+    private async Task<UserDto> MapToUserDtoAsync(ApplicationUser u)
     {
-        Id = u.Id,
-        UserName = u.UserName ?? string.Empty,
-        Email = u.Email ?? string.Empty,
-        CourseId = u.CourseId,
-        CourseName = u.Course?.Name
-    };
-
-    // ── queries ───────────────────────────────────────────────────────────────
-
-    public async Task<IEnumerable<StudentBasicDto>> GetAllStudentsAsync(CancellationToken ct = default)
-    {
-        var roleId = await GetRoleIdAsync("Student", ct);
-        if (roleId is null) return [];
-
-        var users = await UsersInRole(roleId)
-            .Include(u => u.Course)
-            .OrderBy(u => u.Email)
-            .ToListAsync(ct);
-
-        return users.Select(MapToDto);
+        var roles = await _userManager.GetRolesAsync(u);
+        return new UserDto
+        {
+            Id = u.Id,
+            Name = u.UserName ?? string.Empty,
+            Email = u.Email ?? string.Empty,
+            Role = roles.FirstOrDefault() ?? "Unknown",
+            CourseId = u.CourseId,
+            CourseName = u.Course?.Name
+        };
     }
 
-    public async Task<StudentBasicDto?> GetUserByIdAsync(string id, CancellationToken ct = default)
+    private async Task<PagedResultDto<UserDto>> ToPagedResultAsync(
+    IQueryable<ApplicationUser> query, int page, int pageSize, CancellationToken ct)
+    {
+        var totalCount = await query.CountAsync(ct);
+        var users = await query
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync(ct);
+
+        var items = new List<UserDto>(users.Count);
+        foreach (var u in users)
+            items.Add(await MapToUserDtoAsync(u));
+
+        return new PagedResultDto<UserDto>
+        {
+            Items = items,
+            TotalCount = totalCount,
+            PageNumber = page,
+            PageSize = pageSize
+        };
+    }
+
+    // queries
+    public async Task<PagedResultDto<UserDto>> GetAllStudentsAsync(
+        int page, int pageSize, CancellationToken ct = default)
+    {
+        var roleId = await GetRoleIdAsync("Student", ct);
+        if (roleId is null) return new PagedResultDto<UserDto>
+        {
+            Items = [],
+            TotalCount = 0,
+            PageNumber = page,
+            PageSize = pageSize
+        };
+
+        var query = UsersInRole(roleId)
+            .Include(u => u.Course)
+            .OrderBy(u => u.Email);
+
+        return await ToPagedResultAsync(query, page, pageSize, ct);
+    }
+
+    public async Task<UserDto?> GetUserByIdAsync(string id, CancellationToken ct = default)
     {
         var user = await _db.Users
             .Include(u => u.Course)
             .FirstOrDefaultAsync(u => u.Id == id, ct);
 
-        return user is null ? null : MapToDto(user);
+        return user is null ? null : await MapToUserDtoAsync(user);
     }
 
-    public async Task<IEnumerable<StudentDto>> GetUsersByCourseAsync(int courseId, CancellationToken ct = default)
+    public async Task<IEnumerable<StudentDto>> GetUsersByCourseAsync(
+        int courseId, CancellationToken ct = default)
     {
         return await _db.Users
             .Where(u => u.CourseId == courseId)
@@ -78,39 +110,44 @@ public class UserService : IUserService
             .ToListAsync(ct);
     }
 
-    public async Task<IEnumerable<StudentBasicDto>> GetUsersWithoutCourseAsync(CancellationToken ct = default)
+    public async Task<PagedResultDto<UserDto>> GetUsersWithoutCourseAsync(
+        int page, int pageSize, CancellationToken ct = default)
     {
         var roleId = await GetRoleIdAsync("Student", ct);
-        if (roleId is null) return [];
+        if (roleId is null) return new PagedResultDto<UserDto>
+        {
+            Items = [],
+            TotalCount = 0,
+            PageNumber = page,
+            PageSize = pageSize
+        };
 
-        var users = await UsersInRole(roleId)
+        var query = UsersInRole(roleId)
             .Where(u => u.CourseId == null)
-            .OrderBy(u => u.Email)
-            .ToListAsync(ct);
+            .OrderBy(u => u.Email);
 
-        return users.Select(MapToDto);
+        return await ToPagedResultAsync(query, page, pageSize, ct);
     }
 
-    public async Task<IEnumerable<StudentBasicDto>> GetTeachersAsync(CancellationToken ct = default)
+    public async Task<PagedResultDto<UserDto>> GetTeachersAsync(
+        int page, int pageSize, CancellationToken ct = default)
     {
         var roleId = await GetRoleIdAsync("Teacher", ct);
-        if (roleId is null) return [];
+        if (roleId is null) return new PagedResultDto<UserDto>
+        {
+            Items = [],
+            TotalCount = 0,
+            PageNumber = page,
+            PageSize = pageSize
+        };
 
-        return await UsersInRole(roleId)
-            .OrderBy(u => u.Email)
-            .Select(u => new StudentBasicDto
-            {
-                Id = u.Id,
-                UserName = u.UserName ?? string.Empty,
-                Email = u.Email ?? string.Empty,
-                CourseId = null,
-                CourseName = null
-            })
-            .ToListAsync(ct);
+        var query = UsersInRole(roleId)
+            .OrderBy(u => u.Email);
+
+        return await ToPagedResultAsync(query, page, pageSize, ct);
     }
 
-    // ── commands ──────────────────────────────────────────────────────────────
-
+    // commands
     public async Task EnrollUserInCourseAsync(string userId, int courseId, CancellationToken ct = default)
     {
         var user = await _userManager.FindByIdAsync(userId)

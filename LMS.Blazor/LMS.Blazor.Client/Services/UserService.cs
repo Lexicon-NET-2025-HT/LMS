@@ -1,4 +1,5 @@
-﻿using LMS.Shared.DTOs.User;
+﻿using LMS.Shared.DTOs.Common;
+using LMS.Shared.DTOs.User;
 
 namespace LMS.Blazor.Client.Services;
 
@@ -7,17 +8,17 @@ public class UserService(IApiService apiService) : IUserService
     private readonly IApiService _apiService = apiService;
     private const string Base = "api/users";
 
-    public Task<List<StudentBasicDto>?> GetAllUsersAsync(CancellationToken ct = default)
-        => _apiService.GetAsync<List<StudentBasicDto>>(Base, ct);
+    public Task<PagedResultDto<UserDto>?> GetAllUsersAsync(int page = 1, int pageSize = 100, CancellationToken ct = default)
+        => _apiService.GetAsync<PagedResultDto<UserDto>>($"{Base}?page={page}&pageSize={pageSize}", ct);
 
-    public Task<List<StudentBasicDto>?> GetUsersWithoutCourseAsync(CancellationToken ct = default)
-        => _apiService.GetAsync<List<StudentBasicDto>>($"{Base}/without-course", ct);
+    public Task<PagedResultDto<UserDto>?> GetUsersWithoutCourseAsync(int page = 1, int pageSize = 100, CancellationToken ct = default)
+        => _apiService.GetAsync<PagedResultDto<UserDto>>($"{Base}/without-course?page={page}&pageSize={pageSize}", ct);
 
     public Task<List<StudentDto>?> GetUsersByCourseAsync(int courseId, CancellationToken ct = default)
         => _apiService.GetAsync<List<StudentDto>>($"{Base}/course/{courseId}", ct);
 
-    public Task<List<StudentBasicDto>?> GetTeachersAsync(CancellationToken ct = default)
-        => _apiService.GetAsync<List<StudentBasicDto>>($"{Base}/teachers", ct);
+    public Task<PagedResultDto<UserDto>?> GetTeachersAsync(int page = 1, int pageSize = 100, CancellationToken ct = default)
+        => _apiService.GetAsync<PagedResultDto<UserDto>>($"{Base}/teachers?page={page}&pageSize={pageSize}", ct);
 
     public async Task<bool> EnrollUserInCourseAsync(string userId, int courseId, CancellationToken ct = default)
     {
