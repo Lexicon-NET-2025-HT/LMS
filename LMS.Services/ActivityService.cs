@@ -10,7 +10,7 @@ using Service.Contracts;
 namespace LMS.Services
 {
     /// <summary>
-    /// Activity service implementation - TODO: Replace with real database operations
+    /// Activity service implementation
     /// </summary>
     public class ActivityService(
         IUnitOfWork unitOfWork,

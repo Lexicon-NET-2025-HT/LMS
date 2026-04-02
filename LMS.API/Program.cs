@@ -16,8 +16,10 @@ public class Program
         builder.Services.ConfigureSql(builder.Configuration);
         builder.Services.ConfigureControllers();
 
+        builder.Services.RegisterLazy();
         builder.Services.AddRepositories();
         builder.Services.AddServiceLayer();
+
 
         builder.Services.ConfigureAuthentication(builder.Configuration);
         builder.Services.ConfigureIdentity();

@@ -8,7 +8,9 @@ namespace LMS.Infractructure.Repositories;
 
 public class CourseRepository : RepositoryBase<Course>, ICourseRepository
 {
-    public CourseRepository(ApplicationDbContext context) : base(context) { }
+    public CourseRepository(ApplicationDbContext context) : base(context)
+    {
+    }
 
     public async Task<(IEnumerable<Course> Courses, int TotalCount)> GetAllCoursesAsync(
         int page, int pageSize, bool trackChanges = false)
