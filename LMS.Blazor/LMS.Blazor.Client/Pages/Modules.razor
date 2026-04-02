@@ -118,6 +118,7 @@
                 }
             }
 
+            // 2. Fetch the course and its details (modules)
             course = await CourseService.GetCourseByIdAsync(targetCourseId);
             var detail = await CourseService.GetCourseDetailByIdAsync(targetCourseId);
 
@@ -164,12 +165,14 @@
 
     private void OpenEditDialog(ModuleDto m) { isEditing = true; editingModule = m with { }; isDialogOpen = true; }
 
+    // Persists module changes (Create or Update) to the database via API
     private async Task SaveModule()
     {
         try
         {
             if (isEditing)
             {
+                // Update implementation
                 var updateDto = new UpdateModuleDto
                 {
                     Name = editingModule.Name,
@@ -182,6 +185,7 @@
             }
             else
             {
+                // Create implementation
                 var createDto = new CreateModuleDto
                 {
                     CourseId = editingModule.CourseId,
@@ -195,7 +199,7 @@
             }
 
             isDialogOpen = false;
-            await LoadModulesAsync();
+            await LoadModulesAsync(); // Refresh list to reflect changes
         }
         catch (Exception ex)
         {
