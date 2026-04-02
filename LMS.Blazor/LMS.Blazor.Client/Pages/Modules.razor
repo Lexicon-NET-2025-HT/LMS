@@ -6,6 +6,7 @@
 @using LMS.Shared.DTOs.Course
 @using LMS.Blazor.Client.Helpers
 @inject LMS.Blazor.Client.Services.ICourseService CourseService
+@inject LMS.Blazor.Client.Services.IModuleService ModuleService
 @inject LMS.Blazor.Client.Services.IApiService ApiService
 
 <div class="py-5" style="margin: 0 !important; margin-left: -1.5rem !important; max-width: none !important; padding-left: 0 !important;">
@@ -136,7 +137,20 @@
 
     private void ToggleRole() => isTeacher = !isTeacher;
     private void CycleGradient(int id) => gradientIndex[id] = (gradientIndex.GetValueOrDefault(id, id % ModuleStyles.Gradients.Length) + 1) % ModuleStyles.Gradients.Length;
-    private void DeleteModule(int id) => modules.RemoveAll(m => m.Id == id);
+    
+    private async Task DeleteModule(int id)
+    {
+        try
+        {
+            await ModuleService.DeleteModuleAsync(id);
+            await LoadModulesAsync();
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Failed to delete module: {ex.Message}";
+        }
+    }
+
     private void ViewActivities(int id) { /* NavigationManager.NavigateTo(...) */ }
     private bool IsActive(ModuleDto m) => m.StartDate <= DateTime.Now && (!m.EndDate.HasValue || m.EndDate >= DateTime.Now);
 
@@ -149,11 +163,43 @@
 
     private void OpenEditDialog(ModuleDto m) { isEditing = true; editingModule = m with { }; isDialogOpen = true; }
 
-    private void SaveModule()
+    private async Task SaveModule()
     {
-        if (isEditing) { var i = modules.FindIndex(m => m.Id == editingModule.Id); if (i != -1) modules[i] = editingModule; }
-        else { editingModule.Id = modules.Any() ? modules.Max(m => m.Id) + 1 : 1; modules.Add(editingModule); }
-        isDialogOpen = false;
+        try
+        {
+            if (isEditing)
+            {
+                var updateDto = new UpdateModuleDto
+                {
+                    Name = editingModule.Name,
+                    Description = editingModule.Description,
+                    StartDate = editingModule.StartDate,
+                    EndDate = editingModule.EndDate ?? editingModule.StartDate.AddDays(7),
+                    Icon = editingModule.Icon
+                };
+                await ModuleService.UpdateModuleAsync(editingModule.Id, updateDto);
+            }
+            else
+            {
+                var createDto = new CreateModuleDto
+                {
+                    CourseId = editingModule.CourseId,
+                    Name = editingModule.Name,
+                    Description = editingModule.Description,
+                    StartDate = editingModule.StartDate,
+                    EndDate = editingModule.EndDate ?? editingModule.StartDate.AddDays(7),
+                    Icon = editingModule.Icon
+                };
+                await ModuleService.CreateModuleAsync(createDto);
+            }
+
+            isDialogOpen = false;
+            await LoadModulesAsync();
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Failed to save module: {ex.Message}";
+        }
     }
 
 }
