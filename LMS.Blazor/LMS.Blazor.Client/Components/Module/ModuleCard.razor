@@ -1,4 +1,4 @@
-﻿@using LMS.Shared.DTOs.Module
+@using LMS.Shared.DTOs.Module
 @using BlazorBlueprint.Icons.Lucide.Components
 @using BlazorBlueprint.Icons.Lucide.Data
 
@@ -7,7 +7,7 @@
 
         <div style="height:120px;background:@Gradient;display:flex;align-items:center;
             justify-content:center;position:relative;">
-            <LucideIcon Name="@GetIcon(Module.Name)" Size="48" Style="color:rgba(255,255,255,0.85);" />
+            <LucideIcon Name="@(string.IsNullOrEmpty(Module.Icon) ? GetIcon(Module.Name) : Module.Icon)" Size="48" Style="color:rgba(255,255,255,0.85);" />
 
             <div style="position:absolute;top:12px;right:12px;">
                 <BbBadge Variant="@Status.Variant">@Status.Label</BbBadge>

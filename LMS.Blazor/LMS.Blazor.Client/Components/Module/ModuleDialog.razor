@@ -1,4 +1,7 @@
-﻿@using LMS.Shared.DTOs.Module
+@using LMS.Shared.DTOs.Module
+@using BlazorBlueprint.Icons.Lucide.Components
+@using BlazorBlueprint.Icons.Lucide.Data
+@using BlazorBlueprint.Icons.Lucide
 
 <BbDialog @bind-Open="Open">
     <BbDialogContent>
@@ -18,6 +21,21 @@
                 <label class="form-label fw-medium" style="font-size:0.85rem;">Description</label>
                 <BbTextarea @bind-Value="Module.Description"
                             Placeholder="Brief overview of what this module covers..." Rows="3" />
+            </div>
+
+            <div>
+                <label class="form-label fw-medium mb-2" style="font-size:0.85rem;">Module Icon</label>
+                <div class="d-flex flex-wrap gap-2 p-3 border rounded-3 bg-light" style="max-height: 160px; overflow-y: auto;">
+                    @foreach (var icon in availableIcons)
+                    {
+                        <BbButton Variant="@(Module.Icon == icon ? ButtonVariant.Default : ButtonVariant.Ghost)"
+                                  Size="ButtonSize.Small"
+                                  Style="width:50px;height:50px;padding:0;display:flex;align-items:center;justify-content:center;"
+                                  OnClick="@(() => Module.Icon = icon)">
+                            <LucideIcon Name="@icon" Size="24" />
+                        </BbButton>
+                    }
+                </div>
             </div>
             <div class="row g-2">
                 <div class="col-6">
@@ -48,4 +66,21 @@
     [Parameter] public bool IsEditing { get; set; }
     [Parameter, EditorRequired] public ModuleDto Module { get; set; } = default!;
     [Parameter] public EventCallback OnSave { get; set; }
+
+    private string[] availableIcons = [
+        "book-open", "graduation-cap", "school", "library", "pencil", 
+        "book", "clipboard-check", "calculator", "microscope", "flask-round", 
+        "test-tube", "music-2", "palette", "languages", "brain", 
+        "lightbulb", "presentation", "ruler", "shapes", "trophy", 
+        "medal", "landmark", "microchip", "binary", "rocket", 
+        "database", "layers", "shield", "flask-conical", "plug", 
+        "code", "layout", "terminal", "cpu", "globe", 
+        "server", "file-text", "users", "video", "calendar", 
+        "clock", "award", "briefcase", "camera", "cog", 
+        "command", "compass", "edit", "eye", "gift", 
+        "hard-drive", "hash", "image", "inbox", "link", 
+        "mail", "map", "music", "phone", "play", 
+        "search", "settings", "smartphone", "star", "tag", 
+        "thumbs-up", "trash", "user", "zap"
+    ];
 }
