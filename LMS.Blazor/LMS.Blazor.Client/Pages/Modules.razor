@@ -64,6 +64,7 @@
 
                 <ModuleDialog @bind-Open="isDialogOpen"
                               IsEditing="isEditing"
+                              CourseStartDate="course?.StartDate"
                               Module="editingModule"
                               OnSave="SaveModule" />
             }
