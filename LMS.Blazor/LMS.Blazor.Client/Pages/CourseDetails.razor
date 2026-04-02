@@ -262,7 +262,7 @@
                                 <option value="">-- pick a student --</option>
                                 @foreach (var s in availableStudents.Where(s => !students.Any(e => e.Id == s.Id)))
                                 {
-                                    <option value="@s.Id">@s.UserName (@s.Email)</option>
+                                    <option value="@s.Id">@s.Name (@s.Email)</option>
                                 }
                             </select>
                         </div>
@@ -297,7 +297,7 @@
                             @foreach (var student in students)
                             {
                                 <tr>
-                                    <td>@student.UserName</td>
+                                    <td>@student.Name</td>
                                     <td>@student.Email</td>
                                     <td class="text-end">
                                         <button class="btn btn-sm btn-outline-danger"
@@ -454,10 +454,10 @@
             // TODO: replace with real GET /api/users?role=Student when ready
             availableStudents =
             [
-                new() { Id = "mock-1", UserName = "alice@test.com", Email = "alice@test.com" },
-                new() { Id = "mock-2", UserName = "bob@test.com", Email = "bob@test.com" },
-                new() { Id = "mock-3", UserName = "charlie@test.com", Email = "charlie@test.com" },
-                new() { Id = "mock-4", UserName = "diana@test.com", Email = "diana@test.com" },
+                new() { Id = "mock-1", Name = "alice@test.com", Email = "alice@test.com" },
+                new() { Id = "mock-2", Name = "bob@test.com", Email = "bob@test.com" },
+                new() { Id = "mock-3", Name = "charlie@test.com", Email = "charlie@test.com" },
+                new() { Id = "mock-4", Name = "diana@test.com", Email = "diana@test.com" },
             ];
         }
         catch (Exception ex)
@@ -564,7 +564,7 @@
 
         // TODO: replace with real PUT /api/courses/{id}/enroll when ready
         students.Add(student with { CourseId = CourseId, CourseName = course?.Name });
-        successMessage = $"{student.UserName} enrolled (locally).";
+        successMessage = $"{student.Name} enrolled (locally).";
         selectedStudentId = string.Empty;
         showEnrollStudent = false;
     }

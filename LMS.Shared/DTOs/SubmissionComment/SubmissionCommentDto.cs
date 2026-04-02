@@ -1,12 +1,10 @@
 ﻿namespace LMS.Shared.DTOs.SubmissionComment;
 
-public class SubmissionCommentDto
+public record SubmissionCommentDto : SubmissionCommentBaseDto
 {
-    public int Id { get; set; }
-    public int SubmissionId { get; set; }
-    public string AuthorId { get; set; } = string.Empty;
-    public string AuthorName { get; set; } = string.Empty;
-    public string Text { get; set; } = string.Empty;
-    public DateTime CreatedAt { get; set; }
+    public int Id { get; init; }
+    public string AuthorId { get; init; } = string.Empty;
+    public string AuthorName { get; init; } = string.Empty;
+    public DateTime CreatedAt { get; init; }
 
 }

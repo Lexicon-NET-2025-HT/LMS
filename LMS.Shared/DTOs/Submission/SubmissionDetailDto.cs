@@ -8,6 +8,6 @@ namespace LMS.Shared.DTOs.Submission;
 /// </summary>
 public record SubmissionDetailDto : SubmissionDto
 {
-    public List<SubmissionCommentDto> Comments { get; set; } = [];
+    public List<SubmissionCommentDto> Comments { get; init; } = [];
 
 }
