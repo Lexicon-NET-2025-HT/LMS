@@ -1,4 +1,4 @@
-﻿namespace LMS.Shared.DTOs.Module
+namespace LMS.Shared.DTOs.Module
 {
     /// <summary>
     /// Represents a module with basic information and computed activity count.
@@ -17,6 +17,7 @@
         /// Total number of activities in this module.
         /// Computed by counting ACTIVITY records with matching ModuleId.
         /// </summary>
+        public string? Icon { get; set; }
         public int ActivityCount { get; set; }
     }
 }
