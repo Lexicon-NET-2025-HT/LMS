@@ -64,6 +64,8 @@
     private string? successMessage;
     private string? loadError;
 
+    private int moduleId = 1; // Static, change dynamically based on module
+
     // Pagination state
     private int currentPage = 1;
     private int pageSize = 10;
@@ -81,10 +83,10 @@
 
         try
         {
-            var result = await ActivityService.GetAllActivitiesAsync(
-                currentPage, 
-                pageSize, 
-                1
+            var result = await ActivityService.GetAllActivitiesByModuleAsync(
+                moduleId: moduleId,
+                page: currentPage,
+                pageSize: pageSize
             );
 
             if (result is not null)
