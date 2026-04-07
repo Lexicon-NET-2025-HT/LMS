@@ -4,7 +4,6 @@ using LMS.Presentation;
 using LMS.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Options;
 using Microsoft.OpenApi;
 using Swashbuckle.AspNetCore.Filters;
 
@@ -110,6 +109,10 @@ public static class ServiceExtensions
         // Submission Service
         services.AddScoped<ISubmissionService, SubmissionService>();
         services.AddScoped(provider => new Lazy<ISubmissionService>(() => provider.GetRequiredService<ISubmissionService>()));
+
+        // User Service
+        services.AddScoped<IUserService, UserService>();
+        services.AddScoped(provider => new Lazy<IUserService>(() => provider.GetRequiredService<IUserService>()));
 
         services.AddScoped<IStudentCourseService, StudentCourseService>();
     }

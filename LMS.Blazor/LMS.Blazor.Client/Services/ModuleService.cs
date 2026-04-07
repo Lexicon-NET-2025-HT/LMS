@@ -23,7 +23,7 @@ public class ModuleService : IModuleService
         {
             var url = $"{Base}?page={page}&pageSize={pageSize}";
             if (courseId.HasValue) url += $"&courseId={courseId.Value}";
-            
+
             return await _apiService.GetAsync<PagedResultDto<ModuleDto>>(url, ct);
         }
         catch (Exception ex)
@@ -38,7 +38,7 @@ public class ModuleService : IModuleService
         try
         {
             return await _apiService.GetAsync<ModuleDto>($"{Base}/{id}", ct);
-        }
+    }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error fetching module {ModuleId}.", id);
