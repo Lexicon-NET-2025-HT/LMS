@@ -28,5 +28,8 @@ namespace LMS.Shared.DTOs.Submission
         /// </summary>
         public required bool IsLate { get; set; }
         public int CommentCount { get; set; }
+        // Should be deleted and replaced with Submission Comments.....
+        public string? FeedbackText { get; set; }
+        public DateTime? FeedbackGivenAt { get; set; }
     }
 }
