@@ -37,4 +37,16 @@ public class ActivityService : IActivityService
     {
         await _apiService.DeleteAsync($"{Base}/{id}", ct);
     }
+
+    public async Task<PagedResultDto<ActivityDto>> GetAllActivitiesByModuleAsync(
+        int moduleId,
+        int page = 1, 
+        int pageSize = 10, 
+        CancellationToken ct = default)
+    {
+        var pagedResult = await apiService.GetAsync<PagedResultDto<ActivityDto>>(
+            $"{Base}?page={page}&pageSize={pageSize}&moduleId={moduleId}", ct);
+
+        return pagedResult!;
+    }
 }

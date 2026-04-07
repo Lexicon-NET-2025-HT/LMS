@@ -7,6 +7,8 @@
         <BbTableRow TData="ActivityDto">
             <BbTableHeaderCell TData="ActivityDto">Name</BbTableHeaderCell>
             <BbTableHeaderCell TData="ActivityDto">Description</BbTableHeaderCell>
+            <BbTableHeaderCell TData="ActivityDto">Start</BbTableHeaderCell>
+            <BbTableHeaderCell TData="ActivityDto">End</BbTableHeaderCell>
         </BbTableRow>
     </BbTableHeader>
     <BbTableBody>
@@ -15,6 +17,8 @@
             <BbTableRow TData="ActivityDto">
                 <BbTableCell> @activity.Name </BbTableCell>
                 <BbTableCell> @activity.Description </BbTableCell>
+                <BbTableCell> @activity.StartTime </BbTableCell>
+                <BbTableCell> @activity.EndTime </BbTableCell>
             </BbTableRow>
         }
     </BbTableBody>
