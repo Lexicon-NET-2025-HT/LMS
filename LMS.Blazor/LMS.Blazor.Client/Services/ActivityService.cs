@@ -15,7 +15,7 @@ public class ActivityService : IActivityService
 
     public Task<PagedResultDto<ActivityDto>?> GetAllActivitiesAsync(
         int page = 1, 
-        int pageSize = 10, 
+        int pageSize = 10,
         int? moduleId = null,
         CancellationToken ct = default)
     {
