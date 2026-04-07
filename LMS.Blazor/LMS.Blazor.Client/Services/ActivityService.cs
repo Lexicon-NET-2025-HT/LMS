@@ -44,7 +44,7 @@ public class ActivityService : IActivityService
         int pageSize = 10, 
         CancellationToken ct = default)
     {
-        var pagedResult = await apiService.GetAsync<PagedResultDto<ActivityDto>>(
+        var pagedResult = await _apiService.GetAsync<PagedResultDto<ActivityDto>>(
             $"{Base}?page={page}&pageSize={pageSize}&moduleId={moduleId}", ct);
 
         return pagedResult!;

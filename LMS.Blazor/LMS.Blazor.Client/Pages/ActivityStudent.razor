@@ -1,4 +1,4 @@
-﻿@page "/student/activities"
+﻿@page "/modules/{id:int}"
 @using BlazorBlueprint.Components
 @using LMS.Blazor.Client.Components
 @using LMS.Shared.DTOs.Activity
@@ -64,7 +64,7 @@
     private string? successMessage;
     private string? loadError;
 
-    private int moduleId = 1; // Static, change dynamically based on module
+    [Parameter] public int id { get; set; }
 
     // Pagination state
     private int currentPage = 1;
@@ -83,10 +83,10 @@
 
         try
         {
-            var result = await ActivityService.GetAllActivitiesByModuleAsync(
-                moduleId: moduleId,
+            var result = await ActivityService.GetAllActivitiesAsync(
                 page: currentPage,
-                pageSize: pageSize
+                pageSize: pageSize,
+                moduleId: id
             );
 
             if (result is not null)

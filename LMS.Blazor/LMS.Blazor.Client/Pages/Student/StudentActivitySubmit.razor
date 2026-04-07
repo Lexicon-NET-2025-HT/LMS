@@ -139,7 +139,6 @@
                                         <i class="bi bi-file-earmark-text fs-4 text-muted flex-shrink-0"></i>
                                         <div class="overflow-hidden">
                                             <div class="fw-semibold small text-truncate">@doc.DisplayName</div>
-                                            <div class="text-muted small">@doc.FileName</div>
                                         </div>
                                     </div>
                                 </li>
@@ -189,7 +188,6 @@
                             <i class="bi bi-file-earmark-text fs-4 text-muted"></i>
                             <div>
                                 <div class="fw-semibold small">@existingSubmission.Document.DisplayName</div>
-                                <div class="text-muted small">@existingSubmission.Document.FileName</div>
                             </div>
                         </div>
                     }
@@ -434,7 +432,7 @@
                     StudentName = "You",
                     ActivityId = ActivityId,
                     ActivityName = activity!.Name,
-                    Body = submissionTab == SubmissionTab.Text ? submissionBody : null,
+                    Body = submissionTab == SubmissionTab.Text ? submissionBody : string.Empty,
                     SubmittedAt = DateTime.Now,
                     IsLate = isOverdue,
                     FeedbackText = null,
