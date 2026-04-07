@@ -36,6 +36,8 @@ public class DocumentService(
     /// <returns>A paged result containing accessible documents.</returns>
     public async Task<PagedResultDto<DocumentDto>> GetDocumentsAsync(string userId, int page, int pageSize, DocumentQueryDto dto)
     {
+        // TODO: don't use UserService in this service, instead create UserRepository for
+        // getting GetUserWithRelationsAsync
         var user = await userService.GetUserWithRelationsAsync(userId) ??
             throw new UnauthorizedAccessException($"User by id {userId} does not exist");
 
