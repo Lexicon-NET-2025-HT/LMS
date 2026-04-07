@@ -8,12 +8,22 @@ namespace LMS.Infractructure.Repositories;
 
 public class ActivityRepository(ApplicationDbContext context) : RepositoryBase<Activity>(context), IActivityRepository
 {
-    public async Task<Activity?> FindByIdWithDetailAsync(int? id)
+    public async Task<Activity?> GetActivityWithDetailAsync(int? id)
     {
         return await DbSet
             .Include(a => a.Documents)
             .Include(a => a.Submissions)
             .FirstAsync(a => a.Id == id);
+    }
+
+    public async Task<Activity?> GetActivityWithRelationsAsync(int id, bool trackChanges = false)
+    {
+        return await FindByCondition(a => a.Id == id, trackChanges)
+            .Include(a => a.Module)
+                .ThenInclude(m => m.Course)
+            .Include(a => a.Documents)
+            .Include(a => a.Submissions)
+            .FirstOrDefaultAsync();
     }
 
     public async Task<(IEnumerable<Activity> activities, int totalCount)> GetAllActivitiesAsync(
@@ -23,4 +33,5 @@ public class ActivityRepository(ApplicationDbContext context) : RepositoryBase<A
 
         return await query.PagedResult(page, pageSize);
     }
+
 }

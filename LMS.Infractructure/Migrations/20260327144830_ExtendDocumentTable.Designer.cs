@@ -4,6 +4,7 @@ using LMS.Infractructure.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace LMS.Infractructure.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260327144830_ExtendDocumentTable")]
+    partial class ExtendDocumentTable
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -297,6 +300,14 @@ namespace LMS.Infractructure.Migrations
                         .HasMaxLength(5000)
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<DateTime>("FeedbackGivenAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("FeedbackText")
+                        .IsRequired()
+                        .HasMaxLength(5000)
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<bool>("IsLate")
                         .HasColumnType("bit");
 
@@ -314,38 +325,6 @@ namespace LMS.Infractructure.Migrations
                     b.HasIndex("StudentId");
 
                     b.ToTable("Submissions");
-                });
-
-            modelBuilder.Entity("Domain.Models.Entities.SubmissionComment", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("AuthorId")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(450)");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<int>("SubmissionId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("Text")
-                        .IsRequired()
-                        .HasMaxLength(5000)
-                        .HasColumnType("nvarchar(max)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("AuthorId");
-
-                    b.HasIndex("SubmissionId");
-
-                    b.ToTable("SubmissionComment");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRole", b =>
@@ -590,25 +569,6 @@ namespace LMS.Infractructure.Migrations
                     b.Navigation("Student");
                 });
 
-            modelBuilder.Entity("Domain.Models.Entities.SubmissionComment", b =>
-                {
-                    b.HasOne("Domain.Models.Entities.ApplicationUser", "Author")
-                        .WithMany("SubmissionComments")
-                        .HasForeignKey("AuthorId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("Domain.Models.Entities.Submission", "Submission")
-                        .WithMany("Comments")
-                        .HasForeignKey("SubmissionId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Author");
-
-                    b.Navigation("Submission");
-                });
-
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>
                 {
                     b.HasOne("Microsoft.AspNetCore.Identity.IdentityRole", null)
@@ -669,8 +629,6 @@ namespace LMS.Infractructure.Migrations
 
             modelBuilder.Entity("Domain.Models.Entities.ApplicationUser", b =>
                 {
-                    b.Navigation("SubmissionComments");
-
                     b.Navigation("Submissions");
 
                     b.Navigation("TeachingCourses");
@@ -698,8 +656,6 @@ namespace LMS.Infractructure.Migrations
 
             modelBuilder.Entity("Domain.Models.Entities.Submission", b =>
                 {
-                    b.Navigation("Comments");
-
                     b.Navigation("Document");
                 });
 #pragma warning restore 612, 618

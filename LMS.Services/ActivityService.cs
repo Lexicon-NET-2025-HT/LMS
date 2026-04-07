@@ -48,7 +48,7 @@ namespace LMS.Services
 
         public async Task<ActivityDetailDto?> GetActivityDetailByIdAsync(int id)
         {
-            var activity = await _unitOfWork.Activities.FindByIdWithDetailAsync(id) ??
+            var activity = await _unitOfWork.Activities.GetActivityWithDetailAsync(id) ??
                 throw new NotFoundException($"Activity by id: '{id}', does not exist");
 
             Console.WriteLine("TESTTTTT");

@@ -1,4 +1,4 @@
-namespace Domain.Models.Exceptions;
+﻿namespace Domain.Models.Exceptions;
 
 public class ForbiddenException : DomainException
 {

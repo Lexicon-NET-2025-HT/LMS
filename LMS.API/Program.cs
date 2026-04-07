@@ -26,11 +26,13 @@ public class Program
         builder.Services.AddScoped<IDocumentRepository, DocumentRepository>();
         builder.Services.AddScoped<ISubmissionRepository, SubmissionRepository>();
 
+        builder.Services.AddFileStorage(builder.Environment);
+
         builder.Services.ConfigureAuthentication(builder.Configuration);
         builder.Services.ConfigureIdentity();
 
         builder.Services.AddHostedService<DataSeedHostingService>();
-        builder.Services.AddAutoMapper(cfg => cfg.AddProfile<MapperProfile>());
+        builder.Services.AddAutoMapper(cfg => { }, typeof(MapperProfile));
         builder.Services.ConfigureCors();
         builder.Services.ConfigureSwagger();
 
@@ -55,6 +57,8 @@ public class Program
 
         app.UseAuthentication();
         app.UseAuthorization();
+
+        app.UseDocumentFileStorage();
 
         app.MapControllers();
 
