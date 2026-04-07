@@ -18,6 +18,7 @@ public class DocumentService(
     IUnitOfWork unitOfWork,
     IMapper mapper,
     IFileStorage fileStorage,
+    IUserService userService,
     UserManager<ApplicationUser> userManager) : IDocumentService
 {
     private readonly UserManager<ApplicationUser> _userManager = userManager;
@@ -35,7 +36,7 @@ public class DocumentService(
     /// <returns>A paged result containing accessible documents.</returns>
     public async Task<PagedResultDto<DocumentDto>> GetDocumentsAsync(string userId, int page, int pageSize, DocumentQueryDto dto)
     {
-        var user = await _userManager.FindByIdAsync(userId) ??
+        var user = await userService.GetUserWithRelationsAsync(userId) ??
             throw new UnauthorizedAccessException($"User by id {userId} does not exist");
 
         var isTeacher = await _userManager.IsInRoleAsync(user, "Teacher");
