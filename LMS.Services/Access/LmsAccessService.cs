@@ -27,12 +27,17 @@ public class LmsAccessService : ILmsAccessService
     /// </summary>
     public async Task EnsureTeacherForCourseAsync(string userId, Course course, CancellationToken ct = default)
     {
+        await EnsureTeacherForCourseAsync(userId, course.Id, ct);
+    }
+
+    public async Task EnsureTeacherForCourseAsync(string userId, int courseId, CancellationToken ct = default)
+    {
         var access = await userAccessContextFactory.CreateAsync(userId, ct);
 
         if (access.IsAdmin)
             return;
 
-        if (access.IsTeacher && access.TeachingCourseIds.Contains(course.Id))
+        if (access.IsTeacher && access.TeachingCourseIds.Contains(courseId))
             return;
 
         throw new ForbiddenException("You do not have teacher access to this course.");
@@ -43,8 +48,12 @@ public class LmsAccessService : ILmsAccessService
     /// </summary>
     public async Task EnsureCanAccessCourseAsync(string userId, Course course, CancellationToken ct = default)
     {
+        await EnsureCanAccessCourseAsync(userId, course.Id, ct);
+    }
+    public async Task EnsureCanAccessCourseAsync(string userId, int courseId, CancellationToken ct = default)
+    {
         var access = await userAccessContextFactory.CreateAsync(userId, ct);
-        EnsureCanAccessCourse(access, course);
+        EnsureCanAccessCourse(access, courseId);
     }
 
     /// <summary>
@@ -235,7 +244,11 @@ public class LmsAccessService : ILmsAccessService
 
     private void EnsureCanAccessCourse(IUserAccessContext access, Course course)
     {
-        if (access.HasCourseAccess(course.Id))
+        EnsureCanAccessCourse(access, course.Id);
+    }
+    private void EnsureCanAccessCourse(IUserAccessContext access, int courseId)
+    {
+        if (access.HasCourseAccess(courseId))
             return;
 
         throw new ForbiddenException("You do not have access to this course.");

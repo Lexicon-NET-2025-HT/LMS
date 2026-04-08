@@ -11,6 +11,7 @@ public interface ILmsAccessService
     /// Ensures that the user has teacher-level access to the specified course.
     /// </summary>
     Task EnsureTeacherForCourseAsync(string userId, Course course, CancellationToken ct = default);
+    Task EnsureTeacherForCourseAsync(string userId, int courseId, CancellationToken ct = default);
 
     /// <summary>
     /// Ensures that the user may access the specified document.
@@ -23,6 +24,7 @@ public interface ILmsAccessService
     /// Ensures that the user may access the specified course.
     /// </summary>
     Task EnsureCanAccessCourseAsync(string userId, Course course, CancellationToken ct = default);
+    Task EnsureCanAccessCourseAsync(string userId, int courseId, CancellationToken ct = default);
 
 
     /// <summary>
