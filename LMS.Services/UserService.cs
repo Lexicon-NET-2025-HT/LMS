@@ -200,4 +200,52 @@ public class UserService : IUserService
             throw new InvalidOperationException(
                 string.Join(", ", result.Errors.Select(e => e.Description)));
     }
+
+    public async Task<UserDto> UpdateUserAsync(string userId, UpdateUserDto dto, CancellationToken ct = default)
+    {
+        var user = await _userManager.FindByIdAsync(userId)
+            ?? throw new KeyNotFoundException($"User '{userId}' was not found.");
+
+        // Role change
+        if (!string.IsNullOrWhiteSpace(dto.Role))
+        {
+            var currentRoles = await _userManager.GetRolesAsync(user);
+            if (!currentRoles.Contains(dto.Role))
+            {
+                var removeResult = await _userManager.RemoveFromRolesAsync(user, currentRoles);
+                if (!removeResult.Succeeded)
+                    throw new InvalidOperationException(
+                        string.Join(", ", removeResult.Errors.Select(e => e.Description)));
+
+                var addResult = await _userManager.AddToRoleAsync(user, dto.Role);
+                if (!addResult.Succeeded)
+                    throw new InvalidOperationException(
+                        string.Join(", ", addResult.Errors.Select(e => e.Description)));
+            }
+        }
+
+        // Course assignment
+        if (dto.CourseId is not null)
+        {
+            var courseExists = await _db.Courses.AnyAsync(c => c.Id == dto.CourseId, ct);
+            if (!courseExists)
+                throw new KeyNotFoundException($"Course '{dto.CourseId}' was not found.");
+
+            user.CourseId = dto.CourseId;
+        }
+        else
+        {
+            user.CourseId = null;
+        }
+
+        var updateResult = await _userManager.UpdateAsync(user);
+        if (!updateResult.Succeeded)
+            throw new InvalidOperationException(
+                string.Join(", ", updateResult.Errors.Select(e => e.Description)));
+
+        // reload with course name
+        await _db.Entry(user).Reference(u => u.Course).LoadAsync(ct);
+
+        return await MapToUserDtoAsync(user);
+    }
 }

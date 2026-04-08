@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using LMS.Shared.DTOs.User;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Service.Contracts;
 using Swashbuckle.AspNetCore.Annotations;
@@ -122,5 +123,23 @@ public class UsersController : ControllerBase
         }
         catch (InvalidOperationException ex) { return BadRequest(ex.Message); }
         catch (KeyNotFoundException ex) { return NotFound(ex.Message); }
+    }
+
+    // PUT api/users/{id}
+    [HttpPut("{id}")]
+    [SwaggerOperation(Summary = "Update user role and course assignment")]
+    [SwaggerResponse(200, "Updated successfully")]
+    [SwaggerResponse(404, "User or course not found")]
+    [SwaggerResponse(400, "Update failed")]
+    public async Task<IActionResult> UpdateUser(
+        string id, [FromBody] UpdateUserDto dto, CancellationToken cancellationToken)
+    {
+        try
+        {
+            var result = await _serviceManager.UserService.UpdateUserAsync(id, dto, cancellationToken);
+            return Ok(result);
+        }
+        catch (KeyNotFoundException ex) { return NotFound(ex.Message); }
+        catch (InvalidOperationException ex) { return BadRequest(ex.Message); }
     }
 }
