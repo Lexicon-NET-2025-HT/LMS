@@ -75,7 +75,7 @@ public class DocumentService(
     /// <exception cref="NotFoundException">
     /// Thrown if the document does not exist or the user is not authorized to access it.
     /// </exception>
-    public async Task<DocumentDto?> GetDocumentByIdAsync(int id, string userId)
+    public async Task<DocumentDto> GetDocumentByIdAsync(int id, string userId)
     {
         var document = await _unitOfWork.Documents.GetDocumentWithAccessRelationsAsync(id, false)
             ?? throw new NotFoundException($"Document with id {id} does not exist");

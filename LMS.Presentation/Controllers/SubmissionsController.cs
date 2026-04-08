@@ -46,9 +46,6 @@ public class SubmissionsController : ControllerBase
     public async Task<IActionResult> GetSubmissionById(int id)
     {
         var submission = await serviceManager.SubmissionService.GetSubmissionByIdAsync(id);
-        if (submission == null)
-            return NotFound(new { message = "Submission not found" });
-
         return Ok(submission);
     }
 
@@ -62,9 +59,6 @@ public class SubmissionsController : ControllerBase
     public async Task<IActionResult> GetSubmissionDetailsById(int id)
     {
         var submission = await serviceManager.SubmissionService.GetSubmissionDetailByIdAsync(id);
-        if (submission == null)
-            return NotFound(new { message = "Submission not found" });
-
         return Ok(submission);
     }
 

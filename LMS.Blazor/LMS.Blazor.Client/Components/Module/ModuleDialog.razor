@@ -60,8 +60,8 @@
                 </div>
                 <div class="col-6">
                     <label class="form-label fw-medium" style="font-size:0.85rem;">End Date</label>
-                    <BbInput Value="@(Module.EndDate?.ToString("yyyy-MM-dd") ?? "")"
-                             ValueChanged="@((string v) => { Module.EndDate = string.IsNullOrEmpty(v) ? null : DateTime.Parse(v); validationError = null; })"
+                    <BbInput Value="@(Module.EndDate.ToString("yyyy-MM-dd") ?? "")"
+                             ValueChanged="@((string v) => { Module.EndDate = string.IsNullOrEmpty(v) ? Module.StartDate : DateTime.Parse(v); validationError = null; })"
                              Style="width:100%;" />
                 </div>
             </div>
@@ -96,7 +96,7 @@
             return;
         }
 
-        if (Module.EndDate.HasValue && Module.EndDate.Value <= Module.StartDate)
+        if (Module.EndDate <= Module.StartDate)
         {
             validationError = "End date must be greater than start date.";
             return;
