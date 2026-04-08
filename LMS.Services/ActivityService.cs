@@ -1,18 +1,16 @@
 ﻿using AutoMapper;
 using Domain.Contracts.Repositories;
 using Domain.Models.Entities;
-using Domain.Models.Enums;
 using Domain.Models.Exceptions;
 using LMS.Shared.DTOs.Activity;
 using LMS.Shared.DTOs.Common;
 using Microsoft.AspNetCore.Identity;
-using Microsoft.EntityFrameworkCore.Storage;
 using Service.Contracts;
 
 namespace LMS.Services
 {
     /// <summary>
-    /// Activity service implementation - TODO: Replace with real database operations
+    /// Activity service implementation
     /// </summary>
     public class ActivityService(
         IUnitOfWork unitOfWork,
@@ -36,7 +34,7 @@ namespace LMS.Services
             };
         }
 
-        public async Task<ActivityDto?> GetActivityByIdAsync(int id)
+        public async Task<ActivityDto> GetActivityByIdAsync(int id)
         {
             var activity = await _unitOfWork.Activities.FindByIdAsync(id) ??
                 throw new NotFoundException($"Activity by id: '{id}', does not exist");
@@ -46,7 +44,7 @@ namespace LMS.Services
             return activityDto;
         }
 
-        public async Task<ActivityDetailDto?> GetActivityDetailByIdAsync(int id)
+        public async Task<ActivityDetailDto> GetActivityDetailByIdAsync(int id)
         {
             var activity = await _unitOfWork.Activities.GetActivityWithDetailAsync(id) ??
                 throw new NotFoundException($"Activity by id: '{id}', does not exist");

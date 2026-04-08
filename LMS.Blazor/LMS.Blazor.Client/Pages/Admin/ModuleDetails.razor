@@ -86,7 +86,7 @@
                     </div>
                     <div class="col-md-3 col-6">
                         <p class="text-muted mb-1 small">End Date</p>
-                        <p class="mb-0">@(module.EndDate?.ToString("yyyy-MM-dd") ?? "—")</p>
+                        <p class="mb-0">@module.EndDate.ToString("yyyy-MM-dd")</p>
                     </div>
                 </div>
             </div>
@@ -300,6 +300,9 @@
                                             {
                                                 <div class="text-muted small text-truncate" style="max-width:200px;">@doc.Description</div>
                                             }
+                                        </td>
+                                        <td class="d-none d-md-table-cell text-muted small">
+                                            <i class="bi bi-file-earmark me-1"></i>@doc.DisplayName
                                         </td>
                                         <td class="d-none d-sm-table-cell text-muted small">
                                             @doc.UploadedAt.ToString("yyyy-MM-dd")

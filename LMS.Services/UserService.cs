@@ -95,6 +95,15 @@ public class UserService : IUserService
         return user is null ? null : await MapToUserDtoAsync(user);
     }
 
+    public async Task<ApplicationUser?> GetUserWithRelationsAsync(string userId, CancellationToken ct = default)
+    {
+        return await _db.Users
+            .Include(u => u.TeachingCourses)
+            .Include(u => u.UploadedDocuments)
+            .Include(u => u.Course)
+            .FirstOrDefaultAsync(u => u.Id == userId, ct);
+    }
+
     public async Task<IEnumerable<StudentDto>> GetUsersByCourseAsync(
         int courseId, CancellationToken ct = default)
     {

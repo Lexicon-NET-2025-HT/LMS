@@ -3,11 +3,11 @@ using Domain.Models.Entities;
 using LMS.Shared.DTOs.Activity;
 using LMS.Shared.DTOs.AuthDtos;
 using LMS.Shared.DTOs.Course;
-using LMS.Shared.DTOs.Module;
-using LMS.Shared.DTOs.User;
 using LMS.Shared.DTOs.Document;
+using LMS.Shared.DTOs.Module;
 using LMS.Shared.DTOs.Submission;
 using LMS.Shared.DTOs.SubmissionComment;
+using LMS.Shared.DTOs.User;
 
 namespace LMS.Infractructure.Data;
 
@@ -18,25 +18,14 @@ public class MapperProfile : Profile
         // user mappings
         CreateMap<UserRegistrationDto, ApplicationUser>();
 
-        // User mappings
-        CreateMap<ApplicationUser, UserBasicDto>()
-            .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.Id))
-            .ForMember(dest => dest.UserName, opt => opt.MapFrom(src => src.UserName))
-            .ForMember(dest => dest.Email, opt => opt.MapFrom(src => src.Email));
+        CreateMap<ApplicationUser, UserBasicDto>();
 
         CreateMap<ApplicationUser, StudentBasicDto>()
             .IncludeBase<ApplicationUser, UserBasicDto>()
-            .ForMember(dest => dest.CourseId, opt => opt.MapFrom(src => src.CourseId))
             .ForMember(dest => dest.CourseName, opt => opt.MapFrom(src => src.Course != null ? src.Course.Name : null));
 
         CreateMap<ApplicationUser, UserDto>()
-            .ForMember(dest => dest.CourseId, opt => opt.MapFrom(src => src.CourseId))
             .ForMember(dest => dest.CourseName, opt => opt.MapFrom(src => src.Course != null ? src.Course.Name : null));
-
-        // Module mapping
-        CreateMap<Module, ModuleDto>()
-            .ForMember(dest => dest.CourseName, opt => opt.MapFrom(src => src.Course != null ? src.Course.Name : string.Empty))
-            .ForMember(dest => dest.ActivityCount, opt => opt.MapFrom(src => src.Activities.Count));
 
         // Course mappings
         CreateMap<Course, CourseDto>()
@@ -46,25 +35,16 @@ public class MapperProfile : Profile
                 src.CourseTeachers.Select(ct => ct.TeacherId).ToList()));
 
         CreateMap<Course, CourseDetailDto>()
-            .IncludeBase<Course, CourseDto>()
-            .ForMember(dest => dest.Students, opt => opt.MapFrom(src =>
-                src.Students.Select(s => new StudentBasicDto
-                {
-                    Id = s.Id,
-                    UserName = s.UserName ?? string.Empty,
-                    Email = s.Email ?? string.Empty,
-                    CourseId = src.Id,
-                    CourseName = src.Name
-                }).ToList()))
-            .ForMember(dest => dest.Modules, opt => opt.MapFrom(src => src.Modules));
+            .IncludeBase<Course, CourseDto>();
 
         CreateMap<CreateCourseDto, Course>();
 
         CreateMap<UpdateCourseDto, Course>()
             .ForAllMembers(opt => opt.Condition((src, dest, srcMember) => srcMember != null));
 
-        // module mappings
+        // Module mapping
         CreateMap<Module, ModuleDto>()
+            .ForMember(dest => dest.CourseName, opt => opt.MapFrom(src => src.Course != null ? src.Course.Name : string.Empty))
             .ForMember(dest => dest.ActivityCount, opt => opt.MapFrom(src => src.Activities.Count));
 
         CreateMap<Module, ModuleDetailDto>();
@@ -119,8 +99,7 @@ public class MapperProfile : Profile
             .ForMember(dest => dest.ActivityName, opt => opt.MapFrom(src => src.Activity.Name));
 
         CreateMap<Submission, SubmissionDetailDto>()
-            .ForMember(dest => dest.StudentName, opt => opt.MapFrom(src => src.Student.UserName))
-            .ForMember(dest => dest.ActivityName, opt => opt.MapFrom(src => src.Activity.Name));
+            .IncludeBase<Submission, SubmissionDto>();
 
         CreateMap<CreateSubmissionDto, Submission>()
             .ForMember(dest => dest.StudentId, opt => opt.Ignore())
@@ -128,8 +107,7 @@ public class MapperProfile : Profile
             .ForMember(dest => dest.IsLate, opt => opt.Ignore());
 
         CreateMap<SubmissionComment, SubmissionCommentDto>()
-            .ForMember(dest => dest.AuthorName,
-                opt => opt.MapFrom(src => src.Author.UserName));
+            .ForMember(dest => dest.AuthorName, opt => opt.MapFrom(src => src.Author.UserName));
 
     }
 }

@@ -2,10 +2,8 @@ namespace LMS.Shared.DTOs.User;
 
 public record UpdateUserDto
 {
-    public required string Id { get; set; }
-    public string? Name { get; set; }
-    public string? Email { get; set; }
-    public string? Role { get; set; }
-    public int? CourseId { get; set; }
-    // public string? CourseName { get; set; }
+    public string? Name { get; init; }
+    public string? Email { get; init; }
+    public string? Role { get; init; }
+    public int? CourseId { get; init; }
 }

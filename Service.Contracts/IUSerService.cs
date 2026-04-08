@@ -1,4 +1,5 @@
-﻿using LMS.Shared.DTOs.Common;
+﻿using Domain.Models.Entities;
+using LMS.Shared.DTOs.Common;
 using LMS.Shared.DTOs.User;
 
 namespace Service.Contracts;
@@ -13,4 +14,5 @@ public interface IUserService
     Task EnrollUserInCourseAsync(string userId, int courseId, CancellationToken ct = default);
     Task RemoveUserFromCourseAsync(string userId, CancellationToken ct = default);
     Task DeleteUserAsync(string currentUserId, string targetUserId, CancellationToken ct = default);
+    Task<ApplicationUser?> GetUserWithRelationsAsync(string userId, CancellationToken ct = default);
 }

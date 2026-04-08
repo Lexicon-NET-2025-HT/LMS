@@ -203,7 +203,7 @@
                                         </span>
                                     </td>
                                     <td class="d-none d-sm-table-cell text-muted small">@module.StartDate.ToString("yyyy-MM-dd")</td>
-                                    <td class="d-none d-sm-table-cell text-muted small">@(module.EndDate?.ToString("yyyy-MM-dd") ?? "—")</td>
+                                    <td class="d-none d-sm-table-cell text-muted small">@module.EndDate.ToString("yyyy-MM-dd")</td>
                                     <td class="text-center">
                                         <span class="badge bg-secondary">@module.ActivityCount</span>
                                     </td>
@@ -417,7 +417,7 @@
             Name = module.Name,
             Description = module.Description,
             StartDate = module.StartDate,
-            EndDate = module.EndDate ?? module.StartDate.AddDays(14)
+            EndDate = module.EndDate
         };
         formErrors = new();
         showForm = true;
