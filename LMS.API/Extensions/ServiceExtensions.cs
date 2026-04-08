@@ -3,6 +3,7 @@ using LMS.Infractructure.Data;
 using LMS.Infractructure.Repositories;
 using LMS.Presentation;
 using LMS.Services;
+using LMS.Services.Access;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi;
@@ -114,5 +115,7 @@ public static class ServiceExtensions
 
         services.AddScoped<ILmsAccessService, LmsAccessService>();
         services.AddScoped<ILmsRelationResolver, LmsRelationResolver>();
+        services.AddScoped<IUserAccessContext, UserAccessContext>();
+        services.AddScoped<IUserAccessContextFactory, UserAccessContextFactory>();
     }
 }

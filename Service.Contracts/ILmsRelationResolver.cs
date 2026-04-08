@@ -13,4 +13,10 @@ public interface ILmsRelationResolver
     Course ResolveCourse(Activity activity);
     Course ResolveCourse(Submission submission);
     Course ResolveCourse(Document document);
+    Task<Course> ResolveCourseForDocumentTargetAsync(
+        int? courseId,
+        int? moduleId,
+        int? activityId,
+        int? submissionId,
+        CancellationToken ct = default);
 }

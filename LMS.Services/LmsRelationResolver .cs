@@ -154,4 +154,46 @@ public class LmsRelationResolver : ILmsRelationResolver
         throw new InvalidOperationException(
             $"{nameof(Document)} with id {document.Id} is not linked to a {nameof(Course)}, {nameof(Module)}, {nameof(Activity)}, or {nameof(Submission)}.");
     }
+
+    public async Task<Course> ResolveCourseForDocumentTargetAsync(
+        int? courseId,
+        int? moduleId,
+        int? activityId,
+        int? submissionId,
+        CancellationToken ct = default)
+    {
+        if (courseId is not null)
+        {
+            return await _unitOfWork.Courses.GetCourseAsync(courseId.Value)
+                ?? throw new NotFoundException($"Course with id {courseId.Value} was not found.");
+        }
+
+        if (moduleId is not null)
+        {
+            var module = await _unitOfWork.Modules.GetModuleAsync(moduleId.Value)
+                ?? throw new NotFoundException($"Module with id {moduleId.Value} was not found.");
+
+            return ResolveCourse(module);
+        }
+
+        if (activityId is not null)
+        {
+            var activity = await _unitOfWork.Activities.GetActivityWithRelationsAsync(activityId.Value)
+                ?? throw new NotFoundException($"Activity with id {activityId.Value} was not found.");
+
+            return ResolveCourse(activity);
+        }
+
+        if (submissionId is not null)
+        {
+            var submission = await _unitOfWork.Submissions.GetSubmissionWithRelationsAsync(submissionId.Value)
+                ?? throw new NotFoundException($"Submission with id {submissionId.Value} was not found.");
+
+            return ResolveCourse(submission);
+        }
+
+        throw new BadRequestException(
+            "Document must belong to a course, module, activity, or submission.");
+    }
+
 }
