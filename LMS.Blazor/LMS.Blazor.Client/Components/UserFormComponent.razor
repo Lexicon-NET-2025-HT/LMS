@@ -155,14 +155,13 @@
                 // PUT api/users/{id} — role + course only
                 var updateDto = new UpdateUserDto
                 {
-                    Id = User!.Id,
                     Role = model.Role,
-                    Name = model.Name,
+                    Name = model.UserName,
                     Email = model.Email,
                     CourseId = model.CourseId
                 };
 
-                var updated = await ApiService.PutAsync<UserDto>($"api/users/{User.Id}", updateDto);
+                var updated = await ApiService.PutAsync<UserDto>($"api/users/{User!.Id}", updateDto);
                 if (updated is not null)
                     await OnSubmit.InvokeAsync(updated);
                 else

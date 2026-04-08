@@ -238,6 +238,24 @@ public class UserService : IUserService
             user.CourseId = null;
         }
 
+        // Name update
+        if (!string.IsNullOrWhiteSpace(dto.Name))
+        {
+            var setNameResult = await _userManager.SetUserNameAsync(user, dto.Name);
+            if (!setNameResult.Succeeded)
+                throw new InvalidOperationException(
+                    string.Join(", ", setNameResult.Errors.Select(e => e.Description)));
+        }
+
+        // Email update
+        if (!string.IsNullOrWhiteSpace(dto.Email))
+        {
+            var setEmailResult = await _userManager.SetEmailAsync(user, dto.Email);
+            if (!setEmailResult.Succeeded)
+                throw new InvalidOperationException(
+                    string.Join(", ", setEmailResult.Errors.Select(e => e.Description)));
+        }
+
         var updateResult = await _userManager.UpdateAsync(user);
         if (!updateResult.Succeeded)
             throw new InvalidOperationException(
