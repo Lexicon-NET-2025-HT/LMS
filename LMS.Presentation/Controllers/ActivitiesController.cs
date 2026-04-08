@@ -42,9 +42,6 @@ public class ActivitiesController : ControllerBase
     public async Task<IActionResult> GetActivityById(int id)
     {
         var activity = await serviceManager.ActivityService.GetActivityByIdAsync(id);
-        if (activity == null)
-            return NotFound(new { message = "Activity not found" });
-
         return Ok(activity);
     }
 
@@ -58,9 +55,6 @@ public class ActivitiesController : ControllerBase
     public async Task<IActionResult> GetActivityDetail(int id)
     {
         var activity = await serviceManager.ActivityService.GetActivityDetailByIdAsync(id);
-        if (activity == null)
-            return NotFound(new { message = "Activity not found" });
-
         return Ok(activity);
     }
 

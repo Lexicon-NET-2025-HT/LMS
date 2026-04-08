@@ -82,7 +82,7 @@
     private bool isLoading = true;
     private string? errorMessage;
 
-    private ModuleDto editingModule = new() { Id = 0, Name = "", Description = "", CourseId = 0, CourseName = "", StartDate = DateTime.Now };
+    private ModuleDto editingModule = new() { Id = 0, Name = "", Description = "", CourseId = 0, CourseName = "", StartDate = DateTime.Now, EndDate = DateTime.Now.AddDays(14) };
 
     private List<ModuleDto> modules = [];
 
@@ -154,12 +154,12 @@
     }
 
     private void ViewActivities(int id) { /* NavigationManager.NavigateTo(...) */ }
-    private bool IsActive(ModuleDto m) => m.StartDate <= DateTime.Now && (!m.EndDate.HasValue || m.EndDate >= DateTime.Now);
+    private bool IsActive(ModuleDto m) => m.StartDate <= DateTime.Now && m.EndDate >= DateTime.Now;
 
     private void OpenCreateDialog()
     {
         isEditing = false;
-        editingModule = new() { Id = 0, Name = "", Description = "", CourseId = course?.Id ?? CourseId ?? 0, CourseName = course?.Name ?? "", StartDate = DateTime.Now };
+        editingModule = new() { Id = 0, Name = "", Description = "", CourseId = course?.Id ?? CourseId ?? 0, CourseName = course?.Name ?? "", StartDate = DateTime.Now, EndDate = DateTime.Now.AddDays(14) };
         isDialogOpen = true;
     }
 
@@ -178,7 +178,7 @@
                     Name = editingModule.Name,
                     Description = editingModule.Description,
                     StartDate = editingModule.StartDate,
-                    EndDate = editingModule.EndDate ?? editingModule.StartDate.AddDays(7),
+                    EndDate = editingModule.EndDate,
                     Icon = editingModule.Icon
                 };
                 await ModuleService.UpdateModuleAsync(editingModule.Id, updateDto);
@@ -192,7 +192,7 @@
                     Name = editingModule.Name,
                     Description = editingModule.Description,
                     StartDate = editingModule.StartDate,
-                    EndDate = editingModule.EndDate ?? editingModule.StartDate.AddDays(7),
+                    EndDate = editingModule.EndDate,
                     Icon = editingModule.Icon
                 };
                 await ModuleService.CreateModuleAsync(createDto);

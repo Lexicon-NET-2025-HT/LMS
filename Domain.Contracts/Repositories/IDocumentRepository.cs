@@ -1,4 +1,5 @@
 using Domain.Models.Entities;
+using LMS.Shared.DTOs.Document;
 
 namespace Domain.Contracts.Repositories;
 

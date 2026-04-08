@@ -33,15 +33,17 @@ namespace LMS.Services
             };
         }
 
-        public async Task<ModuleDto?> GetModuleByIdAsync(int id)
+        public async Task<ModuleDto> GetModuleByIdAsync(int id)
         {
-            var module = await unitOfWork.Modules.GetModuleAsync(id);
+            var module = await unitOfWork.Modules.GetModuleAsync(id)
+                ?? throw new NotFoundException($"Module with id {id} not found");
             return mapper.Map<ModuleDto>(module);
         }
 
-        public async Task<ModuleDetailDto?> GetModuleDetailByIdAsync(int id)
+        public async Task<ModuleDetailDto> GetModuleDetailByIdAsync(int id)
         {
-            var module = await unitOfWork.Modules.GetModuleAsync(id);
+            var module = await unitOfWork.Modules.GetModuleAsync(id)
+                ?? throw new NotFoundException($"Module with id {id} not found");
             return mapper.Map<ModuleDetailDto>(module);
         }
 
