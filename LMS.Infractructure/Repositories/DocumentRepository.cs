@@ -2,6 +2,7 @@
 using Domain.Models.Entities;
 using LMS.Infractructure.Data;
 using LMS.Infractructure.Extensions;
+using LMS.Shared.DTOs.Document;
 using Microsoft.EntityFrameworkCore;
 using System.Data;
 

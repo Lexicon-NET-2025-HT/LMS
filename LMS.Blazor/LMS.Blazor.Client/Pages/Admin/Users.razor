@@ -250,7 +250,7 @@
         TabKey.ByCourse => byCourse.Select(u => new UserDto
         {
             Id = u.Id,
-            Name = u.UserName,
+            Name = u.Name,
             Email = u.Email,
             Role = "Student",
             CourseId = u.CourseId,
@@ -348,7 +348,7 @@
             byCourse = raw.Select(s => new StudentBasicDto
             {
                 Id = s.Id,
-                UserName = s.Name,
+                Name = s.Name,
                 Email = s.Email,
                 CourseId = selectedCourseId,
                 CourseName = courseName

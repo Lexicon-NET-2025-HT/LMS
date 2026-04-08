@@ -109,7 +109,8 @@
                 {
                     <div class="d-flex gap-2 flex-wrap align-items-center">
                         <span class="text-muted small">
-                            @submissions.Count(s => s.FeedbackText is not null) / @submissions.Count reviewed
+                            @* TODO: implement new submission comments *@
+                            @* @submissions.Count(s => s.FeedbackText is not null) / @submissions.Count reviewed *@
                         </span>
                         <span class="badge bg-danger">
                             @submissions.Count(s => s.IsLate) Late
@@ -177,7 +178,8 @@
                                             }
                                         </td>
                                         <td>
-                                            @if (sub.FeedbackText is not null)
+                                            @* TODO: implement new submission comments *@
+                                            @* @if (sub.FeedbackText is not null)
                                             {
                                                 <span class="badge bg-success">
                                                     <i class="bi bi-check-lg me-1"></i>Given
@@ -186,7 +188,7 @@
                                             else
                                             {
                                                 <span class="badge bg-warning text-dark">Pending</span>
-                                            }
+                                            } *@
                                         </td>
                                         <td class="text-end text-nowrap">
                                             <button class="btn btn-sm @(expandedSubmissionId == sub.Id ? "btn-primary" : "btn-outline-primary")"
@@ -229,8 +231,9 @@
 
                                                         @* Feedback form *@
                                                         <div class="col-md-6">
-                                                            <p class="small fw-semibold text-muted mb-1">
-                                                                @(sub.FeedbackText is not null ? "Feedback (already given)" : "Give Feedback")
+                                                            @* TODO: implement new submission comments *@
+                                                            @* <p class="small fw-semibold text-muted mb-1">
+                                                                @(sub.feedbacktext is not null ? "feedback (already given)" : "give feedback")
                                                             </p>
 
                                                             @if (sub.FeedbackText is not null)
@@ -262,7 +265,7 @@
                                                                     }
                                                                     Submit Feedback
                                                                 </button>
-                                                            }
+                                                            } *@
                                                         </div>
                                                     </div>
                                                 </div>
@@ -482,17 +485,18 @@
             // TODO: wire ISubmissionService to client and call SubmitFeedbackAsync
             // For now we update the local list optimistically
             var sub = submissions.FirstOrDefault(s => s.Id == submissionId);
-            if (sub is not null)
-            {
-                var idx = submissions.IndexOf(sub);
-                submissions[idx] = sub with
-                {
-                    FeedbackText    = draft,
-                    FeedbackGivenAt = DateTime.Now
-                };
-                feedbackDrafts[submissionId] = string.Empty;
-                successMessage = $"Feedback submitted for {sub.StudentName}.";
-            }
+            // TODO: implement new submission comments
+            // if (sub is not null)
+            // {
+            //     var idx = submissions.IndexOf(sub);
+            //     submissions[idx] = sub with
+            //     {
+            //         FeedbackText    = draft,
+            //         FeedbackGivenAt = DateTime.Now
+            //     };
+            //     feedbackDrafts[submissionId] = string.Empty;
+            //     successMessage = $"Feedback submitted for {sub.StudentName}.";
+            // }
 
             await Task.CompletedTask;
         }

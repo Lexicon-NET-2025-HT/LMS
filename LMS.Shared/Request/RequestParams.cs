@@ -13,9 +13,9 @@ public abstract class RequestParams
 
 }
 
-public class UsersRequestParams : RequestParams {}
+public class UsersRequestParams : RequestParams { }
 
-public class CoursesRequestParams : RequestParams {}
+public class CoursesRequestParams : RequestParams { }
 
 public class ActivitiesRequestParams : RequestParams
 {

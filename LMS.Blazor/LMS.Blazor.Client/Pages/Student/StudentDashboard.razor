@@ -139,7 +139,7 @@
                             {
                                 var isActive = module.StartDate <= DateTime.Now &&
                                                (module.EndDate == null || module.EndDate >= DateTime.Now);
-                                var isPast   = module.EndDate.HasValue && module.EndDate < DateTime.Now;
+                                var isPast   = module.EndDate < DateTime.Now;
 
                                 <div class="border-bottom">
                                     @* Module header row *@
@@ -164,10 +164,7 @@
                                             </div>
                                             <div class="text-muted small mt-1">
                                                 @module.StartDate.ToString("yyyy-MM-dd")
-                                                @if (module.EndDate.HasValue)
-                                                {
-                                                    <span> → @module.EndDate.Value.ToString("yyyy-MM-dd")</span>
-                                                }
+                                                <span> → @module.EndDate.ToString("yyyy-MM-dd")</span>
                                                 <span class="ms-2">
                                                     <i class="bi bi-lightning me-1"></i>@module.ActivityCount activities
                                                 </span>

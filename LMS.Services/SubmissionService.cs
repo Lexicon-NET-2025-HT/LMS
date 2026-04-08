@@ -1,6 +1,7 @@
 ﻿using AutoMapper;
 using Domain.Contracts.Repositories;
 using Domain.Models.Entities;
+using Domain.Models.Exceptions;
 using LMS.Shared.DTOs.Common;
 using LMS.Shared.DTOs.Submission;
 using Service.Contracts;
@@ -35,14 +36,17 @@ public class SubmissionService : ISubmissionService
         };
     }
 
-    public async Task<SubmissionDto?> GetSubmissionByIdAsync(int id)
+    public async Task<SubmissionDto> GetSubmissionByIdAsync(int id)
     {
-        var submission = await unitOfWork.Submissions.GetSubmissionAsync(id);
+        var submission = await unitOfWork.Submissions.GetSubmissionAsync(id)
+            ?? throw new NotFoundException($"Submission with id {id} was not found.");
+
         return mapper.Map<SubmissionDto>(submission);
     }
-    public async Task<SubmissionDetailDto?> GetSubmissionDetailByIdAsync(int id)
+    public async Task<SubmissionDetailDto> GetSubmissionDetailByIdAsync(int id)
     {
-        var submission = await unitOfWork.Submissions.GetSubmissionAsync(id);
+        var submission = await unitOfWork.Submissions.GetSubmissionAsync(id)
+            ?? throw new NotFoundException($"Submission with id {id} was not found.");
         return mapper.Map<SubmissionDetailDto>(submission);
     }
 

@@ -1,4 +1,6 @@
-﻿public record DocumentQueryDto
+﻿namespace LMS.Shared.DTOs.Document;
+
+public record DocumentQueryDto
 {
     public int? CourseId { get; init; }
     public int? ModuleId { get; init; }
