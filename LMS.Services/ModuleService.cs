@@ -1,4 +1,4 @@
-﻿using AutoMapper;
+using AutoMapper;
 using Domain.Contracts.Repositories;
 using Domain.Models.Entities;
 using Domain.Models.Exceptions;
@@ -109,6 +109,7 @@ namespace LMS.Services
             module.Description = dto.Description;
             module.StartDate = dto.StartDate;
             module.EndDate = dto.EndDate;
+            module.Icon = dto.Icon;
 
             await ThrowIfNotValidModule(module);
 
@@ -128,6 +129,10 @@ namespace LMS.Services
             }
             module.StartDate = dto.StartDate ?? module.StartDate;
             module.EndDate = dto.EndDate ?? module.EndDate;
+            if (dto.Icon is not null)
+            {
+                module.Icon = dto.Icon;
+            }
 
             await ThrowIfNotValidModule(module.CourseId, module.Id, module.StartDate, module.EndDate, module.Name);
 

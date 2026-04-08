@@ -1,4 +1,4 @@
-﻿namespace LMS.Shared.DTOs.Module;
+namespace LMS.Shared.DTOs.Module;
 
 /// <summary>
 /// Data transfer object for partially updating an existing module.
@@ -10,4 +10,5 @@ public record PatchModuleDto
     public string? Description { get; init; }
     public DateTime? StartDate { get; init; }
     public DateTime? EndDate { get; init; }
+    public string? Icon { get; init; }
 }

@@ -1,4 +1,5 @@
 ﻿using LMS.Shared.DTOs.Module;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Service.Contracts;
@@ -8,6 +9,7 @@ namespace LMS.Presentation.Controllers;
 
 [Route("api/modules")]
 [ApiController]
+[Authorize]
 public class ModulesController : ControllerBase
 {
     private readonly IServiceManager serviceManager;
@@ -68,6 +70,7 @@ public class ModulesController : ControllerBase
     [SwaggerResponse(StatusCodes.Status201Created, "Module created successfully")]
     [SwaggerResponse(StatusCodes.Status404NotFound, "Course not found")]
     [SwaggerResponse(StatusCodes.Status400BadRequest, "Invalid input")]
+    [Authorize(Roles = "Teacher")]
     public async Task<IActionResult> CreateModule([FromBody] CreateModuleDto dto)
     {
         // TODO: Validate user access
@@ -83,6 +86,7 @@ public class ModulesController : ControllerBase
     [SwaggerResponse(StatusCodes.Status204NoContent, "Module updated successfully")]
     [SwaggerResponse(StatusCodes.Status400BadRequest, "Bad request")]
     [SwaggerResponse(StatusCodes.Status404NotFound, "Module not found")]
+    [Authorize(Roles = "Teacher")]
     public async Task<IActionResult> UpdateModule(int id, [FromBody] UpdateModuleDto dto)
     {
         // TODO: Validate user access
@@ -98,6 +102,7 @@ public class ModulesController : ControllerBase
     [SwaggerResponse(StatusCodes.Status204NoContent, "Module updated successfully")]
     [SwaggerResponse(StatusCodes.Status400BadRequest, "Bad request")]
     [SwaggerResponse(StatusCodes.Status404NotFound, "Module not found")]
+    [Authorize(Roles = "Teacher")]
     public async Task<IActionResult> PatchModule(int id, [FromBody] PatchModuleDto dto)
     {
         // TODO: Validate user access
@@ -112,6 +117,7 @@ public class ModulesController : ControllerBase
     )]
     [SwaggerResponse(StatusCodes.Status200OK, "Module deleted successfully")]
     [SwaggerResponse(StatusCodes.Status404NotFound, "Module not found")]
+    [Authorize(Roles = "Teacher")]
     public async Task<IActionResult> DeleteModule(int id)
     {
         // TODO: Validate user access

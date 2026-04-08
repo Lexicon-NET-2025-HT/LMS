@@ -64,9 +64,16 @@ public class MapperProfile : Profile
                 src.ModuleId != null ? nameof(Module) :
                 src.ActivityId != null ? nameof(Activity) :
                 src.SubmissionId != null ? nameof(Submission) :
-                "Unknown"));
+                "Unknown"))
+            .ForMember(dest => dest.FileUrl, opt => opt.MapFrom(src => $"/api/documents/{src.Id}/file"))
+            .ForMember(dest => dest.UploadedByUserName, opt => opt.MapFrom(src => src.UploadedByUser!.UserName));
 
-        CreateMap<CreateDocumentDto, Document>();
+        CreateMap<CreateDocumentDto, Document>()
+            .ForMember(dest => dest.DisplayName, opt => opt.MapFrom(src => src.File.FileName))
+            .ForMember(dest => dest.StoredFileName, opt => opt.Ignore())
+            .ForMember(dest => dest.FileSize, opt => opt.Ignore())
+            .ForMember(dest => dest.UploadedAt, opt => opt.Ignore())
+            .ForMember(dest => dest.UploadedByUser, opt => opt.Ignore());
 
         // Activity mappings
         CreateMap<CreateActivityDto, Activity>();

@@ -105,6 +105,11 @@ public static class ServiceExtensions
         services.AddScoped<IActivityService, ActivityService>();
         services.AddScoped<IDocumentService, DocumentService>();
         services.AddScoped<ISubmissionService, SubmissionService>();
+
+        // User Service
+        services.AddScoped<IUserService, UserService>();
+        services.AddScoped(provider => new Lazy<IUserService>(() => provider.GetRequiredService<IUserService>()));
+
         services.AddScoped<IStudentCourseService, StudentCourseService>();
     }
 }

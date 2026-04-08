@@ -35,4 +35,17 @@ public class SubmissionRepository(ApplicationDbContext context) : RepositoryBase
                 .ThenInclude(c => c.Author)
             .FirstOrDefaultAsync();
     }
+
+    public async Task<Submission?> GetSubmissionWithRelationsAsync(int id, bool trackChanges = false)
+    {
+        return await FindByCondition(m => m.Id == id, trackChanges)
+            .Include(s => s.Student)
+            .Include(s => s.Activity)
+                .ThenInclude(a => a.Module)
+                    .ThenInclude(m => m.Course)
+            .Include(s => s.Document)
+            .Include(s => s.Comments)
+                .ThenInclude(c => c.Author)
+            .FirstOrDefaultAsync();
+    }
 }

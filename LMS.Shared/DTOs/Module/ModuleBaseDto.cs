@@ -7,9 +7,10 @@
 public record ModuleBaseDto
 {
     public required int CourseId { get; init; }
-    public required string Name { get; init; }
-    public required string Description { get; init; } = string.Empty;
-    public required DateTime StartDate { get; init; }
-    public required DateTime EndDate { get; init; }
+    public required string Name { get; set; }
+    public required string Description { get; set; } = string.Empty;
+    public required DateTime StartDate { get; set; }
+    public required DateTime EndDate { get; set; }
+    public string? Icon { get; set; }
 
 }

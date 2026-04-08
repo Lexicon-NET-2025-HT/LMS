@@ -21,7 +21,7 @@
                 <div class="nav-section">
                     <div class="nav-section-title">Account</div>
 
-                    <div class="nav-item px-3">
+                    <div class="nav-item">
                         <NavLink class="nav-link" href="/Account/Login">
                             <span class="bi bi-box-arrow-in-right-nav-menu" aria-hidden="true"></span>
                             Login
@@ -31,7 +31,7 @@
                     
 
         
-                    <div class="nav-item px-3">
+                    <div class="nav-item">
                         <NavLink class="nav-link" href="/Account/Register">
                             <span class="bi bi-person-plus-nav-menu" aria-hidden="true"></span>
                             Register
@@ -45,55 +45,55 @@
             <Authorized>
                 <div class="nav-section">
                     <div class="nav-section-title">teacher</div>
-      
-                    <div class="nav-item px-3">
-                        <NavLink class="nav-link" href="/admin/courses">
-                            <span class="bi bi-book-nav-menu" aria-hidden="true"></span>
-                            Courses
-                        </NavLink>
-                    </div>
-                    <div class="nav-item px-3">
-                        <NavLink class="nav-link" href="modules">
-                            <span class="bi bi-house-door-fill-nav-menu" aria-hidden="true"></span> Modules
-                        </NavLink>
-                    </div>
 
-                    @* <div class="nav-item px-3">
+                    <div class="nav-item">
                         <NavLink class="nav-link" href="/admin">
                             <span class="bi bi-grid-nav-menu" aria-hidden="true"></span>
                             Dashboard
                         </NavLink>
                     </div>
+                    
+                    <div class="nav-item ">
+                        <NavLink class="nav-link" href="/admin/courses">
+                            <span class="bi bi-book-nav-menu" aria-hidden="true"></span>
+                            Courses
+                        </NavLink>
+                    </div>
+                    <div class="nav-item ">
+                        <NavLink class="nav-link" href="modules">
+                            <span class="bi bi-house-door-fill-nav-menu" aria-hidden="true"></span> Modules
+                        </NavLink>
+                    </div>
 
-                    <div class="nav-item px-3">
+                    <div class="nav-item">
                         <NavLink class="nav-link" href="/admin/modules">
                             <span class="bi bi-folder-nav-menu" aria-hidden="true"></span>
                             Modules
                         </NavLink>
                     </div>
 
-                    <div class="nav-item px-3">
+                    <div class="nav-item ">
                         <NavLink class="nav-link" href="/admin/activities">
                             <span class="bi bi-calendar-nav-menu" aria-hidden="true"></span>
                             Activities
                         </NavLink>
                     </div>
 
-                    <div class="nav-item px-3">
+                    <div class="nav-item ">
                         <NavLink class="nav-link" href="/admin/documents">
                             <span class="bi bi-file-earmark-nav-menu" aria-hidden="true"></span>
                             Documents
                         </NavLink>
-                    </div> *@
+                    </div>
                     
-                    <div class="nav-item px-3">
+                    <div class="nav-item ">
                         <NavLink class="nav-link" href="/admin/students">
                             <span class="bi bi-people-nav-menu" aria-hidden="true"></span>
                             Students
                         </NavLink>
                     </div>
 
-                    <div class="nav-item px-3">
+                    <div class="nav-item ">
                         <NavLink class="nav-link" href="/admin/users">
                             <span class="bi bi-people-nav-menu" aria-hidden="true"></span>
                             Users
@@ -104,11 +104,21 @@
                 <div class="nav-section">
                     <div class="nav-section-title">Account</div>
 
-                    <div class="nav-item px-3">
-                        <NavLink class="nav-link" href="/Account/Logout">
-                            <span class="bi bi-arrow-bar-left-nav-menu" aria-hidden="true"></span>
-                            Logout
+                    <div class="nav-item">
+                        <NavLink class="nav-link" href="Account/Manage">
+                            <span class="bi bi-person-nav-menu" aria-hidden="true"></span>
+                            Profile
                         </NavLink>
+                    </div>
+
+                    <div class="nav-item">
+                        <form action="Account/Logout" method="post">
+                            <AntiforgeryToken />
+                            <input type="hidden" name="ReturnUrl" value="@currentUrl" />
+                            <button type="submit" class="nav-link">
+                                <span class="bi bi-arrow-bar-left-nav-menu" aria-hidden="true"></span> Logout
+                            </button>
+                        </form>
                     </div>
                 </div>
             </Authorized>
@@ -119,30 +129,28 @@
                 <div class="nav-section">
                     <div class="nav-section-title">Student</div>
 
-                    <div class="nav-item px-3">
-                        <NavLink class="nav-link" href="/student">
+                    <div class="nav-item ">
+                                    <NavLink class="nav-link" href="/student/dashboard">
                             <span class="bi bi-grid-nav-menu" aria-hidden="true"></span>
                             Dashboard
                         </NavLink>
                     </div>
 
-                    
-
-                    <div class="nav-item px-3">
+                    <div class="nav-item ">
                         <NavLink class="nav-link" href="/modules">
                             <span class="bi bi-folder-nav-menu" aria-hidden="true"></span>
                             My Course
                         </NavLink>
                     </div>
 
-                    <div class="nav-item px-3">
+                    <div class="nav-item ">
                         <NavLink class="nav-link" href="/student/activities">
                             <span class="bi bi-calendar-nav-menu" aria-hidden="true"></span>
                             My Activities
                         </NavLink>
                     </div>
 
-                    <div class="nav-item px-3">
+                    <div class="nav-item ">
                         <NavLink class="nav-link" href="/student/documents">
                             <span class="bi bi-file-earmark-nav-menu" aria-hidden="true"></span>
                             Documents
@@ -153,11 +161,21 @@
                 <div class="nav-section">
                     <div class="nav-section-title">Account</div>
 
-                    <div class="nav-item px-3">
-                        <NavLink class="nav-link" href="/Account/Logout">
-                            <span class="bi bi-arrow-bar-left-nav-menu" aria-hidden="true"></span>
-                            Logout
-                        </NavLink>
+                    <div class="nav-item">
+                        <div class="nav-item">
+                            <NavLink class="nav-link" href="Account/Manage">
+                                <span class="bi bi-person-nav-menu" aria-hidden="true"></span>
+                                Profile
+                            </NavLink>
+                        </div>
+
+                        <form action="Account/Logout" method="post">
+                            <AntiforgeryToken />
+                            <input type="hidden" name="ReturnUrl" value="@currentUrl" />
+                            <button type="submit" class="nav-link">
+                                <span class="bi bi-arrow-bar-left-nav-menu" aria-hidden="true"></span> Logout
+                            </button>
+                        </form>
                     </div>
                 </div>
             </Authorized>

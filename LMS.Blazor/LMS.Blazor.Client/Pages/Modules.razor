@@ -1,8 +1,13 @@
 @page "/modules"
+@page "/modules/{CourseId:int}"
 @using LMS.Blazor.Client.Components.Module
 @using LMS.Blazor.Client.Components.Course
 @using LMS.Shared.DTOs.Module
+@using LMS.Shared.DTOs.Course
 @using LMS.Blazor.Client.Helpers
+@inject LMS.Blazor.Client.Services.ICourseService CourseService
+@inject LMS.Blazor.Client.Services.IModuleService ModuleService
+@inject LMS.Blazor.Client.Services.IApiService ApiService
 
 <div class="py-5" style="margin: 0 !important; margin-left: -1.5rem !important; max-width: none !important; padding-left: 0 !important;">
 
@@ -18,11 +23,26 @@
                 <BbBreadcrumbItem><BbBreadcrumbPage>Modules</BbBreadcrumbPage></BbBreadcrumbItem>
             </BbBreadcrumb>
 
-            <div class="d-flex justify-content-between align-items-start mb-5 flex-wrap gap-3">
-                <div>
-                    <h1 class="fw-bold mb-1" style="font-size:1.8rem;">System Development .NET</h1>
-                    <p class="text-muted mb-0">@modules.Count modules · @modules.Count(IsActive) active now</p>
+            @if (isLoading)
+            {
+                <div class="text-center py-5">
+                    <div class="spinner-border text-primary" role="status"></div>
+                    <p class="mt-2 text-muted">Loading modules...</p>
                 </div>
+            }
+            else if (!string.IsNullOrEmpty(errorMessage))
+            {
+                <div class="alert alert-danger">
+                    <p>@errorMessage</p>
+                </div>
+            }
+            else
+            {
+                <div class="d-flex justify-content-between align-items-start mb-5 flex-wrap gap-3">
+                    <div>
+                        <h1 class="fw-bold mb-1" style="font-size:1.8rem;">@(course?.Name ?? "Course Modules")</h1>
+                        <p class="text-muted mb-0">@modules.Count modules · @modules.Count(IsActive) active now</p>
+                    </div>
                 <div class="d-flex align-items-center gap-3">
                     <BbButton Variant="ButtonVariant.Outline" Size="ButtonSize.Small" OnClick="ToggleRole">
                         @(isTeacher ? "Switch to Student" : "Switch to Teacher")
@@ -34,61 +54,157 @@
                 </div>
             </div>
 
-            <ModuleGrid Modules="modules"
-                        IsTeacher="isTeacher"
-                        GradientIndex="gradientIndex"
-                        OnCycleGradient="CycleGradient"
-                        OnEdit="OpenEditDialog"
-                        OnDelete="DeleteModule"
-                        OnViewActivities="ViewActivities" />
+                <ModuleGrid Modules="modules"
+                            IsTeacher="isTeacher"
+                            GradientIndex="gradientIndex"
+                            OnCycleGradient="CycleGradient"
+                            OnEdit="OpenEditDialog"
+                            OnDelete="DeleteModule"
+                            OnViewActivities="ViewActivities" />
 
-            <ModuleDialog @bind-Open="isDialogOpen"
-                          IsEditing="isEditing"
-                          Module="editingModule"
-                          OnSave="SaveModule" />
+                <ModuleDialog @bind-Open="isDialogOpen"
+                              IsEditing="isEditing"
+                              CourseStartDate="course?.StartDate"
+                              Module="editingModule"
+                              OnSave="SaveModule" />
+            }
         </main>
     </div>
 </div>
 
 @code {
+    [Parameter] public int? CourseId { get; set; }
+
     private bool isTeacher, isDialogOpen, isEditing;
     private Dictionary<int, int> gradientIndex = new();
 
-    private ModuleDto editingModule = new() { Id = 0, Name = "", Description = "", CourseId = 1, CourseName = "Dev .NET", StartDate = DateTime.Now };
+    private CourseDto? course;
+    private bool isLoading = true;
+    private string? errorMessage;
 
-    private List<ModuleDto> modules = new()
+    private ModuleDto editingModule = new() { Id = 0, Name = "", Description = "", CourseId = 0, CourseName = "", StartDate = DateTime.Now, EndDate = DateTime.Now.AddDays(14) };
+
+    private List<ModuleDto> modules = [];
+
+    protected override async Task OnParametersSetAsync()
     {
-        new() { Id=1, CourseId=1, CourseName="Dev .NET", Name="Introduction to .NET",
-            Description="Getting started with the .NET ecosystem, tooling, and project structure.",
-            StartDate=DateTime.Now.AddDays(-10), EndDate=DateTime.Now.AddDays(-5), ActivityCount=4 },
-        new() { Id=2, CourseId=1, CourseName="Dev .NET", Name="C# Fundamentals",
-            Description="Deep dive into OOP principles, collections, LINQ, and async patterns.",
-            StartDate=DateTime.Now.AddDays(-4), EndDate=DateTime.Now.AddDays(10), ActivityCount=8 },
-        new() { Id=3, CourseId=1, CourseName="Dev .NET", Name="Entity Framework Core",
-            Description="Code-first database design, migrations, and querying with EF Core.",
-            StartDate=DateTime.Now.AddDays(12), EndDate=DateTime.Now.AddDays(25), ActivityCount=6 },
-    };
+        await LoadModulesAsync();
+    }
+
+    private async Task LoadModulesAsync()
+    {
+        isLoading = true;
+        errorMessage = null;
+        StateHasChanged();
+        try
+        {
+            int targetCourseId;
+
+            if (CourseId.HasValue)
+            {
+                targetCourseId = CourseId.Value;
+            }
+            else
+            {
+                var myCourse = await ApiService.GetAsync<CourseDto>("api/studentcourse/mycourse");
+                if (myCourse is not null && myCourse.Id > 0)
+                {
+                    targetCourseId = myCourse.Id;
+                }
+                else
+                {
+                    errorMessage = "No course specified and you are not enrolled in any course.";
+                    return;
+                }
+            }
+
+            // 2. Fetch the course and its details (modules)
+            course = await CourseService.GetCourseByIdAsync(targetCourseId);
+            var detail = await CourseService.GetCourseDetailByIdAsync(targetCourseId);
+
+            if (detail is not null)
+            {
+                modules = detail.Modules ?? new List<ModuleDto>();
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Failed to load modules: {ex.Message}";
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
 
     private void ToggleRole() => isTeacher = !isTeacher;
     private void CycleGradient(int id) => gradientIndex[id] = (gradientIndex.GetValueOrDefault(id, id % ModuleStyles.Gradients.Length) + 1) % ModuleStyles.Gradients.Length;
-    private void DeleteModule(int id) => modules.RemoveAll(m => m.Id == id);
+    
+    private async Task DeleteModule(int id)
+    {
+        try
+        {
+            await ModuleService.DeleteModuleAsync(id);
+            await LoadModulesAsync();
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Failed to delete module: {ex.Message}";
+        }
+    }
+
     private void ViewActivities(int id) { /* NavigationManager.NavigateTo(...) */ }
-    private bool IsActive(ModuleDto m) => m.StartDate <= DateTime.Now && (!m.EndDate.HasValue || m.EndDate >= DateTime.Now);
+    private bool IsActive(ModuleDto m) => m.StartDate <= DateTime.Now && m.EndDate >= DateTime.Now;
 
     private void OpenCreateDialog()
     {
         isEditing = false;
-        editingModule = new() { Id = 0, Name = "", Description = "", CourseId = 1, CourseName = "Dev .NET", StartDate = DateTime.Now };
+        editingModule = new() { Id = 0, Name = "", Description = "", CourseId = course?.Id ?? CourseId ?? 0, CourseName = course?.Name ?? "", StartDate = DateTime.Now, EndDate = DateTime.Now.AddDays(14) };
         isDialogOpen = true;
     }
 
     private void OpenEditDialog(ModuleDto m) { isEditing = true; editingModule = m with { }; isDialogOpen = true; }
 
-    private void SaveModule()
+    // Persists module changes (Create or Update) to the database via API
+    private async Task SaveModule()
     {
-        if (isEditing) { var i = modules.FindIndex(m => m.Id == editingModule.Id); if (i != -1) modules[i] = editingModule; }
-        else { editingModule.Id = modules.Max(m => m.Id) + 1; modules.Add(editingModule); }
-        isDialogOpen = false;
+        try
+        {
+            if (isEditing)
+            {
+                // Update implementation
+                var updateDto = new UpdateModuleDto
+                {
+                    Name = editingModule.Name,
+                    Description = editingModule.Description,
+                    StartDate = editingModule.StartDate,
+                    EndDate = editingModule.EndDate,
+                    Icon = editingModule.Icon
+                };
+                await ModuleService.UpdateModuleAsync(editingModule.Id, updateDto);
+            }
+            else
+            {
+                // Create implementation
+                var createDto = new CreateModuleDto
+                {
+                    CourseId = editingModule.CourseId,
+                    Name = editingModule.Name,
+                    Description = editingModule.Description,
+                    StartDate = editingModule.StartDate,
+                    EndDate = editingModule.EndDate,
+                    Icon = editingModule.Icon
+                };
+                await ModuleService.CreateModuleAsync(createDto);
+            }
+
+            isDialogOpen = false;
+            await LoadModulesAsync(); // Refresh list to reflect changes
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Failed to save module: {ex.Message}";
+        }
     }
 
 }

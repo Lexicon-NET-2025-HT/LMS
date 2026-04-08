@@ -1,4 +1,4 @@
-﻿namespace LMS.Shared.DTOs.Module;
+namespace LMS.Shared.DTOs.Module;
 
 /// <summary>
 /// Represents a module with basic information and computed activity count.
