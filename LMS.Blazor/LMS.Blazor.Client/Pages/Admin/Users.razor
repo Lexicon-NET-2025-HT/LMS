@@ -158,7 +158,7 @@
                                                       && user.CourseId is not null)
                                                 {
                                                     <button class="btn btn-sm btn-outline-warning"
-                                                            title="Remove from course"
+                                                            title="Unenroll student from course"
                                                             @onclick="() => RemoveFromCourseAsync(user)">
                                                         <i class="bi bi-person-dash"></i>
                                                     </button>
@@ -384,16 +384,15 @@
         errorMessage = null;
         successMessage = null;
 
-        var ok = await UserService.RemoveUserFromCourseAsync(user.Id);
-
-        if (ok)
+        try
         {
-            successMessage = $"{user.Name} removed from course.";
+            await UserService.RemoveUserFromCourseAsync(user.Id);
             await LoadCurrentTabAsync();
+            successMessage = $"{user.Name} removed from course.";
         }
-        else
+        catch (Exception ex)
         {
-            errorMessage = $"Failed to remove {user.Name} from course.";
+            errorMessage = $"Error: {ex.Message}";
         }
     }
 
