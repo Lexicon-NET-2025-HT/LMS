@@ -1,5 +1,6 @@
 ﻿using Domain.Models.Entities;
 using Domain.Models.Exceptions;
+using LMS.Services.Common;
 using Service.Contracts;
 
 namespace LMS.Services;
@@ -87,14 +88,20 @@ public class LmsAccessService : ILmsAccessService
         return Task.CompletedTask;
     }
 
-    private static bool IsTeacherForCourse(string userId, Course course) =>
-        course.CourseTeachers.Any(ct => ct.TeacherId == userId);
+    private static bool IsTeacherForCourse(string userId, Course course)
+    {
+        var courseTeachers = NavProp.RequireLoadedFrom(course, (c => c.CourseTeachers));
+        return courseTeachers.Any(ct => ct.TeacherId == userId);
+    }
 
-    private static bool IsStudentForCourse(string userId, Course course) =>
-        course.Students.Any(s => s.Id == userId);
+    private static bool IsStudentForCourse(string userId, Course course)
+    {
+        var students = NavProp.RequireLoadedFrom(course, (c => c.Students));
+        return students.Any(s => s.Id == userId);
+    }
 
     private static bool CanAccessCourse(string userId, Course course) =>
-        IsTeacherForCourse(userId, course) || IsStudentForCourse(userId, course);
+        IsStudentForCourse(userId, course) || IsTeacherForCourse(userId, course);
 
     public IQueryable<Document> ApplyDocumentAccessFilter(IQueryable<Document> query, string userId, bool isTeacher, int? studentCourseId, List<int> teacherCourseIds)
     {

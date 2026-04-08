@@ -1,11 +1,15 @@
 ﻿using Domain.Contracts.Repositories;
 using Domain.Models.Entities;
 using Domain.Models.Exceptions;
+using LMS.Services.Common;
 using Service.Contracts;
 
 namespace LMS.Services;
 
-public sealed class LmsRelationResolver : ILmsRelationResolver
+/// <summary>
+/// Resolves course relationships for LMS entities.
+/// </summary>
+public class LmsRelationResolver : ILmsRelationResolver
 {
     private readonly IUnitOfWork _unitOfWork;
 
@@ -14,62 +18,140 @@ public sealed class LmsRelationResolver : ILmsRelationResolver
         _unitOfWork = unitOfWork;
     }
 
+    /// <summary>
+    /// Gets a course by id.
+    /// </summary>
+    /// <param name="courseId">The course id.</param>
+    /// <param name="ct">The cancellation token.</param>
+    /// <returns>The course.</returns>
     public async Task<Course> GetCourseByIdAsync(int courseId, CancellationToken ct = default)
     {
         return await _unitOfWork.Courses.GetCourseAsync(courseId)
             ?? throw new NotFoundException($"Course with id {courseId} was not found.");
     }
 
+    /// <summary>
+    /// Gets the course for a module.
+    /// </summary>
+    /// <param name="moduleId">The module id.</param>
+    /// <param name="ct">The cancellation token.</param>
+    /// <returns>The related course.</returns>
     public async Task<Course> GetCourseFromModuleIdAsync(int moduleId, CancellationToken ct = default)
     {
         var module = await _unitOfWork.Modules.GetModuleAsync(moduleId)
             ?? throw new NotFoundException($"Module with id {moduleId} was not found.");
 
-        return module.Course
-            ?? throw new InvalidOperationException(
-                $"Module with id {moduleId} was loaded without its Course relation.");
+        return ResolveCourse(module);
     }
 
+    /// <summary>
+    /// Gets the course for an activity.
+    /// </summary>
+    /// <param name="activityId">The activity id.</param>
+    /// <param name="ct">The cancellation token.</param>
+    /// <returns>The related course.</returns>
     public async Task<Course> GetCourseFromActivityIdAsync(int activityId, CancellationToken ct = default)
     {
         var activity = await _unitOfWork.Activities.GetActivityWithRelationsAsync(activityId)
             ?? throw new NotFoundException($"Activity with id {activityId} was not found.");
 
-        return activity.Module?.Course
-            ?? throw new InvalidOperationException(
-                $"Activity with id {activityId} was loaded without Module.Course relation.");
+        return ResolveCourse(activity);
     }
 
+    /// <summary>
+    /// Gets the course for a submission.
+    /// </summary>
+    /// <param name="submissionId">The submission id.</param>
+    /// <param name="ct">The cancellation token.</param>
+    /// <returns>The related course.</returns>
     public async Task<Course> GetCourseFromSubmissionIdAsync(int submissionId, CancellationToken ct = default)
     {
         var submission = await _unitOfWork.Submissions.GetSubmissionWithRelationsAsync(submissionId)
             ?? throw new NotFoundException($"Submission with id {submissionId} was not found.");
 
-        return submission.Activity?.Module?.Course
-            ?? throw new InvalidOperationException(
-                $"Submission with id {submissionId} was loaded without Activity.Module.Course relation.");
+        return ResolveCourse(submission);
     }
 
-    public Course? ResolveCourse(Module module)
+    /// <summary>
+    /// Resolves the course for a module.
+    /// </summary>
+    /// <param name="module">The module.</param>
+    /// <returns>The related course.</returns>
+    public Course ResolveCourse(Module module)
     {
-        return module.Course;
+        return NavProp.RequireLoadedFrom(module, (m => m.Course));
     }
 
-    public Course? ResolveCourse(Activity activity)
+    /// <summary>
+    /// Resolves the course for an activity.
+    /// </summary>
+    /// <param name="activity">The activity.</param>
+    /// <returns>The related course.</returns>
+    public Course ResolveCourse(Activity activity)
     {
-        return activity.Module?.Course;
+        var module = NavProp.RequireLoadedFrom(activity, (a => a.Module));
+        return ResolveCourse(module);
     }
 
-    public Course? ResolveCourse(Submission submission)
+    /// <summary>
+    /// Resolves the course for a submission.
+    /// </summary>
+    /// <param name="submission">The submission.</param>
+    /// <returns>The related course.</returns>
+    public Course ResolveCourse(Submission submission)
     {
-        return submission.Activity?.Module?.Course;
+        var activity = NavProp.RequireLoadedFrom(submission, (s => s.Activity));
+        return ResolveCourse(activity);
     }
 
-    public Course? ResolveCourse(Document document)
+    /// <summary>
+    /// Resolves the course for a document.
+    /// </summary>
+    /// <param name="document">The document.</param>
+    /// <returns>The related course.</returns>
+    public Course ResolveCourse(Document document)
     {
-        return document.Course
-            ?? document.Module?.Course
-            ?? document.Activity?.Module?.Course
-            ?? document.Submission?.Activity?.Module?.Course;
+        var course = NavProp.RequireLoadedIfForeignKeySet(
+            entity: document,
+            foreignKeySelector: (d => d.CourseId),
+            navigationSelector: (d => d.Course));
+
+        if (course != null)
+        {
+            return course;
+        }
+
+        var module = NavProp.RequireLoadedIfForeignKeySet(
+            entity: document,
+            foreignKeySelector: (d => d.ModuleId),
+            navigationSelector: (d => d.Module));
+
+        if (module != null)
+        {
+            return ResolveCourse(module);
+        }
+
+        var activity = NavProp.RequireLoadedIfForeignKeySet(
+            entity: document,
+            foreignKeySelector: (d => d.ActivityId),
+            navigationSelector: (d => d.Activity));
+
+        if (activity != null)
+        {
+            return ResolveCourse(activity);
+        }
+
+        var submission = NavProp.RequireLoadedIfForeignKeySet(
+            entity: document,
+            foreignKeySelector: (d => d.SubmissionId),
+            navigationSelector: (d => d.Submission));
+
+        if (submission != null)
+        {
+            return ResolveCourse(submission);
+        }
+
+        throw new InvalidOperationException(
+            $"{nameof(Document)} with id {document.Id} is not linked to a {nameof(Course)}, {nameof(Module)}, {nameof(Activity)}, or {nameof(Submission)}.");
     }
 }

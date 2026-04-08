@@ -115,5 +115,8 @@ public static class ServiceExtensions
         services.AddScoped(provider => new Lazy<IUserService>(() => provider.GetRequiredService<IUserService>()));
 
         services.AddScoped<IStudentCourseService, StudentCourseService>();
+
+        services.AddScoped<ILmsAccessService, LmsAccessService>();
+        services.AddScoped<ILmsRelationResolver, LmsRelationResolver>();
     }
 }
