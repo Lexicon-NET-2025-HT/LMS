@@ -1,6 +1,7 @@
 @using LMS.Shared.DTOs.Common
 @using LMS.Shared.DTOs.User
 @using LMS.Shared.DTOs.Course
+@using LMS.Shared.DTOs.AuthDtos
 @using System.ComponentModel.DataAnnotations
 @inject IApiService ApiService
 
@@ -23,31 +24,61 @@
 
             @* ---- Name ---- *@
             <div class="mb-3">
-                <label class="form-label fw-semibold">Name <span class="text-danger">*</span></label>
-                <InputText class="form-control" @bind-Value="model.Name" placeholder="User name" />
-                <ValidationMessage For="() => model.Name" class="text-danger small" />
+                <label class="form-label fw-semibold">
+                    Username <span class="text-danger">*</span>
+                </label>
+                <InputText class="form-control" @bind-Value="model.UserName" placeholder="Username" />
+                <ValidationMessage For="() => model.UserName" class="text-danger small" />
             </div>
 
             @* ---- Email ---- *@
             <div class="mb-3">
                 <label class="form-label fw-semibold">Email</label>
-                <InputText class="form-control" @bind-Value="model.Email" placeholder="User Email" />
+                <InputText class="form-control" @bind-Value="model.Email" placeholder="user@example.com" />
                 <ValidationMessage For="() => model.Email" class="text-danger small" />
             </div>
 
-            @* ---- Course Id ---- *@
+            @* ---- Password (create only) ---- *@
+            @if (!isEditMode)
+            {
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">
+                        Password <span class="text-danger">*</span>
+                    </label>
+                    <InputText type="password" class="form-control" @bind-Value="model.Password" placeholder="Password" />
+                    <ValidationMessage For="() => model.Password" class="text-danger small" />
+                </div>
+            }
+
+            @* ---- Role ---- *@
             <div class="mb-3">
-                <label class="form-label fw-semibold">Course</label>
-                <InputSelect class="form-control" @bind-Value="model.CourseId" autocomplete="off">
-                    <option value="">-- Select Course --</option>
-                    @if (courses != null){
-                        @foreach (var course in courses) {
-                            <option value="@course.Id">@course.Name (#@course.Id)</option>
-                        }
-                    }
+                <label class="form-label fw-semibold">Role</label>
+                <InputSelect class="form-select" @bind-Value="model.Role">
+                    <option value="">-- Select Role --</option>
+                    <option value="Student">Student</option>
+                    <option value="Teacher">Teacher</option>
                 </InputSelect>
-                <ValidationMessage For="() => model.CourseId" class="text-danger small" />
+                <ValidationMessage For="() => model.Role" class="text-danger small" />
             </div>
+
+            @* ---- Course (hidden for teachers) ---- *@
+            @if (model.Role != "Teacher")
+            {
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Course</label>
+                    <InputSelect class="form-select" @bind-Value="model.CourseId">
+                        <option value="">-- No Course --</option>
+                        @if (courses != null)
+                        {
+                            @foreach (var course in courses)
+                            {
+                                <option value="@course.Id">@course.Name (#@course.Id)</option>
+                            }
+                        }
+                    </InputSelect>
+                    <ValidationMessage For="() => model.CourseId" class="text-danger small" />
+                </div>
+            }
 
             @* ---- Actions ---- *@
             <div class="d-flex gap-2 mt-4">
@@ -56,7 +87,7 @@
                     {
                         <span class="spinner-border spinner-border-sm me-1"></span>
                     }
-                    @(isEditMode ? "Update User" : "Save User")
+                    @(isEditMode ? "Update User" : "Create User")
                 </button>
                 <button type="button" class="btn btn-secondary"
                         @onclick="OnCancel" disabled="@isSubmitting">
@@ -82,19 +113,18 @@
     private bool isEditMode;
     private bool isSubmitting;
     private string? errorMessage;
-
     private IEnumerable<CourseDto>? courses;
 
     protected override async Task OnInitializedAsync()
     {
         try
         {
-            var result = await ApiService.GetAsync<PagedResultDto<CourseDto>>($"api/courses?pageSize=9999");
+            var result = await ApiService.GetAsync<PagedResultDto<CourseDto>>("api/courses?page=1&pageSize=9999");
             if (result is not null) courses = result.Items;
         }
         catch (Exception ex)
         {
-            errorMessage  = $"Failed to load courses. {ex.Message}";
+            errorMessage = $"Failed to load courses. {ex.Message}";
         }
     }
 
@@ -105,9 +135,10 @@
         model = isEditMode
             ? new UserFormModel
             {
-                Name = User?.Name!,
-                Email = User?.Email!,
-                CourseId = User?.CourseId!
+                UserName = User!.Name,
+                Email = User.Email,
+                Role = User.Role,
+                CourseId = User.CourseId
             }
             : new UserFormModel();
     }
@@ -121,34 +152,54 @@
         {
             if (isEditMode)
             {
+                // PUT api/users/{id} — role + course only
                 var updateDto = new UpdateUserDto
                 {
-                    Name = model.Name,
+                    Role = model.Role,
+                    Name = model.UserName,
                     Email = model.Email,
                     CourseId = model.CourseId
                 };
-                await ApiService.PutAsync<object>($"api/users/{User.Id}", updateDto);
-                await OnSubmit.InvokeAsync(User! with
-                {
-                    Id = User.Id,
-                    Name = model.Name,
-                    Email = model.Email,
-                    CourseId = model.CourseId
-                });
+
+                var updated = await ApiService.PutAsync<UserDto>($"api/users/{User!.Id}", updateDto);
+                if (updated is not null)
+                    await OnSubmit.InvokeAsync(updated);
+                else
+                    errorMessage = "Failed to update user. Please try again.";
             }
             else
             {
-                var createDto = new CreateUserDto
+                // POST api/auth — full registration
+                var registerDto = new UserRegistrationDto
                 {
-                    Name = model.Name,
+                    UserName = model.UserName,
                     Email = model.Email,
-                    CourseId = model.CourseId
+                    Password = model.Password,
+                    Role = model.Role
                 };
-                var result = await ApiService.PostAsync<UserDto>($"api/users", createDto);
-                if (result is not null)
-                    await OnSubmit.InvokeAsync(result);
-                else
-                    errorMessage = "Failed to create user. Please try again.";
+
+                // auth/register returns 201 with no body — use a raw post
+                var response = await ApiService.PostAsync<object>("api/auth", registerDto);
+
+                // Enroll in course if one was selected
+                if (model.CourseId is not null)
+                {
+                    // fetch the new user by email to get their id
+                    var allUsers = await ApiService.GetAsync<PagedResultDto<UserDto>>("api/users?page=1&pageSize=9999");
+                    var newUser = allUsers?.Items.FirstOrDefault(u => u.Email == model.Email);
+                    if (newUser is not null)
+                        await ApiService.PutAsync<object>($"api/users/{newUser.Id}/enroll/{model.CourseId}", new { });
+                }
+
+                // build a synthetic UserDto to pass back to the parent
+                await OnSubmit.InvokeAsync(new UserDto
+                {
+                    Id = string.Empty,
+                    Name = model.UserName,
+                    Email = model.Email,
+                    Role = model.Role ?? string.Empty,
+                    CourseId = model.CourseId
+                });
             }
         }
         catch (Exception ex)
@@ -161,17 +212,21 @@
         }
     }
 
-    // ---- Internal form model with validation attributes ----
+    // ---- Internal form model ----
     private class UserFormModel
     {
-        public int? CourseId { get; set; }
-
-        [MaxLength(200, ErrorMessage = "Name cannot exceed 200 characters.")]
-        public string Name { get; set; } = string.Empty;
+        [Required(ErrorMessage = "Username is required.")]
+        [MaxLength(200, ErrorMessage = "Username cannot exceed 200 characters.")]
+        public string UserName { get; set; } = string.Empty;
 
         [MaxLength(254, ErrorMessage = "Email cannot exceed 254 characters.")]
         public string Email { get; set; } = string.Empty;
 
-    }
+        [MaxLength(100)]
+        public string Password { get; set; } = string.Empty;
 
+        public string? Role { get; set; }
+
+        public int? CourseId { get; set; }
+    }
 }
