@@ -19,7 +19,7 @@ public class DocumentsController : LmsControllerBase
     [HttpGet]
     [SwaggerOperation(
         Summary = "Get all documents",
-        Description = "Retrieves a paginated list of all documents, optionally filtered by course"
+        Description = "Retrieves a paginated list of all documents that the user has access to, optionally filtered by course"
     )]
     [SwaggerResponse(StatusCodes.Status200OK, "Documents retrieved successfully")]
     public async Task<IActionResult> GetDocuments([FromQuery] DocumentQueryDto dto, [FromQuery] int page = 1, [FromQuery] int pageSize = 10)

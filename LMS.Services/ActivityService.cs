@@ -66,23 +66,24 @@ namespace LMS.Services
             return _mapper.Map<ActivityDto>(activity);
         }
 
-        public async Task<ActivityDetailDto> GetActivityDetailByIdAsync(int id)
+        public async Task<ActivityDetailDto> GetActivityDetailByIdAsync(int id, string userId)
         {
-            var activity = await _unitOfWork.Activities.GetActivityWithDetailAsync(id) ??
-                throw new NotFoundException($"Activity by id: '{id}', does not exist");
+            var activity = await _unitOfWork.Activities.GetActivityWithRelationsAsync(id) ??
+               throw new NotFoundException($"Activity by id: '{id}', does not exist");
 
-            Console.WriteLine("TESTTTTT");
-            Console.WriteLine(activity.GetType().Name);
+            await lmsAccessService.EnsureCanAccessActivityAsync(userId, activity);
 
             var activityDetailDto = _mapper.Map<ActivityDetailDto>(activity);
 
             return activityDetailDto;
         }
 
-        public async Task<ActivityDto> CreateActivityAsync(CreateActivityDto dto)
+        public async Task<ActivityDto> CreateActivityAsync(string userId, CreateActivityDto dto)
         {
-            var module = await _unitOfWork.Modules.FindByIdAsync(dto.ModuleId) ??
+            var module = await _unitOfWork.Modules.GetModuleAsync(dto.ModuleId) ??
                 throw new NotFoundException($"Module by id: '{dto.ModuleId}', does not exist");
+
+            await lmsAccessService.EnsureTeacherForCourseAsync(userId, module.CourseId);
 
             var activity = _mapper.Map<Activity>(dto);
 
@@ -96,10 +97,9 @@ namespace LMS.Services
             return activityDto;
         }
 
-        public async Task UpdateActivityAsync(int id, UpdateActivityDto dto)
+        public async Task UpdateActivityAsync(int id, string userId, UpdateActivityDto dto)
         {
-            var activity = await _unitOfWork.Activities.FindByIdAsync(id) ??
-                throw new NotFoundException($"Activity by id: '{id}', does not exist");
+            var activity = await GetTeacherAccessedActivity(id, userId);
 
             _mapper.Map(dto, activity);
 
@@ -107,10 +107,9 @@ namespace LMS.Services
             await _unitOfWork.CompleteAsync();
         }
 
-        public async Task PatchActivityAsync(int id, PatchActivityDto dto)
+        public async Task PatchActivityAsync(int id, string userId, PatchActivityDto dto)
         {
-            var activity = await _unitOfWork.Activities.FindByIdAsync(id) ??
-                throw new NotFoundException($"Activity by id: '{id}', does not exist");
+            var activity = await GetTeacherAccessedActivity(id, userId);
 
             _mapper.Map(dto, activity);
 
@@ -118,13 +117,21 @@ namespace LMS.Services
             await _unitOfWork.CompleteAsync();
         }
 
-        public async Task DeleteActivityAsync(int id)
+        public async Task DeleteActivityAsync(int id, string userId)
         {
-            var activity = await _unitOfWork.Activities.FindByIdAsync(id) ??
-                throw new NotFoundException($"Activity with id: '{id}' does not exist");
+            var activity = await GetTeacherAccessedActivity(id, userId);
 
             _unitOfWork.Activities.Delete(activity);
             await _unitOfWork.CompleteAsync();
+        }
+
+        private async Task<Activity> GetTeacherAccessedActivity(int id, string userId)
+        {
+            var activity = await _unitOfWork.Activities.GetActivityWithRelationsAsync(id) ??
+                throw new NotFoundException($"Activity by id: '{id}', does not exist");
+
+            await lmsAccessService.EnsureTeacherForCourseAsync(userId, activity.Module.CourseId);
+            return activity;
         }
     }
 }

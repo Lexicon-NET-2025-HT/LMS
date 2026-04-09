@@ -20,7 +20,7 @@ public class ActivitiesController : LmsControllerBase
     [HttpGet]
     [SwaggerOperation(
         Summary = "Get all activities",
-        Description = "Retrieves a paginated list of all activities, optionally filtered by module"
+        Description = "Retrieves a paginated list of all activities that the user has access to, optionally filtered by module"
     )]
     [SwaggerResponse(StatusCodes.Status200OK, "Activities retrieved successfully")]
     public async Task<IActionResult> GetAllActivities([FromQuery] ActivitiesRequestParams query)
@@ -50,9 +50,10 @@ public class ActivitiesController : LmsControllerBase
     )]
     [SwaggerResponse(StatusCodes.Status200OK, "Activity details retrieved successfully")]
     [SwaggerResponse(StatusCodes.Status404NotFound, "Activity not found")]
+    [SwaggerResponse(StatusCodes.Status403Forbidden, "Forbidden")]
     public async Task<IActionResult> GetActivityDetail(int id)
     {
-        var activity = await serviceManager.ActivityService.GetActivityDetailByIdAsync(id);
+        var activity = await serviceManager.ActivityService.GetActivityDetailByIdAsync(id, UserId);
         return Ok(activity);
     }
 
@@ -63,9 +64,10 @@ public class ActivitiesController : LmsControllerBase
     )]
     [SwaggerResponse(StatusCodes.Status201Created, "Activity created successfully")]
     [SwaggerResponse(StatusCodes.Status400BadRequest, "Invalid input")]
+    [SwaggerResponse(StatusCodes.Status403Forbidden, "Forbidden")]
     public async Task<IActionResult> CreateActivity([FromBody] CreateActivityDto dto)
     {
-        var activity = await serviceManager.ActivityService.CreateActivityAsync(dto);
+        var activity = await serviceManager.ActivityService.CreateActivityAsync(UserId, dto);
         return CreatedAtAction(nameof(GetActivityById), new { id = activity.Id }, activity);
     }
 
@@ -76,9 +78,10 @@ public class ActivitiesController : LmsControllerBase
     )]
     [SwaggerResponse(StatusCodes.Status200OK, "Activity updated successfully")]
     [SwaggerResponse(StatusCodes.Status404NotFound, "Activity not found")]
+    [SwaggerResponse(StatusCodes.Status403Forbidden, "Forbidden")]
     public async Task<IActionResult> UpdateActivity(int id, [FromBody] UpdateActivityDto dto)
     {
-        await serviceManager.ActivityService.UpdateActivityAsync(id, dto);
+        await serviceManager.ActivityService.UpdateActivityAsync(id, UserId, dto);
         return Ok(new { message = "Activity updated successfully" });
     }
 
@@ -87,9 +90,10 @@ public class ActivitiesController : LmsControllerBase
         Summary = "Partially update an activity.",
         Description = "Partially updates an existing activity with the provided details"
     )]
+    [SwaggerResponse(StatusCodes.Status403Forbidden, "Forbidden")]
     public async Task<IActionResult> PatchActivity(int id, [FromBody] PatchActivityDto dto)
     {
-        await serviceManager.ActivityService.PatchActivityAsync(id, dto);
+        await serviceManager.ActivityService.PatchActivityAsync(id, UserId, dto);
         return Ok(new { message = "Activity patched successfully" });
     }
 
@@ -100,9 +104,10 @@ public class ActivitiesController : LmsControllerBase
     )]
     [SwaggerResponse(StatusCodes.Status200OK, "Activity deleted successfully")]
     [SwaggerResponse(StatusCodes.Status404NotFound, "Activity not found")]
+    [SwaggerResponse(StatusCodes.Status403Forbidden, "Forbidden")]
     public async Task<IActionResult> DeleteActivity(int id)
     {
-        await serviceManager.ActivityService.DeleteActivityAsync(id);
+        await serviceManager.ActivityService.DeleteActivityAsync(id, UserId);
         return Ok(new { message = "Activity deleted successfully" });
     }
 }

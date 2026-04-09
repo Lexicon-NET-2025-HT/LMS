@@ -19,7 +19,7 @@ public class ModulesController : LmsControllerBase
     [HttpGet]
     [SwaggerOperation(
         Summary = "Get all modules",
-        Description = "Retrieves a paginated list of all modules, optionally filtered by course"
+        Description = "Retrieves a paginated list of all modules that the user has access to, optionally filtered by course"
     )]
     [SwaggerResponse(StatusCodes.Status200OK, "Modules retrieved successfully")]
     public async Task<IActionResult> GetAllModules(
