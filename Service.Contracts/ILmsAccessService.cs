@@ -14,7 +14,7 @@ public interface ILmsAccessService
     Task EnsureTeacherForCourseAsync(string userId, int courseId, CancellationToken ct = default);
 
     /// <summary>
-    /// Ensures that the user may access the specified document.
+    /// Ensures access to a document, i.e the student uploading it and teachers for the course the document belongs to.
     /// </summary>
     Task EnsureCanAccessDocumentAsync(string userId, Document document, CancellationToken ct = default);
     Task EnsureCanModifyDocumentAsync(string userId, Document document, CancellationToken ct = default);
@@ -38,7 +38,7 @@ public interface ILmsAccessService
     Task EnsureCanAccessActivityAsync(string userId, Activity activity, CancellationToken ct = default);
 
     /// <summary>
-    /// Ensures that the user may access the specified submission.
+    /// Ensures access to a submission, i.e the author student and teachers for the course the submission belongs to.
     /// </summary>
     Task EnsureCanAccessSubmissionAsync(string userId, Submission submission, CancellationToken ct = default);
 

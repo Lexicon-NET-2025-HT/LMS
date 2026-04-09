@@ -19,7 +19,10 @@ public class ModuleService : IModuleService
     private readonly IMapper mapper;
     private readonly ILmsAccessService lmsAccessService;
     private readonly IUserAccessContextFactory userAccessContextFactory;
-    public ModuleService(IUnitOfWork unitOfWork, IMapper mapper, ILmsAccessService lmsAccessService, IUserAccessContextFactory userAccessContextFactor)
+    public ModuleService(IUnitOfWork unitOfWork,
+                         IMapper mapper,
+                         ILmsAccessService lmsAccessService,
+                         IUserAccessContextFactory userAccessContextFactor)
     {
         this.unitOfWork = unitOfWork;
         this.mapper = mapper;
@@ -28,12 +31,12 @@ public class ModuleService : IModuleService
     }
     public async Task<PagedResultDto<ModuleDto>> GetAllModulesAsync(string userId, int page, int pageSize, int? courseId = null)
     {
-        var access = await userAccessContextFactory.CreateAsync(userId);
-
         if (courseId != null)
         {
             await lmsAccessService.EnsureCanAccessCourseAsync(userId, courseId.Value);
         }
+
+        var access = await userAccessContextFactory.CreateAsync(userId);
 
         var query = lmsAccessService.ApplyModuleAccessFilter(
             unitOfWork.Modules.BuildQuery(courseId),

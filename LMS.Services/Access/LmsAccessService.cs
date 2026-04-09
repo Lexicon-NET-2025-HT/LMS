@@ -75,7 +75,7 @@ public class LmsAccessService : ILmsAccessService
     }
 
     /// <summary>
-    /// Ensures access to a submission.
+    /// Ensures access to a submission, i.e the author student and teachers for the course the submission belongs to.
     /// </summary>
     public async Task EnsureCanAccessSubmissionAsync(string userId, Submission submission, CancellationToken ct = default)
     {
@@ -84,7 +84,7 @@ public class LmsAccessService : ILmsAccessService
     }
 
     /// <summary>
-    /// Ensures access to a document.
+    /// Ensures access to a document, i.e the student uploading it and teachers for the course the document belongs to.
     /// </summary>
     public async Task EnsureCanAccessDocumentAsync(string userId, Document document, CancellationToken ct = default)
     {

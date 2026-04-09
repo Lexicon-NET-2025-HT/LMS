@@ -25,7 +25,7 @@ public class ActivitiesRequestParams : PagedRequestParams
 public class SubmissionsRequestParams : PagedRequestParams
 {
     public int? ActivityId { get; set; } = null;
-    public int? StudentId { get; set; } = null;
+    public string? StudentId { get; set; } = null;
 }
 
 public class ModulesRequestParams : PagedRequestParams
