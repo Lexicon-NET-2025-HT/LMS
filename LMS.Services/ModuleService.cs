@@ -30,6 +30,11 @@ public class ModuleService : IModuleService
     {
         var access = await userAccessContextFactory.CreateAsync(userId);
 
+        if (courseId != null)
+        {
+            await lmsAccessService.EnsureCanAccessCourseAsync(userId, courseId.Value);
+        }
+
         var query = lmsAccessService.ApplyModuleAccessFilter(
             unitOfWork.Modules.BuildQuery(courseId),
             access);

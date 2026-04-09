@@ -1,4 +1,5 @@
 ﻿using LMS.Shared.DTOs.Course;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Service.Contracts;
@@ -8,6 +9,7 @@ namespace LMS.Presentation.Controllers;
 
 [Route("api/courses")]
 [ApiController]
+[Authorize]
 public class CoursesController : LmsControllerBase
 {
     public CoursesController(IServiceManager serviceManager) : base(serviceManager)
@@ -20,6 +22,7 @@ public class CoursesController : LmsControllerBase
         Description = "Retrieves a paginated list of all courses"
     )]
     [SwaggerResponse(StatusCodes.Status200OK, "Courses retrieved successfully")]
+    [AllowAnonymous]
     public async Task<IActionResult> GetAllCourses([FromQuery] int page = 1, [FromQuery] int pageSize = 10)
     {
         var result = await serviceManager.CourseService.GetAllCoursesAsync(UserId, page, pageSize);
@@ -33,6 +36,7 @@ public class CoursesController : LmsControllerBase
     )]
     [SwaggerResponse(StatusCodes.Status200OK, "Course retrieved successfully")]
     [SwaggerResponse(StatusCodes.Status404NotFound, "Course not found")]
+    [AllowAnonymous]
     public async Task<IActionResult> GetCourseById(int id)
     {
         var course = await serviceManager.CourseService.GetCourseByIdAsync(id, UserId);
@@ -46,6 +50,7 @@ public class CoursesController : LmsControllerBase
     )]
     [SwaggerResponse(StatusCodes.Status200OK, "Course details retrieved successfully")]
     [SwaggerResponse(StatusCodes.Status404NotFound, "Course not found")]
+    [SwaggerResponse(StatusCodes.Status403Forbidden, "Forbidden")]
     public async Task<IActionResult> GetCourseDetail(int id)
     {
         var course = await serviceManager.CourseService.GetCourseDetailByIdAsync(id, UserId);
@@ -59,6 +64,7 @@ public class CoursesController : LmsControllerBase
     )]
     [SwaggerResponse(StatusCodes.Status201Created, "Course created successfully")]
     [SwaggerResponse(StatusCodes.Status400BadRequest, "Invalid input")]
+    [SwaggerResponse(StatusCodes.Status403Forbidden, "Forbidden")]
     public async Task<IActionResult> CreateCourse([FromBody] CreateCourseDto dto)
     {
         var course = await serviceManager.CourseService.CreateCourseAsync(UserId, dto);
@@ -72,6 +78,7 @@ public class CoursesController : LmsControllerBase
     )]
     [SwaggerResponse(StatusCodes.Status200OK, "Course updated successfully")]
     [SwaggerResponse(StatusCodes.Status404NotFound, "Course not found")]
+    [SwaggerResponse(StatusCodes.Status403Forbidden, "Forbidden")]
     public async Task<IActionResult> UpdateCourse(int id, [FromBody] UpdateCourseDto dto)
     {
         await serviceManager.CourseService.UpdateCourseAsync(id, UserId, dto);
@@ -85,6 +92,7 @@ public class CoursesController : LmsControllerBase
     )]
     [SwaggerResponse(StatusCodes.Status200OK, "Course deleted successfully")]
     [SwaggerResponse(StatusCodes.Status404NotFound, "Course not found")]
+    [SwaggerResponse(StatusCodes.Status403Forbidden, "Forbidden")]
     public async Task<IActionResult> DeleteCourse(int id)
     {
         await serviceManager.CourseService.DeleteCourseAsync(id, UserId);

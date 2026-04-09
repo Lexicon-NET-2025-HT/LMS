@@ -48,6 +48,7 @@ public class DocumentsController : LmsControllerBase
     )]
     [SwaggerResponse(StatusCodes.Status201Created, "Document created successfully")]
     [SwaggerResponse(StatusCodes.Status400BadRequest, "Invalid input")]
+    [SwaggerResponse(StatusCodes.Status403Forbidden, "Forbidden")]
     public async Task<IActionResult> CreateDocument([FromForm] CreateDocumentDto dto)
     {
         var document = await serviceManager.DocumentService.CreateDocumentAsync(UserId, dto);
@@ -61,6 +62,7 @@ public class DocumentsController : LmsControllerBase
     )]
     [SwaggerResponse(StatusCodes.Status200OK, "Document updated successfully")]
     [SwaggerResponse(StatusCodes.Status404NotFound, "Document not found")]
+    [SwaggerResponse(StatusCodes.Status403Forbidden, "Forbidden")]
     public async Task<IActionResult> UpdateDocument(int id, [FromBody] UpdateDocumentDto dto)
     {
         var document = await serviceManager.DocumentService.UpdateDocumentAsync(id, UserId, dto);
@@ -74,6 +76,7 @@ public class DocumentsController : LmsControllerBase
     )]
     [SwaggerResponse(StatusCodes.Status200OK, "Document deleted successfully")]
     [SwaggerResponse(StatusCodes.Status404NotFound, "Document not found")]
+    [SwaggerResponse(StatusCodes.Status403Forbidden, "Forbidden")]
     public async Task<IActionResult> DeleteDocument(int id)
     {
         await serviceManager.DocumentService.DeleteDocumentAsync(id, UserId);
