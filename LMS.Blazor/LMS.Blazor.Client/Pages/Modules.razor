@@ -1,4 +1,4 @@
-@page "/modules/{CourseId:int}"
+@page "/courses/{CourseId:int}"
 @using LMS.Blazor.Client.Components.Module
 @using LMS.Blazor.Client.Components.Course
 @using LMS.Shared.DTOs.Module
@@ -7,6 +7,7 @@
 @inject LMS.Blazor.Client.Services.ICourseService CourseService
 @inject LMS.Blazor.Client.Services.IModuleService ModuleService
 @inject LMS.Blazor.Client.Services.IApiService ApiService
+@inject NavigationManager Nav
 
 <div class="py-5" style="margin: 0 !important; margin-left: -1.5rem !important; max-width: none !important; padding-left: 0 !important;">
 
@@ -138,9 +139,8 @@
 
     private void ToggleRole() => isTeacher = !isTeacher;
     private void CycleGradient(int id) => gradientIndex[id] = (gradientIndex.GetValueOrDefault(id, id % ModuleStyles.Gradients.Length) + 1) % ModuleStyles.Gradients.Length;
-    private void DeleteModule(int id) => modules.RemoveAll(m => m.Id == id);
     private void ViewActivities(int id) => Nav.NavigateTo($"modules/{id}");
-    private bool IsActive(ModuleDto m) => m.StartDate <= DateTime.Now && (!m.EndDate.HasValue || m.EndDate >= DateTime.Now);
+    // private bool IsActive(ModuleDto m) => m.StartDate <= DateTime.Now && (!m.EndDate.HasValue || m.EndDate >= DateTime.Now);
     
     private async Task DeleteModule(int id)
     {
@@ -155,7 +155,7 @@
         }
     }
 
-    private void ViewActivities(int id) { /* NavigationManager.NavigateTo(...) */ }
+
     private bool IsActive(ModuleDto m) => m.StartDate <= DateTime.Now && m.EndDate >= DateTime.Now;
 
     private void OpenCreateDialog()

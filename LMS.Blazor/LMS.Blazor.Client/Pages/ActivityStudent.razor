@@ -1,4 +1,4 @@
-﻿@page "/modules/{id:int}"
+﻿@page "/modules/{moduleId:int}"
 @using BlazorBlueprint.Components
 @using LMS.Blazor.Client.Components
 @using LMS.Blazor.Client.Components.Activity
@@ -65,7 +65,7 @@
     private string? successMessage;
     private string? loadError;
 
-    [Parameter] public int id { get; set; }
+    [Parameter] public int moduleId { get; set; }
 
     // Pagination state
     private int currentPage = 1;
@@ -87,7 +87,7 @@
             var result = await ActivityService.GetAllActivitiesAsync(
                 page: currentPage,
                 pageSize: pageSize,
-                moduleId: id
+                moduleId: moduleId
             );
 
             if (result is not null)
