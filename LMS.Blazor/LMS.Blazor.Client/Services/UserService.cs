@@ -34,4 +34,7 @@ public class UserService(IApiService apiService) : IUserService
 
     public Task<bool> DeleteUserAsync(string userId, CancellationToken ct = default)
         => _apiService.DeleteAsync($"{Base}/{userId}", ct);
+
+    public Task<UserDto?> UpdateUserAsync(string userId, UpdateUserDto dto, CancellationToken ct = default)
+    => _apiService.PutAsync<UserDto>($"{Base}/{userId}", dto, ct);
 }

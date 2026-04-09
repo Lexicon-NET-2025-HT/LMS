@@ -14,5 +14,7 @@ public interface IUserService
     Task EnrollUserInCourseAsync(string userId, int courseId, CancellationToken ct = default);
     Task RemoveUserFromCourseAsync(string userId, CancellationToken ct = default);
     Task DeleteUserAsync(string currentUserId, string targetUserId, CancellationToken ct = default);
+    Task<UserDto> UpdateUserAsync(string userId, UpdateUserDto dto, CancellationToken ct = default);
+
     Task<ApplicationUser?> GetUserWithRelationsAsync(string userId, CancellationToken ct = default);
 }
