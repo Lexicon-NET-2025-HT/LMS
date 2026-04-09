@@ -2,7 +2,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace LMS.Shared.Request;
 
-public abstract class RequestParams
+public abstract class PagedRequestParams
 {
 
     [Range(1, int.MaxValue)]
@@ -13,27 +13,27 @@ public abstract class RequestParams
 
 }
 
-public class UsersRequestParams : RequestParams { }
+public class UsersRequestParams : PagedRequestParams { }
 
-public class CoursesRequestParams : RequestParams { }
+public class CoursesRequestParams : PagedRequestParams { }
 
-public class ActivitiesRequestParams : RequestParams
+public class ActivitiesRequestParams : PagedRequestParams
 {
     public int? ModuleId { get; set; } = null;
 }
 
-public class SubmissionsRequestParams : RequestParams
+public class SubmissionsRequestParams : PagedRequestParams
 {
     public int? ActivityId { get; set; } = null;
     public int? StudentId { get; set; } = null;
 }
 
-public class ModulesRequestParams : RequestParams
+public class ModulesRequestParams : PagedRequestParams
 {
     public int? CourseId { get; set; } = null;
 }
 
-public class DocumentsRequestParams : RequestParams
+public class DocumentsRequestParams : PagedRequestParams
 {
     public int? CourseId { get; set; } = null;
 }

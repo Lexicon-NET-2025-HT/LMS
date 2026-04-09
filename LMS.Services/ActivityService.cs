@@ -2,8 +2,11 @@
 using Domain.Contracts.Repositories;
 using Domain.Models.Entities;
 using Domain.Models.Exceptions;
+using LMS.Infractructure.Extensions;
+using LMS.Services.Access;
 using LMS.Shared.DTOs.Activity;
 using LMS.Shared.DTOs.Common;
+using LMS.Shared.Request;
 using Microsoft.AspNetCore.Identity;
 using Service.Contracts;
 
@@ -15,33 +18,52 @@ namespace LMS.Services
     public class ActivityService(
         IUnitOfWork unitOfWork,
         IMapper mapper,
+        ILmsAccessService lmsAccessService,
+        IUserAccessContextFactory userAccessContextFactory,
         UserManager<ApplicationUser> userManager) : IActivityService
     {
         private readonly UserManager<ApplicationUser> _userManager = userManager;
         private readonly IUnitOfWork _unitOfWork = unitOfWork;
         private readonly IMapper _mapper = mapper;
+        private readonly ILmsAccessService _lmsAccessService = lmsAccessService;
+        private readonly IUserAccessContextFactory _userAccessContextFactory = userAccessContextFactory;
 
-        public async Task<PagedResultDto<ActivityDto>> GetAllActivitiesAsync(int page, int pageSize, int? moduleId = null)
+        public async Task<PagedResultDto<ActivityDto>> GetAllActivitiesAsync(string userId, ActivitiesRequestParams queryDto)
         {
-            var (activities, totalCount) = await _unitOfWork.Activities.GetAllActivitiesAsync(page, pageSize, moduleId);
+            var access = await _userAccessContextFactory.CreateAsync(userId);
+
+            if (queryDto.ModuleId != null)
+            {
+                var module = await _unitOfWork.Modules.GetModuleAsync(queryDto.ModuleId.Value) ??
+                    throw new NotFoundException($"Module by id: '{queryDto.ModuleId.Value}', does not exist");
+                await lmsAccessService.EnsureCanAccessModuleAsync(userId, module);
+            }
+
+            var query = lmsAccessService.ApplyActivityAccessFilter(
+                _unitOfWork.Activities.BuildQuery(queryDto.ModuleId),
+                access);
+
+            var (activities, totalCount) = await query
+                .OrderBy(a => a.StartTime)
+                .PagedResult(queryDto);
 
             return new PagedResultDto<ActivityDto>
             {
                 Items = _mapper.Map<List<ActivityDto>>(activities),
                 TotalCount = totalCount,
-                PageNumber = page,
-                PageSize = pageSize
+                PageNumber = queryDto.Page,
+                PageSize = queryDto.PageSize
             };
         }
 
-        public async Task<ActivityDto> GetActivityByIdAsync(int id)
+        public async Task<ActivityDto> GetActivityByIdAsync(int id, string userId)
         {
-            var activity = await _unitOfWork.Activities.FindByIdAsync(id) ??
+            var activity = await _unitOfWork.Activities.GetActivityWithRelationsAsync(id) ??
                 throw new NotFoundException($"Activity by id: '{id}', does not exist");
 
-            var activityDto = _mapper.Map<ActivityDto>(activity);
+            await lmsAccessService.EnsureCanAccessActivityAsync(userId, activity);
 
-            return activityDto;
+            return _mapper.Map<ActivityDto>(activity);
         }
 
         public async Task<ActivityDetailDto> GetActivityDetailByIdAsync(int id)

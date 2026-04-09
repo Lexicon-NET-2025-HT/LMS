@@ -1,4 +1,6 @@
 ﻿using LMS.Shared.DTOs.Activity;
+using LMS.Shared.Request;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Service.Contracts;
@@ -8,13 +10,11 @@ namespace LMS.Presentation.Controllers;
 
 [Route("api/activities")]
 [ApiController]
-public class ActivitiesController : ControllerBase
+[Authorize]
+public class ActivitiesController : LmsControllerBase
 {
-    private readonly IServiceManager serviceManager;
-
-    public ActivitiesController(IServiceManager serviceManager)
+    public ActivitiesController(IServiceManager serviceManager) : base(serviceManager)
     {
-        this.serviceManager = serviceManager;
     }
 
     [HttpGet]
@@ -23,12 +23,9 @@ public class ActivitiesController : ControllerBase
         Description = "Retrieves a paginated list of all activities, optionally filtered by module"
     )]
     [SwaggerResponse(StatusCodes.Status200OK, "Activities retrieved successfully")]
-    public async Task<IActionResult> GetAllActivities(
-        [FromQuery] int page = 1,
-        [FromQuery] int pageSize = 10,
-        [FromQuery] int? moduleId = null)
+    public async Task<IActionResult> GetAllActivities([FromQuery] ActivitiesRequestParams query)
     {
-        var result = await serviceManager.ActivityService.GetAllActivitiesAsync(page, pageSize, moduleId);
+        var result = await serviceManager.ActivityService.GetAllActivitiesAsync(UserId, query);
         return Ok(result);
     }
 
@@ -39,9 +36,10 @@ public class ActivitiesController : ControllerBase
     )]
     [SwaggerResponse(StatusCodes.Status200OK, "Activity retrieved successfully")]
     [SwaggerResponse(StatusCodes.Status404NotFound, "Activity not found")]
+    [SwaggerResponse(StatusCodes.Status403Forbidden, "Forbidden")]
     public async Task<IActionResult> GetActivityById(int id)
     {
-        var activity = await serviceManager.ActivityService.GetActivityByIdAsync(id);
+        var activity = await serviceManager.ActivityService.GetActivityByIdAsync(id, UserId);
         return Ok(activity);
     }
 
