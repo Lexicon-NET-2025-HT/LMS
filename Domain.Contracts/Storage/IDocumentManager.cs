@@ -82,4 +82,8 @@ public interface IDocumentManager
     /// The submission whose attached document should be removed.
     /// </param>
     Task RemoveFromSubmissionAsync(Submission submission);
+
+    Task DeleteFileAsync(Document document);
+    Task DeleteManyAsync(IEnumerable<Document> documents);
+    Task<Stream> OpenReadAsync(Document document);
 }

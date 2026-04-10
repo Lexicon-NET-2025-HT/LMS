@@ -1,5 +1,6 @@
 using AutoMapper;
 using Domain.Contracts.Repositories;
+using Domain.Contracts.Storage;
 using Domain.Models.Entities;
 using Domain.Models.Exceptions;
 using LMS.Infractructure.Extensions;
@@ -19,15 +20,18 @@ public class ModuleService : IModuleService
     private readonly IMapper mapper;
     private readonly ILmsAccessService lmsAccessService;
     private readonly IUserAccessContextFactory userAccessContextFactory;
+    private readonly IDocumentManager documentManager;
     public ModuleService(IUnitOfWork unitOfWork,
                          IMapper mapper,
                          ILmsAccessService lmsAccessService,
+                         IDocumentManager documentManager,
                          IUserAccessContextFactory userAccessContextFactor)
     {
         this.unitOfWork = unitOfWork;
         this.mapper = mapper;
         this.lmsAccessService = lmsAccessService;
         this.userAccessContextFactory = userAccessContextFactor;
+        this.documentManager = documentManager;
     }
     public async Task<PagedResultDto<ModuleDto>> GetAllModulesAsync(string userId, int page, int pageSize, int? courseId = null)
     {
@@ -177,9 +181,15 @@ public class ModuleService : IModuleService
 
     public async Task DeleteModuleAsync(int id, string userId)
     {
-        var module = await unitOfWork.Modules.FindByIdOrThrowAsync(id, trackChanges: true);
+        var module = await unitOfWork.Modules.GetModuleAsync(id, trackChanges: true)
+            ?? throw new NotFoundException($"Module with id {id} does not exist.");
 
         await lmsAccessService.EnsureTeacherForCourseAsync(userId, module.CourseId);
+
+        if (module.Documents.Any())
+        {
+            await documentManager.DeleteManyAsync(module.Documents);
+        }
 
         unitOfWork.Modules.Delete(module);
         await unitOfWork.CompleteAsync();

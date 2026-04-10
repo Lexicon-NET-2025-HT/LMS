@@ -7,7 +7,6 @@ using LMS.Infractructure.Extensions;
 using LMS.Services.Access;
 using LMS.Shared.DTOs.Common;
 using LMS.Shared.DTOs.Document;
-using Microsoft.AspNetCore.Identity;
 using Service.Contracts;
 
 namespace LMS.Services;
@@ -18,17 +17,13 @@ namespace LMS.Services;
 public class DocumentService(
     IUnitOfWork unitOfWork,
     IMapper mapper,
-    IFileStorage fileStorage,
     IDocumentManager documentManager,
     ILmsRelationResolver lmsRelationResolver,
     ILmsAccessService lmsAccessService,
-    IUserAccessContextFactory userAccessContextFactory,
-    UserManager<ApplicationUser> userManager) : IDocumentService
+    IUserAccessContextFactory userAccessContextFactory) : IDocumentService
 {
-    private readonly UserManager<ApplicationUser> _userManager = userManager;
     private readonly IUnitOfWork _unitOfWork = unitOfWork;
     private readonly IMapper _mapper = mapper;
-    private readonly IFileStorage _fileStorage = fileStorage;
     private readonly ILmsRelationResolver _lmsRelationResolver = lmsRelationResolver;
     private readonly ILmsAccessService _lmsAccessService = lmsAccessService;
     private readonly IUserAccessContextFactory _userAccessContextFactory = userAccessContextFactory;
@@ -109,7 +104,7 @@ public class DocumentService(
             throw new NotFoundException("File not found.");
         }
 
-        var stream = await _fileStorage.OpenReadAsync(document.StoredFileName);
+        var stream = await _documentManager.OpenReadAsync(document);
 
         var contentType = string.IsNullOrWhiteSpace(document.ContentType)
             ? "application/octet-stream"
@@ -232,15 +227,7 @@ public class DocumentService(
         // TODO: option to soft delete instead of hard delete, add IsDeleted property to Document entity and filter it out in queries
 
         // remove the file from storage if it exists
-        if (!string.IsNullOrWhiteSpace(document.StoredFileName))
-        {
-            var success = await _fileStorage.DeleteAsync(document.StoredFileName);
-            if (!success)
-            {
-                // log the failure to delete the file, but do not prevent the document record from being deleted
-                // consider implementing a retry mechanism or marking the document for cleanup if file deletion fails
-            }
-        }
+        await _documentManager.DeleteFileAsync(document);
 
         _unitOfWork.Documents.Delete(document);
         await _unitOfWork.CompleteAsync();

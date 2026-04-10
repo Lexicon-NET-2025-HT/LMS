@@ -96,8 +96,30 @@ public class DocumentManager(
         unitOfWork.Documents.Delete(document);
         submission.Document = null;
 
-        await fileStorage.DeleteAsync(document.StoredFileName);
+        await DeleteFileAsync(document);
         await unitOfWork.CompleteAsync();
     }
 
+    public async Task DeleteFileAsync(Document document)
+    {
+        await fileStorage.DeleteAsync(document.StoredFileName);
+    }
+
+    public async Task DeleteManyAsync(IEnumerable<Document> documents)
+    {
+        ArgumentNullException.ThrowIfNull(documents);
+
+        foreach (var document in documents)
+        {
+            await DeleteFileAsync(document);
+            unitOfWork.Documents.Delete(document);
+        }
+
+        await unitOfWork.CompleteAsync();
+    }
+
+    public async Task<Stream> OpenReadAsync(Document document)
+    {
+        return await fileStorage.OpenReadAsync(document.StoredFileName);
+    }
 }
