@@ -109,7 +109,8 @@ public class SubmissionService : ISubmissionService
         {
             var document = await documentManager.CreateEntityAsync(
                 userId,
-                submissionId: createdSubmission.Id);
+                submissionId: createdSubmission.Id,
+                description: dto.FileDescription);
 
             await documentManager.AttachFileAsync(document, dto.File);
             await documentManager.SaveDocumentAsync(document);
