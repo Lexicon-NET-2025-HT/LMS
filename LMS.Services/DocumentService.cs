@@ -19,6 +19,7 @@ public class DocumentService(
     IUnitOfWork unitOfWork,
     IMapper mapper,
     IFileStorage fileStorage,
+    IDocumentManager documentManager,
     ILmsRelationResolver lmsRelationResolver,
     ILmsAccessService lmsAccessService,
     IUserAccessContextFactory userAccessContextFactory,
@@ -31,6 +32,7 @@ public class DocumentService(
     private readonly ILmsRelationResolver _lmsRelationResolver = lmsRelationResolver;
     private readonly ILmsAccessService _lmsAccessService = lmsAccessService;
     private readonly IUserAccessContextFactory _userAccessContextFactory = userAccessContextFactory;
+    private readonly IDocumentManager _documentManager = documentManager;
 
     /// <summary>
     /// Retrieves a paged list of documents accessible to the specified user.
@@ -137,24 +139,20 @@ public class DocumentService(
             throw new BadRequestException("File is missing.");
         }
 
-        var user = await _userManager.FindByIdAsync(userId) ??
-            throw new UnauthorizedAccessException($"User by id {userId} does not exist");
-
         await ValidateCreateAccessAsync(userId, dto);
 
-        var savedFileResult = await _fileStorage.SaveAsync(dto.File);
+        var document = await _documentManager.CreateEntityAsync(
+            userId,
+            courseId: dto.CourseId,
+            moduleId: dto.ModuleId,
+            activityId: dto.ActivityId,
+            submissionId: dto.SubmissionId,
+            description: dto.Description);
 
-        var document = _mapper.Map<Document>(dto);
+        await _documentManager.AttachFileAsync(document, dto.File);
+        await _documentManager.SaveDocumentAsync(document);
 
-        document.UploadedByUser = user;
-        document.UploadedAt = DateTime.UtcNow;
-        document.FileSize = savedFileResult.FileSize;
-        document.StoredFileName = savedFileResult.FileName;
-
-        _unitOfWork.Documents.Create(document);
-        await _unitOfWork.CompleteAsync();
-
-        var createdDocument = await _unitOfWork.Documents.GetDocumentWithAccessRelationsAsync(document.Id)
+        var createdDocument = await _unitOfWork.Documents.GetDocumentAsync(document.Id)
             ?? throw new NotFoundException($"Document with id {document.Id} does not exist after creation.");
 
         return _mapper.Map<DocumentDto>(createdDocument);

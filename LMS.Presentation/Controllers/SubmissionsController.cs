@@ -67,7 +67,7 @@ public class SubmissionsController : LmsControllerBase
     [SwaggerResponse(StatusCodes.Status201Created, "Submission created successfully")]
     [SwaggerResponse(StatusCodes.Status400BadRequest, "Invalid input")]
     [SwaggerResponse(StatusCodes.Status403Forbidden, "Forbidden")]
-    public async Task<IActionResult> CreateSubmission([FromBody] CreateSubmissionDto dto)
+    public async Task<IActionResult> CreateSubmission([FromForm] CreateSubmissionDto dto)
     {
         var submission = await serviceManager.SubmissionService.CreateSubmissionAsync(UserId, dto);
         return CreatedAtAction(nameof(GetSubmissionById), new { id = submission.Id }, submission);
@@ -81,7 +81,7 @@ public class SubmissionsController : LmsControllerBase
     [SwaggerResponse(StatusCodes.Status200OK, "Submission updated successfully")]
     [SwaggerResponse(StatusCodes.Status404NotFound, "Submission not found")]
     [SwaggerResponse(StatusCodes.Status403Forbidden, "Forbidden")]
-    public async Task<IActionResult> UpdateSubmission(int id, [FromBody] UpdateSubmissionDto dto)
+    public async Task<IActionResult> UpdateSubmission(int id, [FromForm] UpdateSubmissionDto dto)
     {
         await serviceManager.SubmissionService.UpdateSubmissionAsync(id, UserId, dto);
         return NoContent();
@@ -95,7 +95,7 @@ public class SubmissionsController : LmsControllerBase
     [SwaggerResponse(StatusCodes.Status200OK, "Submission updated successfully")]
     [SwaggerResponse(StatusCodes.Status404NotFound, "Submission not found")]
     [SwaggerResponse(StatusCodes.Status403Forbidden, "Forbidden")]
-    public async Task<IActionResult> PatchSubmission(int id, [FromBody] PatchSubmissionDto dto)
+    public async Task<IActionResult> PatchSubmission(int id, [FromForm] PatchSubmissionDto dto)
     {
         await serviceManager.SubmissionService.UpdateSubmissionPartiallyAsync(id, UserId, dto);
         return NoContent();

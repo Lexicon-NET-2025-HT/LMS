@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using Domain.Contracts.Repositories;
+using Domain.Contracts.Storage;
 using Domain.Models.Entities;
 using Domain.Models.Exceptions;
 using LMS.Infractructure.Extensions;
@@ -7,6 +8,7 @@ using LMS.Services.Access;
 using LMS.Shared.DTOs.Common;
 using LMS.Shared.DTOs.Submission;
 using LMS.Shared.Request;
+using Microsoft.AspNetCore.Http;
 using Service.Contracts;
 
 namespace LMS.Services;
@@ -18,17 +20,20 @@ public class SubmissionService : ISubmissionService
 {
     private readonly IUnitOfWork unitOfWork;
     private readonly IMapper mapper;
+    private readonly IDocumentManager documentManager;
     private readonly ILmsAccessService lmsAccessService;
     private readonly IUserAccessContextFactory userAccessContextFactory;
     public SubmissionService(IUnitOfWork unitOfWork,
                              IMapper mapper,
                              ILmsAccessService lmsAccessService,
-                             IUserAccessContextFactory userAccessContextFactor)
+                             IUserAccessContextFactory userAccessContextFactor,
+                             IDocumentManager documentManager)
     {
         this.unitOfWork = unitOfWork;
         this.mapper = mapper;
         this.lmsAccessService = lmsAccessService;
         this.userAccessContextFactory = userAccessContextFactor;
+        this.documentManager = documentManager;
     }
     public async Task<PagedResultDto<SubmissionDto>> GetAllSubmissionsAsync(string userId, SubmissionsRequestParams queryDto)
     {
@@ -87,6 +92,7 @@ public class SubmissionService : ISubmissionService
 
         await lmsAccessService.EnsureCanAccessActivityAsync(userId, activity);
 
+
         var submission = mapper.Map<Submission>(dto);
         submission.StudentId = userId;
         submission.SubmittedAt = DateTime.UtcNow;
@@ -96,8 +102,21 @@ public class SubmissionService : ISubmissionService
         await unitOfWork.CompleteAsync();
 
         // refetch new submission with navprops to verify it exists
-        var createdSubmission = await unitOfWork.Submissions.GetSubmissionAsync(submission.Id)
+        var createdSubmission = await unitOfWork.Submissions.GetSubmissionAsync(submission.Id, trackChanges: true)
             ?? throw new InvalidOperationException($"Submission with id {submission.Id} could not be loaded after creation.");
+
+        if (dto.File != null)
+        {
+            var document = await documentManager.CreateEntityAsync(
+                userId,
+                submissionId: createdSubmission.Id);
+
+            await documentManager.AttachFileAsync(document, dto.File);
+            await documentManager.SaveDocumentAsync(document);
+
+            createdSubmission.Document = document;
+            await unitOfWork.CompleteAsync();
+        }
 
         return mapper.Map<SubmissionDto>(createdSubmission);
     }
@@ -106,7 +125,7 @@ public class SubmissionService : ISubmissionService
         ArgumentNullException.ThrowIfNull(dto);
         var submission = await GetStudentAccessedSubmission(id, userId);
 
-        await InternallyUpdateSubmissionAsync(submission, dto.Body, dto.ActivityId, dto.DocumentId);
+        await InternallyUpdateSubmissionAsync(submission, dto.Body, dto.ActivityId, dto.File);
     }
 
     public async Task UpdateSubmissionPartiallyAsync(int id, string userId, PatchSubmissionDto dto)
@@ -118,22 +137,26 @@ public class SubmissionService : ISubmissionService
         await InternallyUpdateSubmissionAsync(submission,
                                               dto.Body ?? submission.Body ?? string.Empty,
                                               dto.ActivityId ?? submission.Activity.Id,
-                                              dto.DocumentId);
+                                              dto.File);
     }
-    private async Task InternallyUpdateSubmissionAsync(Submission submission, string body, int activityId, int? documentId)
+    private async Task InternallyUpdateSubmissionAsync(Submission submission, string body, int activityId, IFormFile? file)
     {
         submission.Body = body;
-        if (documentId != null)
-        {
-            submission.Document = await unitOfWork.Documents.FindByIdOrThrowAsync(documentId.Value, trackChanges: true);
-        }
         submission.ActivityId = activityId;
+        if (file != null)
+        {
+            await documentManager.ReplaceForSubmissionAsync(submission, file);
+            return;
+        }
 
         await unitOfWork.CompleteAsync();
     }
     public async Task DeleteSubmissionAsync(int id, string userId)
     {
         var submission = await GetStudentAccessedSubmission(id, userId);
+
+        await documentManager.RemoveFromSubmissionAsync(submission);
+
         unitOfWork.Submissions.Delete(submission);
         await unitOfWork.CompleteAsync();
     }
