@@ -94,6 +94,42 @@ public class ClientApiService : IApiService
         return response.IsSuccessStatusCode;
     }
 
+    public async Task<T?> PostMultipartAsync<T>(
+        string endpoint,
+        MultipartFormDataContent content,
+        CancellationToken ct = default)
+    {
+        var response = await _httpClient.PostAsync($"api/proxy/{endpoint}", content, ct);
+        HandleUnauthorized(response);
+        if (!response.IsSuccessStatusCode)
+        {
+            var errorBody = await response.Content.ReadAsStringAsync(ct);
+            Console.WriteLine(errorBody);
+        }
+        response.EnsureSuccessStatusCode();
+        return await DeserializeAsync<T>(response, ct);
+    }
+
+    public async Task<T?> PutMultipartAsync<T>(
+        string endpoint,
+        MultipartFormDataContent content,
+        CancellationToken ct = default)
+    {
+        var response = await _httpClient.PutAsync($"api/proxy/{endpoint}", content, ct);
+
+        HandleUnauthorized(response);
+
+        if (!response.IsSuccessStatusCode)
+        {
+            var errorBody = await response.Content.ReadAsStringAsync(ct);
+            Console.WriteLine(errorBody);
+        }
+
+        response.EnsureSuccessStatusCode();
+
+        return await DeserializeAsync<T>(response, ct);
+    }
+
     // -------------------------
     // Private helpers
     // -------------------------
@@ -122,4 +158,6 @@ public class ClientApiService : IApiService
 
         return await JsonSerializer.DeserializeAsync<T>(content, _jsonOptions, ct);
     }
+
+
 }

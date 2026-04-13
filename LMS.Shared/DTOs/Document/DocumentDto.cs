@@ -4,7 +4,7 @@
     /// Represents a document attached to a course, module, or activity.
     /// Documents can be associated with one of three scopes: Course, Module, or Activity.
     /// </summary>
-    public record DocumentDto
+    public class DocumentDto
     {
         public required int Id { get; init; }
         /// <summary>
@@ -14,6 +14,7 @@
         public long FileSize { get; init; }
         public required string DisplayName { get; init; }
         public required string Description { get; init; }
+        public required string ContentType { get; init; }
 
         /// <summary>
         /// Date and time when the document was uploaded.

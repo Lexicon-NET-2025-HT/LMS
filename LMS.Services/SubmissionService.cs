@@ -126,7 +126,7 @@ public class SubmissionService : ISubmissionService
         ArgumentNullException.ThrowIfNull(dto);
         var submission = await GetStudentAccessedSubmission(id, userId);
 
-        await InternallyUpdateSubmissionAsync(submission, dto.Body, dto.ActivityId, dto.File);
+        await InternallyUpdateSubmissionAsync(submission, dto.Body, dto.ActivityId, dto.File, dto.FileDescription);
     }
 
     public async Task UpdateSubmissionPartiallyAsync(int id, string userId, PatchSubmissionDto dto)
@@ -138,15 +138,16 @@ public class SubmissionService : ISubmissionService
         await InternallyUpdateSubmissionAsync(submission,
                                               dto.Body ?? submission.Body ?? string.Empty,
                                               dto.ActivityId ?? submission.Activity.Id,
-                                              dto.File);
+                                              dto.File ?? null,
+                                              dto.FileDescription ?? submission.Document?.Description);
     }
-    private async Task InternallyUpdateSubmissionAsync(Submission submission, string body, int activityId, IFormFile? file)
+    private async Task InternallyUpdateSubmissionAsync(Submission submission, string? body, int? activityId, IFormFile? file, string? fileDescription)
     {
-        submission.Body = body;
-        submission.ActivityId = activityId;
+        submission.Body = body ?? submission.Body;
+        submission.ActivityId = activityId ?? submission.ActivityId;
         if (file != null)
         {
-            await documentManager.ReplaceForSubmissionAsync(submission, file);
+            await documentManager.ReplaceForSubmissionAsync(submission, file, fileDescription);
             return;
         }
 

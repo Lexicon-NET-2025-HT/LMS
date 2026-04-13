@@ -35,4 +35,16 @@ public class ServerNoOpApiService(ILogger<ServerNoOpApiService> logger) : IApiSe
         _logger.LogWarning("ServerNoOpApiService called for: {Endpoint}", endpoint);
         return Task.FromResult(false);
     }
+
+    public Task<T?> PostMultipartAsync<T>(string endpoint, MultipartFormDataContent content, CancellationToken ct = default)
+    {
+        _logger.LogWarning("ServerNoOpApiService called for: {Endpoint}", endpoint);
+        return Task.FromResult<T?>(default);
+    }
+
+    public Task<T?> PutMultipartAsync<T>(string endpoint, MultipartFormDataContent content, CancellationToken ct = default)
+    {
+        _logger.LogWarning("ServerNoOpApiService called for: {Endpoint}", endpoint);
+        return Task.FromResult<T?>(default);
+    }
 }
