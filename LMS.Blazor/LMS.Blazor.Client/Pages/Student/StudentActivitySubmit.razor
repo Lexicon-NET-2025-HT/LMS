@@ -187,12 +187,7 @@
                     @if (existingSubmission.Document is not null)
                     {
                         <p class="small fw-semibold text-muted mb-1">Attached file</p>
-                        <div class="d-flex align-items-center gap-2 border rounded p-2 bg-light">
-                            <i class="bi bi-file-earmark-text fs-4 text-muted"></i>
-                            <div>
-                                <div class="fw-semibold small">@existingSubmission.Document!.DisplayName</div>
-                            </div>
-                        </div>
+                        <DocumentWithDownload Document="@existingSubmission.Document"/>
                     }
 
                     @* ---- Feedback block ---- *@
@@ -273,7 +268,7 @@
                         
                     <div class="mb-3">
                         <UploadDocumentField
-                                Value="documentUpload"
+                                @bind-Value="documentUpload"
                                 Label="Attach File"
                                 DescriptionLabel="File description"
                                 DescriptionPlaceholder="Optional description" />
