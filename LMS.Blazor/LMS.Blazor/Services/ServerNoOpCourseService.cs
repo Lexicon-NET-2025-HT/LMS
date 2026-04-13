@@ -14,6 +14,12 @@ public class ServerNoOpCourseService(ILogger<ServerNoOpCourseService> logger) : 
         return Task.FromResult<PagedResultDto<CourseDto>?>(null);
     }
 
+    public Task<CourseDto?> GetMyCourseAsync(CancellationToken ct = default)
+    {
+        _logger.LogWarning("ServerNoOpCourseService called for GetMyCourseAsync");
+        return Task.FromResult<CourseDto?>(null);
+    }
+
     public Task<CourseDto?> GetCourseByIdAsync(int courseId, CancellationToken ct = default)
     {
         _logger.LogWarning("ServerNoOpCourseService called for GetCourseByIdAsync: {CourseId}", courseId);

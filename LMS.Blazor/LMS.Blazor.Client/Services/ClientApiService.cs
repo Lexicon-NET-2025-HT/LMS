@@ -30,6 +30,16 @@ public class ClientApiService : IApiService
         return await DeserializeAsync<T>(response, ct);
     }
 
+    public async Task<T?> GetAllowNotFoundAsync<T>(string endpoint, CancellationToken ct = default)
+    {
+        var response = await _httpClient.GetAsync($"api/proxy/{endpoint}", ct);
+        HandleUnauthorized(response);
+        if (response.StatusCode == System.Net.HttpStatusCode.NotFound)
+            return default;
+        response.EnsureSuccessStatusCode();
+        return await DeserializeAsync<T>(response, ct);
+    }
+
     public async Task<T?> PostAsync<T>(string endpoint, object body, CancellationToken ct = default)
     {
         var response = await _httpClient.PostAsJsonAsync($"api/proxy/{endpoint}", body, _jsonOptions, ct);
