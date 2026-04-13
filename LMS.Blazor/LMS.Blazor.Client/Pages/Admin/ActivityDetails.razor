@@ -3,7 +3,6 @@
 @using LMS.Shared.DTOs.Activity
 @using LMS.Shared.DTOs.Document
 @using LMS.Shared.DTOs.Submission
-@using Domain.Models.Enums
 @inject IActivityService ActivityService
 @inject NavigationManager Navigation
 
@@ -66,7 +65,7 @@
             <div class="card-header d-flex flex-wrap justify-content-between align-items-center gap-2">
                 <h5 class="mb-0">@activity.Name</h5>
                 <div class="d-flex gap-2 flex-wrap align-items-center">
-                    <span class="badge @GetActivityTypeBadge(activity.Type) fs-6">@activity.Type</span>
+                    <span class="badge @GetActivityTypeBadge(activity.ActivityTypeName) fs-6">@activity.ActivityTypeName</span>
                     <span class="badge bg-secondary">@submissions.Count Submissions</span>
                     <span class="badge bg-info text-dark">@documents.Count Documents</span>
                 </div>
@@ -83,12 +82,12 @@
                     </div>
                     <div class="col-md-2 col-6">
                         <p class="text-muted mb-1 small">Start</p>
-                        <p class="mb-0">@activity.StartTime.ToString("yyyy-MM-dd HH:mm")</p>
+                        <p class="mb-0">@activity.StartTime.ToString()</p>
                     </div>
                     <div class="col-md-2 col-6">
                         <p class="text-muted mb-1 small">End / Deadline</p>
                         <p class="mb-0 @(activity.EndTime < DateTime.Now ? "text-danger fw-semibold" : "")">
-                            @activity.EndTime.ToString("yyyy-MM-dd HH:mm")
+                            @activity.EndTime.ToString()
                             @if (activity.EndTime < DateTime.Now)
                             {
                                 <span class="badge bg-danger ms-1">Past</span>
@@ -427,18 +426,19 @@
                 // Reconstruct an ActivityDetailDto from the basic dto
                 activity = new ActivityDetailDto
                 {
-                    Id             = basic.Id,
-                    ModuleId       = basic.ModuleId,
-                    ModuleName     = basic.ModuleName,
-                    Name           = basic.Name,
-                    Description    = basic.Description,
-                    Type           = basic.Type,
-                    StartTime      = basic.StartTime,
-                    EndTime        = basic.EndTime,
-                    DocumentCount  = basic.DocumentCount,
+                    Id = basic.Id,
+                    ModuleId = basic.ModuleId,
+                    ModuleName = basic.ModuleName,
+                    Name = basic.Name,
+                    Description = basic.Description,
+                    ActivityTypeId = basic.ActivityTypeId,      // changed
+                    ActivityTypeName = basic.ActivityTypeName,   // changed
+                    StartTime = basic.StartTime,
+                    EndTime = basic.EndTime,
+                    DocumentCount = basic.DocumentCount,
                     SubmissionCount = basic.SubmissionCount,
-                    Documents      = [],
-                    Submissions    = []
+                    Documents = [],
+                    Submissions = []
                 };
 
                 submissions = activity.Submissions;
@@ -538,12 +538,12 @@
             Navigation.NavigateTo("/admin/modules");
     }
 
-    private static string GetActivityTypeBadge(ActivityType type) => type switch
+    private static string GetActivityTypeBadge(string typeName) => typeName switch
     {
-        ActivityType.Assignment => "bg-warning text-dark",
-        ActivityType.Exercise       => "bg-danger",
-        ActivityType.Lecture    => "bg-primary",
-        ActivityType.ELearning => "bg-success",
-        _                       => "bg-secondary"
+        "Assignment" => "bg-warning text-dark",
+        "Exercise" => "bg-danger",
+        "Lecture" => "bg-primary",
+        "E-Learning" => "bg-success",
+        _ => "bg-secondary"
     };
 }

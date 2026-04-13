@@ -3,7 +3,8 @@
 @using LMS.Shared.DTOs.Activity
 @using LMS.Shared.DTOs.Document
 @using LMS.Shared.DTOs.Module
-@using Domain.Models.Enums
+@using LMS.Shared.DTOs.ActivityType
+@inject IActivityTypeService ActivityTypeService
 @inject IModuleService ModuleService
 @inject IActivityService ActivityService
 @inject NavigationManager Navigation
@@ -129,10 +130,10 @@
 
                         <div class="col-12 col-sm-4 col-xl-2">
                             <label class="form-label small fw-semibold mb-1">Type <span class="text-danger">*</span></label>
-                            <select class="form-select form-select-sm" @bind="newActivity.Type">
-                                @foreach (var type in Enum.GetValues<ActivityType>())
+                            <select class="form-select form-select-sm" @bind="newActivity.ActivityTypeId">
+                                @foreach (var type in activityTypes)
                                 {
-                                    <option value="@type">@type</option>
+                                    <option value="@type.Id">@type.Name</option>
                                 }
                             </select>
                         </div>
@@ -212,10 +213,10 @@
                                             }
                                         </td>
                                         <td>
-                                            <span class="badge @GetActivityTypeBadge(act.Type)">@act.Type</span>
+                                            <span class="badge @GetActivityTypeBadge(act.ActivityTypeName)">@act.ActivityTypeName</span>
                                         </td>
                                         <td class="d-none d-sm-table-cell text-muted small">
-                                            @act.StartTime.ToString("yyyy-MM-dd HH:mm")
+                                            @act.StartTime.ToString()
                                         </td>
                                         <td class="d-none d-sm-table-cell text-muted small">
                                             @act.EndTime.ToString("yyyy-MM-dd HH:mm")
@@ -394,6 +395,7 @@
     // ---- Add activity ----
     private bool showAddActivity;
     private bool isAddingActivity;
+    private List<ActivityTypeDto> activityTypes = [];
     private ActivityFormModel newActivity = new();
     private Dictionary<string, string> activityErrors = new();
 
@@ -419,6 +421,9 @@
 
         try
         {
+            var typesResult = await ActivityTypeService.GetAllActivityTypesAsync();
+            activityTypes = typesResult?.ToList() ?? [];
+
             module = await ModuleService.GetModuleDetailByIdAsync(ModuleId);
             if (module is not null)
             {
@@ -450,8 +455,8 @@
                 ModuleId = ModuleId,
                 Name = newActivity.Name,
                 Description = newActivity.Description,
-                Type = newActivity.Type,
-                StartTime = newActivity.StartTime,
+                ActivityTypeId = newActivity.ActivityTypeId,
+                StartTime = newActivity.StartTime ?? DateTime.Now,
                 EndTime = newActivity.EndTime
             };
 
@@ -556,22 +561,22 @@
     // ---- Helpers ----
     private void GoBack() => Navigation.NavigateTo($"/admin/modules");
 
-    private static string GetActivityTypeBadge(ActivityType type) => type switch
+    private static string GetActivityTypeBadge(string typeName) => typeName switch
     {
-        ActivityType.Assignment  => "bg-warning text-dark",
-        ActivityType.Exercise        => "bg-danger",
-        ActivityType.Lecture     => "bg-primary",
-        ActivityType.ELearning  => "bg-success",
-        _                        => "bg-secondary"
+        "Assignment" => "bg-warning text-dark",
+        "Exercise" => "bg-danger",
+        "Lecture" => "bg-primary",
+        "E-Learning" => "bg-success",
+        _ => "bg-secondary"
     };
 
-    // ---- Local models ----
+    // ---- update ActivityFormModel ----
     private class ActivityFormModel
     {
         public string Name { get; set; } = string.Empty;
         public string Description { get; set; } = string.Empty;
-        public ActivityType Type { get; set; } = ActivityType.Lecture;
-        public DateTime StartTime { get; set; } = DateTime.Today.AddHours(9);
+        public int ActivityTypeId { get; set; }        // was ActivityType Type
+        public DateTime? StartTime { get; set; } = DateTime.Today.AddHours(9);
         public DateTime EndTime { get; set; } = DateTime.Today.AddHours(11);
     }
 

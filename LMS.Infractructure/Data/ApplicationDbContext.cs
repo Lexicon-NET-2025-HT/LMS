@@ -10,6 +10,7 @@ namespace LMS.Infractructure.Data
         public DbSet<Course> Courses { get; set; }
         public DbSet<Module> Modules { get; set; }
         public DbSet<Activity> Activities { get; set; }
+        public DbSet<ActivityType> ActivityTypes { get; set; }
         public DbSet<Document> Documents { get; set; }
         public DbSet<Submission> Submissions { get; set; }
         public DbSet<CourseTeacher> CourseTeachers { get; set; }
@@ -67,6 +68,26 @@ namespace LMS.Infractructure.Data
                     .WithMany(m => m.Activities)
                     .HasForeignKey(a => a.ModuleId)
                     .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasOne(a => a.ActivityType)
+                    .WithMany(at => at.Activities)
+                    .HasForeignKey(a => a.ActivityTypeId)
+                    .OnDelete(DeleteBehavior.Restrict);
+            });
+
+            builder.Entity<ActivityType>(entity =>
+            {
+                entity.HasKey(at => at.Id);
+
+                entity.Property(at => at.Name)
+                    .IsRequired()
+                    .HasMaxLength(100);
+
+                entity.Property(at => at.Description)
+                    .HasMaxLength(500);
+
+                entity.HasIndex(at => at.Name)
+                    .IsUnique();
             });
 
             // ApplicationUser -> Course (student belongs to course)

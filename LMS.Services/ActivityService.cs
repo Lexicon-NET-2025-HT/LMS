@@ -62,9 +62,12 @@ namespace LMS.Services
             var module = await _unitOfWork.Modules.FindByIdAsync(dto.ModuleId) ??
                 throw new NotFoundException($"Module by id: '{dto.ModuleId}', does not exist");
 
+            var activityType = await _unitOfWork.ActivityTypes.FindByIdAsync(dto.ActivityTypeId) ??
+                throw new NotFoundException($"ActivityType with id: '{dto.ActivityTypeId}' does not exist");
             var activity = _mapper.Map<Activity>(dto);
 
             activity.Module = module;
+            activity.ActivityType = activityType;
 
             _unitOfWork.Activities.Create(activity);
             await _unitOfWork.CompleteAsync();

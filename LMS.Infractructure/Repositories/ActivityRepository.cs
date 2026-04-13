@@ -20,7 +20,8 @@ public class ActivityRepository(ApplicationDbContext context) : RepositoryBase<A
     {
         return await FindByCondition(a => a.Id == id, trackChanges)
             .Include(a => a.Module)
-                .ThenInclude(m => m.Course)
+            .ThenInclude(m => m.Course)
+            .Include(a => a.ActivityType)
             .Include(a => a.Documents)
             .Include(a => a.Submissions)
             .FirstOrDefaultAsync();
@@ -29,9 +30,14 @@ public class ActivityRepository(ApplicationDbContext context) : RepositoryBase<A
     public async Task<(IEnumerable<Activity> activities, int totalCount)> GetAllActivitiesAsync(
         int page, int pageSize, int? moduleId, bool trackChanges = false)
     {
-        var query = FindByCondition(a => moduleId == null || a.ModuleId == moduleId.Value, trackChanges);
+        var query = FindByCondition(a => moduleId == null || a.ModuleId == moduleId.Value, trackChanges)
+            .Include(a => a.Module)
+            .Include(a => a.ActivityType);
 
         return await query.PagedResult(page, pageSize);
     }
+
+    public async Task<bool> AnyWithActivityTypeAsync(int activityTypeId)
+        => await FindByCondition(a => a.ActivityTypeId == activityTypeId).AnyAsync();
 
 }

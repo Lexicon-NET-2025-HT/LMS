@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Components;
+﻿using LMS.Shared.DTOs.Common;
+using Microsoft.AspNetCore.Components;
 using System.Net.Http.Json;
 using System.Text.Json;
 
@@ -50,7 +51,29 @@ public class ClientApiService : IApiService
     {
         var response = await _httpClient.DeleteAsync($"api/proxy/{endpoint}", ct);
         HandleUnauthorized(response);
-        return response.IsSuccessStatusCode;
+
+        if (!response.IsSuccessStatusCode)
+        {
+            ApiResponseDto<object>? apiResponse = null;
+
+            try
+            {
+                apiResponse = await response.Content.ReadFromJsonAsync<ApiResponseDto<object>>(cancellationToken: ct);
+            }
+            catch
+            {
+                // fallback
+            }
+
+            var message =
+                apiResponse?.Message ??
+                apiResponse?.Errors.FirstOrDefault() ??
+                $"Request failed with status {response.StatusCode}.";
+
+            throw new Exception(message);
+        }
+
+        return true;
     }
 
     // -------------------------

@@ -3,7 +3,6 @@
 @using LMS.Shared.DTOs.Activity
 @using LMS.Shared.DTOs.Document
 @using LMS.Shared.DTOs.Submission
-@using Domain.Models.Enums
 @inject IActivityService ActivityService
 @inject NavigationManager Navigation
 
@@ -65,7 +64,7 @@
         <div class="card mb-4">
             <div class="card-header d-flex flex-wrap justify-content-between align-items-center gap-2">
                 <div>
-                    <span class="badge @GetActivityTypeBadge(activity.Type) me-2">@activity.Type</span>
+                    <span class="badge @GetActivityTypeBadge(activity.ActivityTypeName) me-2">@activity.ActivityTypeName</span>
                     <span class="fw-semibold">@activity.ModuleName</span>
                 </div>
                 @if (isOverdue)
@@ -91,7 +90,7 @@
                 <div class="row g-2 small">
                     <div class="col-6 col-md-3">
                         <span class="text-muted d-block">Opens</span>
-                        <span>@activity.StartTime.ToString("MMM d, yyyy HH:mm")</span>
+                        <span>@(activity.StartTime?.ToString("MMM d, yyyy HH:mm") ?? "—")</span>
                     </div>
                     <div class="col-6 col-md-3">
                         <span class="text-muted d-block">Deadline</span>
@@ -489,12 +488,12 @@
         return $"{t.Minutes}m remaining";
     }
 
-    private static string GetActivityTypeBadge(ActivityType type) => type switch
+    private static string GetActivityTypeBadge(string typeName) => typeName switch
     {
-        ActivityType.Assignment => "bg-warning text-dark",
-        ActivityType.Exercise => "bg-danger",
-        ActivityType.Lecture => "bg-primary",
-        ActivityType.ELearning => "bg-success",
+        "Assignment" => "bg-warning text-dark",
+        "Exercise" => "bg-danger",
+        "Lecture" => "bg-primary",
+        "E-Learning" => "bg-success",
         _ => "bg-secondary"
     };
 

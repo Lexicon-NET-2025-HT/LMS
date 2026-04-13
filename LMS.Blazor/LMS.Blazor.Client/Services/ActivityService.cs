@@ -33,8 +33,9 @@ public class ActivityService : IActivityService
     public Task<ActivityDto?> CreateActivityAsync(CreateActivityDto dto, CancellationToken ct = default)
         => _apiService.PostAsync<ActivityDto>(Base, dto, ct);
 
-    public async Task DeleteActivityAsync(int id, CancellationToken ct = default)
-    {
-        await _apiService.DeleteAsync($"{Base}/{id}", ct);
-    }
+    public Task DeleteActivityAsync(int id, CancellationToken ct = default)
+        => _apiService.DeleteAsync($"{Base}/{id}", ct);
+
+    public Task UpdateActivityAsync(int id, UpdateActivityDto dto, CancellationToken ct = default)
+    => _apiService.PutAsync<object>($"{Base}/{id}", dto, ct);
 }

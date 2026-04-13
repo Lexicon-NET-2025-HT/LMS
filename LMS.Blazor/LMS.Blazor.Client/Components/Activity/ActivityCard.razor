@@ -1,0 +1,78 @@
+﻿@using LMS.Shared.DTOs.Activity
+@using BlazorBlueprint.Components
+
+<BbCard Class="h-100">
+    <BbCardHeader>
+        <div class="d-flex justify-content-between align-items-start gap-2">
+            <BbCardTitle Class="text-sm font-semibold mb-0">@Activity.Name</BbCardTitle>
+            <BbBadge Variant="@GetBadgeVariant(Activity.ActivityTypeName)">
+                @Activity.ActivityTypeName
+            </BbBadge>
+        </div>
+        <p class="text-muted mb-0" style="font-size:0.78rem;">@Activity.ModuleName</p>
+    </BbCardHeader>
+
+    <BbCardContent>
+        <p class="text-muted mb-3" style="font-size:0.85rem;overflow:hidden;display:-webkit-box;
+           -webkit-line-clamp:2;-webkit-box-orient:vertical;">
+            @(string.IsNullOrEmpty(Activity.Description) ? "No description." : Activity.Description)
+        </p>
+        <BbSeparator Class="my-2" />
+        <div class="d-flex flex-column gap-1" style="font-size:0.78rem;color:#888;">
+            <span><i class="bi bi-play me-1"></i>@(Activity.StartTime?.ToString("MMM d, HH:mm") ?? "—")</span>
+            <span class="@(Activity.EndTime < DateTime.Now ? "text-danger" : "")">
+                <i class="bi bi-flag me-1"></i>@Activity.EndTime.ToString("MMM d, HH:mm")
+                @if (Activity.EndTime < DateTime.Now)
+                {
+                    <BbBadge Variant="BadgeVariant.Destructive" Class="ms-1">Past</BbBadge>
+                }
+            </span>
+        </div>
+    </BbCardContent>
+
+    <BbCardFooter Class="d-flex justify-content-between align-items-center pt-0">
+        <div class="d-flex gap-2">
+            <BbBadge Variant="BadgeVariant.Secondary">
+                <i class="bi bi-file-earmark me-1"></i>@Activity.DocumentCount
+            </BbBadge>
+            <BbBadge Variant="BadgeVariant.Secondary">
+                <i class="bi bi-send me-1"></i>@Activity.SubmissionCount
+            </BbBadge>
+        </div>
+        <div class="d-flex gap-1">
+            @if (OnView.HasDelegate)
+            {
+                <BbButton Variant="ButtonVariant.Ghost" Size="ButtonSize.Small"
+                          OnClick="@(() => OnView.InvokeAsync(Activity))">👁️</BbButton>
+            }
+            @if (OnEdit.HasDelegate)
+            {
+                <BbButton Variant="ButtonVariant.Ghost" Size="ButtonSize.Small"
+                          OnClick="@(() => OnEdit.InvokeAsync(Activity))">✏️</BbButton>
+            }
+            @if (OnDelete.HasDelegate)
+            {
+                <BbButton Variant="ButtonVariant.Ghost" Size="ButtonSize.Small"
+                          Style="color:var(--bb-destructive);"
+                          OnClick="@(() => OnDelete.InvokeAsync(Activity.Id))">🗑️</BbButton>
+            }
+        </div>
+    </BbCardFooter>
+</BbCard>
+
+@code {
+    [Parameter, EditorRequired] public ActivityDto Activity { get; set; } = default!;
+    [Parameter] public string? Class { get; set; }
+    [Parameter] public EventCallback<ActivityDto> OnView { get; set; }
+    [Parameter] public EventCallback<ActivityDto> OnEdit { get; set; }
+    [Parameter] public EventCallback<int> OnDelete { get; set; }
+
+    private static BadgeVariant GetBadgeVariant(string typeName) => typeName switch
+    {
+        "Assignment" => BadgeVariant.Default,
+        "Lecture"    => BadgeVariant.Destructive,
+        "Exercise"   => BadgeVariant.Outline,
+        "E-Learning" => BadgeVariant.Secondary,
+        _            => BadgeVariant.Outline
+    };
+}

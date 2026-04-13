@@ -90,6 +90,7 @@ public static class ServiceExtensions
 
         services.AddScoped<ICourseRepository, CourseRepository>();
         services.AddScoped<IModuleRepository, ModuleRepository>();
+        services.AddScoped<IActivityTypeRepository, ActivityTypeRepository>();
         services.AddScoped<IActivityRepository, ActivityRepository>();
         services.AddScoped<IDocumentRepository, DocumentRepository>();
         services.AddScoped<ISubmissionRepository, SubmissionRepository>();
@@ -102,6 +103,7 @@ public static class ServiceExtensions
         services.AddScoped<IAuthService, AuthService>();
         services.AddScoped<ICourseService, CourseService>();
         services.AddScoped<IModuleService, ModuleService>();
+        services.AddScoped<IActivityTypeService, ActivityTypeService>();
         services.AddScoped<IActivityService, ActivityService>();
         services.AddScoped<IDocumentService, DocumentService>();
         services.AddScoped<ISubmissionService, SubmissionService>();

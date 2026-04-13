@@ -1,15 +1,17 @@
 ﻿@page "/admin/courses/{CourseId:int}/details"
 @attribute [Authorize(Roles = "Teacher")]
+@using Domain.Models.Entities
 @using LMS.Shared.DTOs.Activity
 @using LMS.Shared.DTOs.Course
 @using LMS.Shared.DTOs.Module
 @using LMS.Shared.DTOs.User
+@using LMS.Shared.DTOs.ActivityType
 @inject ICourseService CourseService
 @inject NavigationManager Navigation
-@using Domain.Models.Enums
 @inject IModuleService ModuleService
 @inject IActivityService ActivityService
 @inject IUserService UserService
+@inject IActivityTypeService ActivityTypeService
 
 <PageTitle>Course Details</PageTitle>
 
@@ -175,10 +177,10 @@
                                         </div>
                                         <div class="col-12 col-sm-6 col-xl-2">
                                             <label class="form-label small fw-semibold mb-1">Type</label>
-                                            <select class="form-select form-select-sm" @bind="newActivityType">
-                                                @foreach (var type in Enum.GetValues<ActivityType>())
+                                            <select class="form-select form-select-sm" @bind="newActivityTypeId">
+                                                @foreach (var type in activityTypes)
                                                 {
-                                                    <option value="@type">@type</option>
+                                                    <option value="@type.Id">@type.Name</option>
                                                 }
                                             </select>
                                         </div>
@@ -234,9 +236,9 @@
                                                     {
                                                         <tr>
                                                             <td>@act.Name</td>
-                                                            <td><span class="badge bg-info text-dark">@act.Type</span></td>
-                                                            <td>@act.StartTime.ToString("yyyy-MM-dd HH:mm")</td>
-                                                            <td>@act.EndTime.ToString("yyyy-MM-dd HH:mm")</td>
+                                                            <td><span class="badge bg-info text-dark">@act.ActivityTypeName</span></td>
+                                                            <td>@act.StartTime.ToString()</td>
+                                                            <td>@act.EndTime.ToString()</td>
                                                             <td>
                                                                 <button class="btn btn-sm btn-outline-danger"
                                                                         @onclick="() => RemoveActivityAsync(act.Id, module.Id)">
@@ -247,12 +249,6 @@
                                                     }
                                                 </tbody>
                                             </table>
-                                        </div>
-
-                                        @* Sync reminder *@
-                                        <div class="alert alert-warning py-1 px-2 mt-2 mb-0 small">
-                                            <i class="bi bi-exclamation-triangle me-1"></i>
-                                            These activities are stored locally. Save to API when backend is ready.
                                         </div>
                                     }
                                 </div>
@@ -408,7 +404,8 @@
 
     // ---- Activity state ----
     private string newActivityName = string.Empty;
-    private ActivityType newActivityType = ActivityType.Lecture;
+    private List<ActivityTypeDto> activityTypes = [];
+    private int newActivityTypeId;
     private DateTime newActivityStart = DateTime.Today.AddHours(9);
     private DateTime newActivityEnd = DateTime.Today.AddHours(17);
     private bool isAddingActivity;
@@ -438,6 +435,10 @@
 
         try
         {
+            var typesResult = await ActivityTypeService.GetAllActivityTypesAsync();
+            activityTypes = typesResult?.ToList() ?? [];
+            newActivityTypeId = activityTypes.FirstOrDefault()?.Id ?? 0;
+
             var detail = await CourseService.GetCourseDetailByIdAsync(CourseId);
 
             if (detail is not null)
@@ -556,24 +557,23 @@
             return;
         }
 
-        var type = kind == ActivityKind.Assignment
-            ? ActivityType.Assignment
-            : newActivityType;
-
         isAddingActivity = true;
         try
         {
-            var dto = new CreateActivityDto
+            var assignmentType = activityTypes.FirstOrDefault(t => t.Name == "Assignment");
+            var activityDto = new CreateActivityDto
             {
                 ModuleId = moduleId,
                 Name = newActivityName,
                 Description = string.Empty,
-                Type = type,
+                ActivityTypeId = kind == ActivityKind.Assignment
+                                    ? (assignmentType?.Id ?? newActivityTypeId)
+                                    : newActivityTypeId,
                 StartTime = newActivityStart,
                 EndTime = newActivityEnd
             };
 
-            var created = await ActivityService.CreateActivityAsync(dto);
+            var created = await ActivityService.CreateActivityAsync(activityDto);
             if (created is not null)
             {
                 if (moduleActivities.TryGetValue(moduleId, out var list))

@@ -1,6 +1,7 @@
 using AutoMapper;
 using Domain.Models.Entities;
 using LMS.Shared.DTOs.Activity;
+using LMS.Shared.DTOs.ActivityType;
 using LMS.Shared.DTOs.AuthDtos;
 using LMS.Shared.DTOs.Course;
 using LMS.Shared.DTOs.Document;
@@ -53,8 +54,8 @@ public class MapperProfile : Profile
 
         // activity mappings
         CreateMap<Activity, ActivityDto>()
-            .ForMember(dest => dest.DocumentCount, opt => opt.MapFrom(src => src.Documents.Count))
-            .ForMember(dest => dest.SubmissionCount, opt => opt.MapFrom(src => src.Submissions.Count));
+            .ForMember(dest => dest.DocumentCount, opt => opt.MapFrom(src => src.Documents.Count));
+        //.ForMember(dest => dest.SubmissionCount, opt => opt.MapFrom(src => src.Submissions.Count));
 
         // document mappings
         CreateMap<Document, DocumentDto>()
@@ -75,12 +76,13 @@ public class MapperProfile : Profile
             .ForMember(dest => dest.UploadedAt, opt => opt.Ignore())
             .ForMember(dest => dest.UploadedByUser, opt => opt.Ignore());
 
+        // ActivityType mappings
+        CreateMap<ActivityType, ActivityTypeDto>();
+        CreateMap<CreateActivityTypeDto, ActivityType>();
+        CreateMap<UpdateActivityTypeDto, ActivityType>();
+
         // Activity mappings
         CreateMap<CreateActivityDto, Activity>();
-
-        CreateMap<Activity, ActivityDto>()
-            .ForMember(dest => dest.DocumentCount, opt => opt.MapFrom(src => src.Documents.Count))
-            .ForMember(dest => dest.SubmissionCount, opt => opt.MapFrom(src => src.Submissions.Count));
 
         CreateMap<UpdateActivityDto, Activity>();
 
@@ -88,6 +90,16 @@ public class MapperProfile : Profile
             .ForAllMembers(opt => opt.Condition((src, dest, srcMember) => srcMember != null));
 
         CreateMap<Activity, ActivityDto>()
+            .ForMember(dest => dest.ModuleName, opt => opt.MapFrom(src =>
+                src.Module != null ? src.Module.Name : string.Empty))
+            .ForMember(dest => dest.ActivityTypeId, opt => opt.MapFrom(src =>
+                src.ActivityTypeId))
+            .ForMember(dest => dest.ActivityTypeName, opt => opt.MapFrom(src =>
+                src.ActivityType != null ? src.ActivityType.Name : string.Empty))
+            .ForMember(dest => dest.DocumentCount, opt => opt.MapFrom(src =>
+                src.Documents.Count))
+            .ForMember(dest => dest.SubmissionCount, opt => opt.MapFrom(src =>
+                src.Submissions.Count))
             .IncludeAllDerived();
 
         CreateMap<Activity, ActivityDetailDto>();

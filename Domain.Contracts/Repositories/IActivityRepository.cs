@@ -8,4 +8,5 @@ public interface IActivityRepository : IRepositoryBase<Activity>
     Task<(IEnumerable<Activity> activities, int totalCount)> GetAllActivitiesAsync(
         int page, int pageSize, int? moduleId, bool trackChanges = false);
     Task<Activity?> GetActivityWithRelationsAsync(int id, bool trackChanges = false);
+    Task<bool> AnyWithActivityTypeAsync(int activityTypeId);
 }

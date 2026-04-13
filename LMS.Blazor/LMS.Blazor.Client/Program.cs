@@ -1,6 +1,6 @@
+using BlazorBlueprint.Components;
 using LMS.Blazor.Client.Services;
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
-using BlazorBlueprint.Components;
 
 namespace LMS.Blazor.Client;
 
@@ -23,6 +23,7 @@ internal class Program
         builder.Services.AddScoped<IApiService, ClientApiService>();
         builder.Services.AddScoped<ICourseService, CourseService>();
         builder.Services.AddScoped<IModuleService, ModuleService>();
+        builder.Services.AddScoped<IActivityTypeService, ActivityTypeService>();
         builder.Services.AddScoped<IActivityService, ActivityService>();
         builder.Services.AddScoped<IUserService, UserService>();
 
