@@ -187,7 +187,7 @@
                     @if (existingSubmission.Document is not null)
                     {
                         <p class="small fw-semibold text-muted mb-1">Attached file</p>
-                        <DocumentWithDownload Document="@existingSubmission.Document"/>
+                        <DocumentWithDownload Document="@existingSubmission.Document" OnDeleted="HandleDocumentDeleted"/>
                     }
 
                     @* ---- Feedback block ---- *@
@@ -528,4 +528,10 @@
         ActivityType.ELearning => "bg-success",
         _ => "bg-secondary"
     };
+
+    private void HandleDocumentDeleted(int _)
+    {
+        if (existingSubmission is not null)
+            existingSubmission = existingSubmission with { Document = null };
+    }
 }

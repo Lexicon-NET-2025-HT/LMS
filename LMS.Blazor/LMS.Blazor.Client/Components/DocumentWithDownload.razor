@@ -35,21 +35,35 @@
             }
         </div>
 
-        
         <a href="@GetFileUrl(true)"
-                class="btn btn-sm btn-outline-primary"
-                target="_blank">
+               class="btn btn-sm btn-outline-primary"
+               target="_blank">
             Download
         </a>
-        
+
+        <button class="btn btn-sm btn-outline-danger"
+                @onclick="HandleDelete"
+                disabled="@_isDeleting">
+            @if (_isDeleting)
+            {
+                <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+            }
+            else
+            {
+                <i class="bi bi-trash"></i>
+            }
+        </button>
     </div>
 }
+
 @code {
     [Parameter] public DocumentDto? Document { get; set; }
-
     [Parameter] public bool ShowUploadedBy { get; set; } = true;
     [Parameter] public bool ShowUploadedDate { get; set; } = true;
     [Parameter] public bool ShowDescription { get; set; } = true;
+    [Parameter] public EventCallback<int> OnDeleted { get; set; }
+
+    private bool _isDeleting = false;
 
     private string GetFileUrl(bool download = false)
     {
@@ -59,4 +73,19 @@
         return DocumentService.GetDocumentFileUrl(Document.Id, download);
     }
 
+    private async Task HandleDelete()
+    {
+        if (Document is null) return;
+
+        _isDeleting = true;
+        try
+        {
+            await DocumentService.DeleteDocumentAsync(Document.Id);
+            await OnDeleted.InvokeAsync(Document.Id);
+        }
+        finally
+        {
+            _isDeleting = false;
+        }
+    }
 }
