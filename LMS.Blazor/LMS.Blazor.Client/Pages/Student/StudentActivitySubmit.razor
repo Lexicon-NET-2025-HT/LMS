@@ -432,7 +432,7 @@
                     StudentName = "You",
                     ActivityId = ActivityId,
                     ActivityName = activity!.Name,
-                    Body = submissionTab == SubmissionTab.Text ? submissionBody : null,
+                    Body = submissionTab == SubmissionTab.Text ? submissionBody : string.Empty,
                     SubmittedAt = DateTime.Now,
                     IsLate = isOverdue
                 };

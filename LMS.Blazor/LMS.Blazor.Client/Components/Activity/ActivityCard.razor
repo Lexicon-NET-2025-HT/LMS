@@ -1,78 +1,63 @@
 ﻿@using LMS.Shared.DTOs.Activity
+@using Domain.Models.Enums
 @using BlazorBlueprint.Components
 
-<BbCard Class="h-100">
-    <BbCardHeader>
-        <div class="d-flex justify-content-between align-items-start gap-2">
-            <BbCardTitle Class="text-sm font-semibold mb-0">@Activity.Name</BbCardTitle>
-            <BbBadge Variant="@GetBadgeVariant(Activity.ActivityTypeName)">
-                @Activity.ActivityTypeName
-            </BbBadge>
-        </div>
-        <p class="text-muted mb-0" style="font-size:0.78rem;">@Activity.ModuleName</p>
+<BbCard class="overflow-hidden transition-all duration-200 hover:shadow-md hover:scale-[1.01]">
+
+    <div class="px-3 py-2 text-xs font-bold text-white"
+         style="background: @GetGradient(Activity.Type);">
+
+        @Activity.Type
+    </div>
+
+    <BbCardHeader class="py-2">
+        <BbCardTitle class="text-sm">
+            @Activity.Name
+        </BbCardTitle>
     </BbCardHeader>
 
-    <BbCardContent>
-        <p class="text-muted mb-3" style="font-size:0.85rem;overflow:hidden;display:-webkit-box;
-           -webkit-line-clamp:2;-webkit-box-orient:vertical;">
-            @(string.IsNullOrEmpty(Activity.Description) ? "No description." : Activity.Description)
-        </p>
-        <BbSeparator Class="my-2" />
-        <div class="d-flex flex-column gap-1" style="font-size:0.78rem;color:#888;">
-            <span><i class="bi bi-play me-1"></i>@(Activity.StartTime?.ToString("MMM d, HH:mm") ?? "—")</span>
-            <span class="@(Activity.EndTime < DateTime.Now ? "text-danger" : "")">
-                <i class="bi bi-flag me-1"></i>@Activity.EndTime.ToString("MMM d, HH:mm")
-                @if (Activity.EndTime < DateTime.Now)
-                {
-                    <BbBadge Variant="BadgeVariant.Destructive" Class="ms-1">Past</BbBadge>
-                }
-            </span>
-        </div>
+    <BbCardContent class="text-sm opacity-80">
+        <BbCardDescription class="line-clamp-2 hover:line-clamp-none">
+            @Activity.Description
+        </BbCardDescription>
     </BbCardContent>
 
-    <BbCardFooter Class="d-flex justify-content-between align-items-center pt-0">
-        <div class="d-flex gap-2">
-            <BbBadge Variant="BadgeVariant.Secondary">
-                <i class="bi bi-file-earmark me-1"></i>@Activity.DocumentCount
-            </BbBadge>
-            <BbBadge Variant="BadgeVariant.Secondary">
-                <i class="bi bi-send me-1"></i>@Activity.SubmissionCount
-            </BbBadge>
+    <div class="border-t border-black/10 mx-3"></div>
+
+    <BbCardFooter class="flex items-center justify-end gap-3 text-xs opacity-70 py-2">
+
+        <div class="flex items-center gap-1">
+            <span>@Activity.StartTime.ToString("MMM dd HH:mm")</span>
         </div>
-        <div class="d-flex gap-1">
-            @if (OnView.HasDelegate)
-            {
-                <BbButton Variant="ButtonVariant.Ghost" Size="ButtonSize.Small"
-                          OnClick="@(() => OnView.InvokeAsync(Activity))">👁️</BbButton>
-            }
-            @if (OnEdit.HasDelegate)
-            {
-                <BbButton Variant="ButtonVariant.Ghost" Size="ButtonSize.Small"
-                          OnClick="@(() => OnEdit.InvokeAsync(Activity))">✏️</BbButton>
-            }
-            @if (OnDelete.HasDelegate)
-            {
-                <BbButton Variant="ButtonVariant.Ghost" Size="ButtonSize.Small"
-                          Style="color:var(--bb-destructive);"
-                          OnClick="@(() => OnDelete.InvokeAsync(Activity.Id))">🗑️</BbButton>
-            }
+
+        <span class="opacity-50">→</span>
+
+        <div class="flex items-center gap-1">
+            <span>@Activity.EndTime.ToString("MMM dd HH:mm")</span>
         </div>
+
     </BbCardFooter>
+
 </BbCard>
 
 @code {
-    [Parameter, EditorRequired] public ActivityDto Activity { get; set; } = default!;
-    [Parameter] public string? Class { get; set; }
-    [Parameter] public EventCallback<ActivityDto> OnView { get; set; }
-    [Parameter] public EventCallback<ActivityDto> OnEdit { get; set; }
-    [Parameter] public EventCallback<int> OnDelete { get; set; }
+    [Parameter] public ActivityDto Activity { get; set; } = default!;
 
-    private static BadgeVariant GetBadgeVariant(string typeName) => typeName switch
+    private string GetGradient(ActivityType type) => type switch
     {
-        "Assignment" => BadgeVariant.Default,
-        "Lecture"    => BadgeVariant.Destructive,
-        "Exercise"   => BadgeVariant.Outline,
-        "E-Learning" => BadgeVariant.Secondary,
-        _            => BadgeVariant.Outline
+        ActivityType.Lecture =>
+            "linear-gradient(135deg,#2563eb,#60a5fa)",
+
+        ActivityType.Exercise =>
+            "linear-gradient(135deg,#16a34a,#4ade80)",
+
+        ActivityType.Assignment =>
+            "linear-gradient(135deg,#f97316,#fb923c)",
+
+        ActivityType.ELearning =>
+            "linear-gradient(135deg,#7c3aed,#a78bfa)",
+
+        _ =>
+            "linear-gradient(135deg,#6b7280,#9ca3af)"
     };
 }

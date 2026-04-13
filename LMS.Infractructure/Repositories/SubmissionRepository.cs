@@ -25,6 +25,18 @@ public class SubmissionRepository(ApplicationDbContext context) : RepositoryBase
 
         return await query.PagedResult(page, pageSize);
     }
+
+    public IQueryable<Submission> BuildQuery(int? activityId = null, string? studentId = null, bool trackChanges = false)
+    {
+        return FindByCondition(
+                s =>
+                    (activityId == null || s.ActivityId == activityId.Value) &&
+                    (studentId == null || s.StudentId == studentId),
+                trackChanges)
+            .Include(a => a.Activity).ThenInclude(a => a.Module).ThenInclude(m => m.Course)
+            .Include(a => a.Student)
+            .Include(a => a.Document);
+    }
     public async Task<Submission?> GetSubmissionAsync(int id, bool trackChanges = false)
     {
         return await FindByCondition(m => m.Id == id, trackChanges)

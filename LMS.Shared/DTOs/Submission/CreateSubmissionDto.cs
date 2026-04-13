@@ -1,4 +1,6 @@
-﻿namespace LMS.Shared.DTOs.Submission;
+﻿using Microsoft.AspNetCore.Http;
+
+namespace LMS.Shared.DTOs.Submission;
 
 /// <summary>
 /// Data transfer object for creating a new submission.
@@ -9,5 +11,6 @@ public record CreateSubmissionDto
 {
     public required int ActivityId { get; init; }
     public string? Body { get; init; }
-    public int? DocumentId { get; init; }
+    public IFormFile? File { get; init; } = null!;
+    public string? FileDescription { get; init; }
 }
