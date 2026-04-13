@@ -17,7 +17,7 @@ public class SubmissionService : ISubmissionService
         _logger = logger;
     }
 
-    public async Task<PagedResultDto<SubmissionDto?>> GetAllSubmissionsAsync(
+    public async Task<PagedResultDto<SubmissionDto>?> GetAllSubmissionsAsync(
         int page = 1,
         int pageSize = 10,
         int? activityId = null,

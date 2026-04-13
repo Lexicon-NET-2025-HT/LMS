@@ -59,6 +59,7 @@ public class DocumentRepository(ApplicationDbContext context) : RepositoryBase<D
     public IQueryable<Document> BuildBasicQuery(bool trackChanges = false)
     {
         return FindAll(trackChanges)
+                .Include(d => d.UploadedByUser)
                 .Include(d => d.Course)
                 .Include(d => d.Module).ThenInclude(m => m.Course)
                 .Include(d => d.Activity).ThenInclude(a => a.Module).ThenInclude(m => m.Course)
@@ -84,6 +85,7 @@ public class DocumentRepository(ApplicationDbContext context) : RepositoryBase<D
     public IQueryable<Document> BuildAccessRelationsQuery(bool trackChanges = false)
     {
         return FindAll(trackChanges)
+                .Include(d => d.UploadedByUser)
                 .Include(d => d.Course).ThenInclude(c => c.CourseTeachers)
                 .Include(d => d.Module).ThenInclude(m => m.Course).ThenInclude(c => c.CourseTeachers)
                 .Include(d => d.Activity).ThenInclude(a => a.Module).ThenInclude(m => m.Course).ThenInclude(c => c.CourseTeachers)
