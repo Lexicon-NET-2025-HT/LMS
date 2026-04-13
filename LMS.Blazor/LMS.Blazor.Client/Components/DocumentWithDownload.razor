@@ -1,0 +1,62 @@
+﻿@using LMS.Shared.DTOs.Document
+@inject IDocumentService DocumentService
+
+@if (Document is not null)
+{
+    <div class="d-flex align-items-start gap-2 border rounded p-2 bg-light">
+        <i class="bi bi-file-earmark-text fs-4 text-muted"></i>
+
+        <div class="flex-grow-1">
+            <div class="fw-semibold small">
+                <a href="@GetFileUrl()" target="_blank" class="text-decoration-none">
+                    @Document.DisplayName
+                </a>
+            </div>
+
+            @if (ShowDescription && !string.IsNullOrWhiteSpace(Document.Description))
+            {
+                <div class="text-muted small">
+                    @Document.Description
+                </div>
+            }
+
+            @if (ShowUploadedBy && !string.IsNullOrWhiteSpace(Document.UploadedByUserName))
+            {
+                <div class="text-muted small">
+                    Uploaded by: @Document.UploadedByUserName
+                </div>
+            }
+
+            @if (ShowUploadedDate)
+            {
+                <div class="text-muted small">
+                    Uploaded at: @Document.UploadedAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm")
+                </div>
+            }
+        </div>
+
+        
+        <a href="@GetFileUrl(true)"
+                class="btn btn-sm btn-outline-primary"
+                target="_blank">
+            Download
+        </a>
+        
+    </div>
+}
+@code {
+    [Parameter] public DocumentDto? Document { get; set; }
+
+    [Parameter] public bool ShowUploadedBy { get; set; } = true;
+    [Parameter] public bool ShowUploadedDate { get; set; } = true;
+    [Parameter] public bool ShowDescription { get; set; } = true;
+
+    private string GetFileUrl(bool download = false)
+    {
+        if (Document is null)
+            return "#";
+
+        return DocumentService.GetDocumentFileUrl(Document.Id, download);
+    }
+
+}

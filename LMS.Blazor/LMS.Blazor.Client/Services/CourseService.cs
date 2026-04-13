@@ -8,6 +8,7 @@ public class CourseService(IApiService apiService) : ICourseService
     private readonly IApiService _apiService = apiService;
 
     private const string Base = "api/courses";
+    private const string StudentCourseBase = "api/studentcourse";
 
     public async Task<PagedResultDto<CourseDto>?> GetAllCoursesAsync(int page = 1, int pageSize = 10, CancellationToken ct = default)
         => await _apiService.GetAsync<PagedResultDto<CourseDto>>($"{Base}?page={page}&pageSize={pageSize}", ct);

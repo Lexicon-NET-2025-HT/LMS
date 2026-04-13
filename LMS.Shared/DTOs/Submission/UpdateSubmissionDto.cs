@@ -1,15 +1,10 @@
-﻿using Microsoft.AspNetCore.Http;
-
-namespace LMS.Shared.DTOs.Submission;
+﻿namespace LMS.Shared.DTOs.Submission;
 
 /// <summary>
 /// Data transfer object for updating an existing submission.
 /// Used in PUT  /api/submissions/{id} requests.
 /// Students can only update their own submissions before the deadline.
 /// </summary>
-public record UpdateSubmissionDto
+public class UpdateSubmissionDto : CreateSubmissionDto
 {
-    public int ActivityId { get; init; }
-    public string Body { get; init; } = string.Empty;
-    public IFormFile File { get; init; } = null!;
 }

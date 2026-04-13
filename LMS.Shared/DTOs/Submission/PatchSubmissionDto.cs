@@ -11,5 +11,6 @@ public record PatchSubmissionDto
 {
     public int? ActivityId { get; init; }
     public string? Body { get; init; }
-    public IFormFile File { get; init; } = null!;
+    public IFormFile? File { get; init; } = null!;
+    public string? FileDescription { get; init; }
 }
