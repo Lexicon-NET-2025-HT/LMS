@@ -1,7 +1,6 @@
 ﻿using Domain.Contracts.Repositories;
 using Domain.Models.Entities;
 using LMS.Infractructure.Data;
-using LMS.Infractructure.Extensions;
 using Microsoft.EntityFrameworkCore;
 
 namespace LMS.Infractructure.Repositories;
@@ -26,12 +25,13 @@ public class ActivityRepository(ApplicationDbContext context) : RepositoryBase<A
             .FirstOrDefaultAsync();
     }
 
-    public async Task<(IEnumerable<Activity> activities, int totalCount)> GetAllActivitiesAsync(
-        int page, int pageSize, int? moduleId, bool trackChanges = false)
+    public IQueryable<Activity> BuildQuery(int? moduleId = null, bool trackChanges = false)
     {
-        var query = FindByCondition(a => moduleId == null || a.ModuleId == moduleId.Value, trackChanges);
-
-        return await query.PagedResult(page, pageSize);
+        return FindByCondition(
+                a => moduleId == null || a.ModuleId == moduleId.Value,
+                trackChanges)
+            .Include(a => a.Submissions)
+            .Include(a => a.Module).ThenInclude(m => m.Course);
     }
 
 }

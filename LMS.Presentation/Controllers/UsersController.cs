@@ -91,6 +91,7 @@ public class UsersController : ControllerBase
     public async Task<IActionResult> EnrollUserInCourse(
         string userId, int courseId, CancellationToken cancellationToken)
     {
+        // TODO: handle exceptions with middleware
         try
         {
             await _serviceManager.UserService.EnrollUserInCourseAsync(userId, courseId, cancellationToken);
@@ -108,6 +109,7 @@ public class UsersController : ControllerBase
     [SwaggerResponse(404, "User not found")]
     public async Task<IActionResult> RemoveUserFromCourse(string userId, CancellationToken cancellationToken)
     {
+        // TODO: handle exceptions with middleware
         try
         {
             await _serviceManager.UserService.RemoveUserFromCourseAsync(userId, cancellationToken);
@@ -126,6 +128,7 @@ public class UsersController : ControllerBase
     [SwaggerResponse(404, "User not found")]
     public async Task<IActionResult> DeleteUser(string id, CancellationToken cancellationToken)
     {
+        // TODO: handle exceptions with middleware
         try
         {
             var currentUserId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value
