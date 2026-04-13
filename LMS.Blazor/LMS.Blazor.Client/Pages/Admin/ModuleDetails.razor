@@ -572,7 +572,7 @@
     }
 
     // ---- Helpers ----
-    private void GoBack() => Navigation.NavigateTo($"/admin/modules");
+    private void GoBack() => Navigation.NavigateTo($"/courses/{module.CourseId}");
 
     private static string GetActivityTypeBadge(ActivityType type) => type switch
     {

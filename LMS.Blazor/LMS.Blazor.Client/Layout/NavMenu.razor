@@ -2,7 +2,7 @@
 @inject NavigationManager NavigationManager
 @using Microsoft.AspNetCore.Components.Authorization
 @using LMS.Shared.DTOs.Course
-@inject LMS.Blazor.Client.Services.IApiService ApiService
+@inject IEnumerable<LMS.Blazor.Client.Services.IApiService> ApiServices
 @inject AuthenticationStateProvider AuthStateProvider
 
 <div class="top-row ps-3 navbar navbar-dark">
@@ -191,6 +191,7 @@
     private string? currentUrl;
     private string? studentCourseName;
     private int studentCourseId;
+    private LMS.Blazor.Client.Services.IApiService? ApiService => ApiServices.FirstOrDefault();
 
     protected override async Task OnInitializedAsync()
     {
@@ -202,11 +203,14 @@
         {
             try
             {
-                var course = await ApiService.GetAsync<CourseDto>("api/studentcourse/mycourse");
-                if (course != null)
+                if (ApiService != null)
                 {
-                    studentCourseName = course.Name;
-                    studentCourseId = course.Id;
+                    var course = await ApiService.GetAsync<CourseDto>("api/studentcourse/mycourse");
+                    if (course != null)
+                    {
+                        studentCourseName = course.Name;
+                        studentCourseId = course.Id;
+                    }
                 }
             }
             catch
