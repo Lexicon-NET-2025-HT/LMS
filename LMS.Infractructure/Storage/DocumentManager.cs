@@ -60,7 +60,7 @@ public class DocumentManager(
         await unitOfWork.CompleteAsync();
     }
 
-    public async Task ReplaceForSubmissionAsync(Submission submission, IFormFile file)
+    public async Task ReplaceForSubmissionAsync(Submission submission, IFormFile file, string? fileDescription)
     {
         ArgumentNullException.ThrowIfNull(submission);
 
@@ -73,7 +73,8 @@ public class DocumentManager(
 
         var document = await CreateEntityAsync(
             submission.StudentId,
-            submissionId: submission.Id);
+            submissionId: submission.Id,
+            description: fileDescription);
 
         await AttachFileAsync(document, file);
 

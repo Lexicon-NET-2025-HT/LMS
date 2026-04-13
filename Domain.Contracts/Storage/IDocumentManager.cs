@@ -73,7 +73,7 @@ public interface IDocumentManager
     /// <param name="file">
     /// The new file to attach to the submission.
     /// </param>
-    Task ReplaceForSubmissionAsync(Submission submission, IFormFile file);
+    Task ReplaceForSubmissionAsync(Submission submission, IFormFile file, string? fileDescription);
 
     /// <summary>
     /// Removes the document currently attached to the given submission.

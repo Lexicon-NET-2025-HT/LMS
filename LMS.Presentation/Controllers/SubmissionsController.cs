@@ -3,6 +3,7 @@ using LMS.Shared.Request;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
 using Service.Contracts;
 using Swashbuckle.AspNetCore.Annotations;
 
@@ -13,9 +14,10 @@ namespace LMS.Presentation.Controllers;
 [Authorize]
 public class SubmissionsController : LmsControllerBase
 {
-
-    public SubmissionsController(IServiceManager serviceManager) : base(serviceManager)
+    private readonly ILogger<SubmissionsController> _logger;
+    public SubmissionsController(IServiceManager serviceManager, ILogger<SubmissionsController> logger) : base(serviceManager)
     {
+        this._logger = logger;
     }
 
     [HttpGet]
@@ -67,10 +69,11 @@ public class SubmissionsController : LmsControllerBase
     [SwaggerResponse(StatusCodes.Status201Created, "Submission created successfully")]
     [SwaggerResponse(StatusCodes.Status400BadRequest, "Invalid input")]
     [SwaggerResponse(StatusCodes.Status403Forbidden, "Forbidden")]
+
     public async Task<IActionResult> CreateSubmission([FromForm] CreateSubmissionDto dto)
     {
-        var submission = await serviceManager.SubmissionService.CreateSubmissionAsync(UserId, dto);
-        return CreatedAtAction(nameof(GetSubmissionById), new { id = submission.Id }, submission);
+        var result = await serviceManager.SubmissionService.CreateSubmissionAsync(UserId, dto);
+        return Ok(result);
     }
 
     [HttpPut("{id}")]

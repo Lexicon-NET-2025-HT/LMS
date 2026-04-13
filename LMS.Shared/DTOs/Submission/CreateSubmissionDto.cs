@@ -7,10 +7,10 @@ namespace LMS.Shared.DTOs.Submission;
 /// Used in POST /api/submissions requests.
 /// TODO: add file
 /// </summary>
-public record CreateSubmissionDto
+public class CreateSubmissionDto
 {
-    public required int ActivityId { get; init; }
-    public string? Body { get; init; }
-    public IFormFile? File { get; init; } = null!;
-    public string? FileDescription { get; init; }
+    public int ActivityId { get; set; }
+    public string? Body { get; set; }
+    public IFormFile? File { get; set; }
+    public string? FileDescription { get; set; }
 }
