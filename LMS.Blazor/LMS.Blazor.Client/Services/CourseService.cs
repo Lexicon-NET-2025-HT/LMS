@@ -10,6 +10,7 @@ public class CourseService : ICourseService
     private readonly ILogger<CourseService> _logger;
 
     private const string Base = "api/courses";
+    private const string StudentCourseBase = "api/studentcourse";
 
     public CourseService(IApiService apiService, ILogger<CourseService> logger)
     {
@@ -34,6 +35,27 @@ public class CourseService : ICourseService
         catch (TaskCanceledException ex)
         {
             _logger.LogWarning(ex, "Request timed out fetching all courses.");
+        }
+        return null;
+    }
+
+    public async Task<CourseDto?> GetMyCourseAsync(CancellationToken ct = default)
+    {
+        try
+        {
+            return await _apiService.GetAllowNotFoundAsync<CourseDto>($"{StudentCourseBase}/mycourse", ct);
+        }
+        catch (HttpRequestException ex)
+        {
+            _logger.LogError(ex, "Network error fetching student my course.");
+        }
+        catch (JsonException ex)
+        {
+            _logger.LogError(ex, "Failed to deserialize student my course response.");
+        }
+        catch (TaskCanceledException ex)
+        {
+            _logger.LogWarning(ex, "Request timed out fetching student my course.");
         }
         return null;
     }
