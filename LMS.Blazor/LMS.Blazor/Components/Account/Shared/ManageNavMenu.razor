@@ -4,6 +4,20 @@
 @inject SignInManager<ApplicationUser> SignInManager
 
 <ul class="nav nav-pills flex-column">
+    <AuthorizeView Roles="Teacher">
+        <Authorized>
+            <li class="nav-item">
+                <NavLink class="nav-link" href="/admin">Dashboard</NavLink>
+            </li>
+        </Authorized>
+    </AuthorizeView>
+    <AuthorizeView Roles="Student">
+        <Authorized>
+            <li class="nav-item">
+                <NavLink class="nav-link" href="/student/dashboard">Dashboard</NavLink>
+            </li>
+        </Authorized>
+    </AuthorizeView>
     <li class="nav-item">
         <NavLink class="nav-link" href="Account/Manage" Match="NavLinkMatch.All">Profile</NavLink>
     </li>
