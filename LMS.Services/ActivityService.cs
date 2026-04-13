@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using Domain.Contracts.Repositories;
+using Domain.Contracts.Storage;
 using Domain.Models.Entities;
 using Domain.Models.Exceptions;
 using LMS.Infractructure.Extensions;
@@ -20,11 +21,13 @@ namespace LMS.Services
         IMapper mapper,
         ILmsAccessService lmsAccessService,
         IUserAccessContextFactory userAccessContextFactory,
+        IDocumentManager documentManager,
         UserManager<ApplicationUser> userManager) : IActivityService
     {
         private readonly UserManager<ApplicationUser> _userManager = userManager;
         private readonly IUnitOfWork _unitOfWork = unitOfWork;
         private readonly IMapper _mapper = mapper;
+        private readonly IDocumentManager _documentManager = documentManager;
         private readonly ILmsAccessService _lmsAccessService = lmsAccessService;
         private readonly IUserAccessContextFactory _userAccessContextFactory = userAccessContextFactory;
 
@@ -116,6 +119,11 @@ namespace LMS.Services
         public async Task DeleteActivityAsync(int id, string userId)
         {
             var activity = await GetTeacherAccessedActivity(id, userId);
+
+            if (activity.Documents.Any())
+            {
+                await documentManager.DeleteManyAsync(activity.Documents);
+            }
 
             _unitOfWork.Activities.Delete(activity);
             await _unitOfWork.CompleteAsync();

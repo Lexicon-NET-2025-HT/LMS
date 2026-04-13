@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using Domain.Contracts.Repositories;
+using Domain.Contracts.Storage;
 using Domain.Models.Entities;
 using Domain.Models.Exceptions;
 using LMS.Services.Access;
@@ -15,17 +16,19 @@ public class CourseService : ICourseService
     private readonly IMapper mapper;
     private readonly ILmsAccessService lmsAccessService;
     private readonly IUserAccessContextFactory userAccessContextFactory;
-
+    private readonly IDocumentManager documentManager;
     public CourseService(
         IUnitOfWork unitOfWork,
         IMapper mapper,
         ILmsAccessService lmsAccessService,
+        IDocumentManager documentManager,
         IUserAccessContextFactory userAccessContextFactory)
     {
         this.unitOfWork = unitOfWork;
         this.mapper = mapper;
         this.lmsAccessService = lmsAccessService;
         this.userAccessContextFactory = userAccessContextFactory;
+        this.documentManager = documentManager;
     }
 
     public async Task<PagedResultDto<CourseDto>> GetAllCoursesAsync(string userId, int page, int pageSize)
@@ -104,6 +107,11 @@ public class CourseService : ICourseService
             ?? throw new NotFoundException($"Course with id {id} was not found.");
 
         await lmsAccessService.EnsureTeacherForCourseAsync(userId, course);
+
+        if (course.Documents.Any())
+        {
+            await documentManager.DeleteManyAsync(course.Documents);
+        }
 
         unitOfWork.Courses.Delete(course);
         await unitOfWork.CompleteAsync();

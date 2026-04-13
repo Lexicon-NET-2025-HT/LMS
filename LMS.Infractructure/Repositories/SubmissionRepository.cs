@@ -34,7 +34,8 @@ public class SubmissionRepository(ApplicationDbContext context) : RepositoryBase
                     (studentId == null || s.StudentId == studentId),
                 trackChanges)
             .Include(a => a.Activity).ThenInclude(a => a.Module).ThenInclude(m => m.Course)
-            .Include(a => a.Student);
+            .Include(a => a.Student)
+            .Include(a => a.Document);
     }
     public async Task<Submission?> GetSubmissionAsync(int id, bool trackChanges = false)
     {
