@@ -1,4 +1,5 @@
-﻿using Domain.Models.Entities;
+using Microsoft.AspNetCore.Identity;
+using Domain.Models.Entities;
 using LMS.Shared.DTOs.Common;
 using LMS.Shared.DTOs.User;
 
@@ -11,6 +12,7 @@ public interface IUserService
     Task<IEnumerable<StudentDto>> GetUsersByCourseAsync(int courseId, CancellationToken ct = default);
     Task<PagedResultDto<UserDto>> GetUsersWithoutCourseAsync(int page, int pageSize, CancellationToken ct = default);
     Task<PagedResultDto<UserDto>> GetTeachersAsync(int page, int pageSize, CancellationToken ct = default);
+    Task<(IdentityResult,UserDto?)> CreateUserAsync(CreateUserDto userDto, CancellationToken ct = default);
     Task EnrollUserInCourseAsync(string userId, int courseId, CancellationToken ct = default);
     Task RemoveUserFromCourseAsync(string userId, CancellationToken ct = default);
     Task DeleteUserAsync(string currentUserId, string targetUserId, CancellationToken ct = default);
