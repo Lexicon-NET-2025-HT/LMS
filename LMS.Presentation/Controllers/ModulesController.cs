@@ -41,7 +41,6 @@ public class ModulesController : LmsControllerBase
     [SwaggerResponse(StatusCodes.Status403Forbidden, "Forbidden")]
     public async Task<IActionResult> GetModuleById(int id)
     {
-        // TODO: Validate user access
         var module = await serviceManager.ModuleService.GetModuleByIdAsync(id, UserId);
         return Ok(module);
     }
@@ -56,7 +55,6 @@ public class ModulesController : LmsControllerBase
     [SwaggerResponse(StatusCodes.Status403Forbidden, "Forbidden")]
     public async Task<IActionResult> GetModuleDetail(int id)
     {
-        // TODO: Validate user access
         var module = await serviceManager.ModuleService.GetModuleDetailByIdAsync(id, UserId);
         return Ok(module);
     }
@@ -73,7 +71,6 @@ public class ModulesController : LmsControllerBase
     [Authorize(Roles = "Teacher")]
     public async Task<IActionResult> CreateModule([FromBody] CreateModuleDto dto)
     {
-        // TODO: Validate user access
         var module = await serviceManager.ModuleService.CreateModuleAsync(UserId, dto);
         return CreatedAtAction(nameof(GetModuleById), new { id = module.Id }, module);
     }
@@ -89,7 +86,6 @@ public class ModulesController : LmsControllerBase
     [SwaggerResponse(StatusCodes.Status403Forbidden, "Forbidden")]
     public async Task<IActionResult> UpdateModule(int id, [FromBody] UpdateModuleDto dto)
     {
-        // TODO: Validate user access
         await serviceManager.ModuleService.UpdateModuleAsync(id, UserId, dto);
         return NoContent();
     }
@@ -105,7 +101,6 @@ public class ModulesController : LmsControllerBase
     [SwaggerResponse(StatusCodes.Status403Forbidden, "Forbidden")]
     public async Task<IActionResult> PatchModule(int id, [FromBody] PatchModuleDto dto)
     {
-        // TODO: Validate user access
         await serviceManager.ModuleService.UpdateModulePartiallyAsync(id, UserId, dto);
         return NoContent();
     }
@@ -120,7 +115,6 @@ public class ModulesController : LmsControllerBase
     [SwaggerResponse(StatusCodes.Status403Forbidden, "Forbidden")]
     public async Task<IActionResult> DeleteModule(int id)
     {
-        // TODO: Validate user access
         await serviceManager.ModuleService.DeleteModuleAsync(id, UserId);
         return Ok(new { message = "Module deleted successfully" });
     }
