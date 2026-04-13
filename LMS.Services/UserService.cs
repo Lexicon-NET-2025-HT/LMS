@@ -1,4 +1,5 @@
-﻿using Domain.Models.Entities;
+using AutoMapper;
+using Domain.Models.Entities;
 using LMS.Infractructure.Data;
 using LMS.Shared.DTOs.Common;
 using LMS.Shared.DTOs.User;
@@ -11,12 +12,16 @@ namespace LMS.Services;
 public class UserService : IUserService
 {
     private readonly UserManager<ApplicationUser> _userManager;
+    private readonly RoleManager<IdentityRole> _roleManager;
     private readonly ApplicationDbContext _db;
+    private readonly IMapper _mapper;
 
-    public UserService(UserManager<ApplicationUser> userManager, ApplicationDbContext db)
+    public UserService(UserManager<ApplicationUser> userManager, RoleManager<IdentityRole> roleManager, ApplicationDbContext db, IMapper mapper)
     {
         _userManager = userManager;
+        _roleManager = roleManager;
         _db = db;
+        _mapper = mapper;
     }
 
     // helpers
@@ -157,6 +162,29 @@ public class UserService : IUserService
     }
 
     // commands
+
+    public async Task<(IdentityResult,UserDto?)> CreateUserAsync(CreateUserDto createUserDto, CancellationToken ct = default)
+    {
+        ArgumentNullException.ThrowIfNull(createUserDto);
+
+        var isRoleValid = !string.IsNullOrWhiteSpace(createUserDto.Role);
+
+        if (isRoleValid)
+        {
+            var roleExists = await _roleManager.RoleExistsAsync(createUserDto.Role);
+            if (!roleExists)
+                return (IdentityResult.Failed(new IdentityError { Description = "Role does not exist" }), null);
+        }
+
+        var user = _mapper.Map<ApplicationUser>(createUserDto);
+        var result = await _userManager.CreateAsync(user, createUserDto.Password);
+
+        if (result.Succeeded && isRoleValid)
+            result = await _userManager.AddToRoleAsync(user, createUserDto.Role);
+
+        return (result, _mapper.Map<UserDto>(user));
+    }
+
     public async Task EnrollUserInCourseAsync(string userId, int courseId, CancellationToken ct = default)
     {
         var user = await _userManager.FindByIdAsync(userId)
