@@ -70,7 +70,10 @@ public class MapperProfile : Profile
                 src.SubmissionId != null ? nameof(Submission) :
                 "Unknown"))
             .ForMember(dest => dest.FileUrl, opt => opt.MapFrom(src => $"/api/documents/{src.Id}/file"))
-            .ForMember(dest => dest.UploadedByUserName, opt => opt.MapFrom(src => src.UploadedByUser!.UserName));
+            .ForMember(dest => dest.UploadedByUserName, opt => opt.MapFrom(src => src.UploadedByUser!.UserName))
+            .ForMember(dest => dest.CourseName, opt => opt.MapFrom(src => src.Course != null ? src.Course.Name : null))
+            .ForMember(dest => dest.ModuleName, opt => opt.MapFrom(src => src.Module != null ? src.Module.Name : null))
+            .ForMember(dest => dest.ActivityName, opt => opt.MapFrom(src => src.Activity != null ? src.Activity.Name : null));
 
         CreateMap<CreateDocumentDto, Document>()
             .ForMember(dest => dest.DisplayName, opt => opt.MapFrom(src => src.File.FileName))

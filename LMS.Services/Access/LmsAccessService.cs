@@ -1,4 +1,4 @@
-﻿using Domain.Models.Entities;
+using Domain.Models.Entities;
 using Domain.Models.Exceptions;
 using LMS.Infractructure.Extensions;
 using LMS.Services.Common;
@@ -136,7 +136,7 @@ public class LmsAccessService : ILmsAccessService
 
         return query
             .WhereIf(access.IsTeacher,
-                m => access.TeachingCourseIds.Contains(m.CourseId))
+                m => true) // Teachers can see all modules
             .WhereIf(access.IsStudent && access.StudentCourseId is not null,
                 m => m.CourseId == access.StudentCourseId!.Value);
     }
@@ -151,7 +151,7 @@ public class LmsAccessService : ILmsAccessService
 
         return query
             .WhereIf(access.IsTeacher,
-                a => a.Module != null && access.TeachingCourseIds.Contains(a.Module.CourseId))
+                a => true) // Teachers can see all activities
             .WhereIf(access.IsStudent && access.StudentCourseId is not null,
                 a => a.Module != null && a.Module.CourseId == access.StudentCourseId!.Value);
     }
@@ -248,6 +248,9 @@ public class LmsAccessService : ILmsAccessService
     }
     private void EnsureCanAccessCourse(IUserAccessContext access, int courseId)
     {
+        if (access.IsAdmin || access.IsTeacher)
+            return;
+
         if (access.HasCourseAccess(courseId))
             return;
 

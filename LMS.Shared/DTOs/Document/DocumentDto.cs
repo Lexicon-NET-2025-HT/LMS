@@ -1,4 +1,4 @@
-﻿namespace LMS.Shared.DTOs.Document
+namespace LMS.Shared.DTOs.Document
 {
     /// <summary>
     /// Represents a document attached to a course, module, or activity.
@@ -33,8 +33,11 @@
         /// </summary>
         public required string UploadedByUserName { get; init; }
         public int? CourseId { get; init; }
+        public string? CourseName { get; init; }
         public int? ModuleId { get; init; }
+        public string? ModuleName { get; init; }
         public int? ActivityId { get; init; }
+        public string? ActivityName { get; init; }
         public int? SubmissionId { get; init; }
         public required string Scope { get; init; }
     }
