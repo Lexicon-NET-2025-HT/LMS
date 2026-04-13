@@ -54,14 +54,9 @@
 
         <BbCardFooter Class="px-4 pb-4 pt-0 d-flex justify-content-between align-items-center">
             <div class="d-flex gap-2">
-                <BbButton Variant="ButtonVariant.Outline" Size="ButtonSize.Small"
-                          OnClick="@(() => OnViewActivities.InvokeAsync(Module.Id))">
-                    Activities
-                    <BbBadge Variant="BadgeVariant.Secondary" Class="ms-1">@Module.ActivityCount</BbBadge>
-                </BbButton>
                 <BbButton Variant="ButtonVariant.Default" Size="ButtonSize.Small"
-                          OnClick="@(() => OnViewDetails.InvokeAsync(Module.Id))">
-                    Details
+                          OnClick="@(() => OnGoToModule.InvokeAsync(Module.Id))">
+                    Go to Module
                 </BbButton>
             </div>
             @if (IsTeacher)
@@ -86,8 +81,7 @@
     [Parameter] public EventCallback<int> OnCycleGradient { get; set; }
     [Parameter] public EventCallback<ModuleDto> OnEdit { get; set; }
     [Parameter] public EventCallback<int> OnDelete { get; set; }
-    [Parameter] public EventCallback<int> OnViewActivities { get; set; }
-    [Parameter] public EventCallback<int> OnViewDetails { get; set; }
+    [Parameter] public EventCallback<int> OnGoToModule { get; set; }
 
     private (string Label, BadgeVariant Variant) Status
     {
