@@ -19,6 +19,7 @@ public class ModuleRepository(ApplicationDbContext context) : RepositoryBase<Mod
     {
         return await FindByCondition(m => m.Id == id, trackChanges)
             .Include(m => m.Activities)
+                .ThenInclude(a => a.ActivityType)
             .Include(m => m.Documents)
             .Include(m => m.Course)
             .FirstOrDefaultAsync();

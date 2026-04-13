@@ -22,4 +22,6 @@ public class CourseService(IApiService apiService) : ICourseService
         => await _apiService.PutAsync<object>($"{Base}/{courseId}", dto, ct);
     public async Task DeleteCourseAsync(int courseId, CancellationToken ct = default)
         => await _apiService.DeleteAsync($"{Base}/{courseId}", ct);
+    public async Task<CourseDto?> GetMyCourseAsync(CancellationToken ct = default)
+        => await _apiService.GetAllowNotFoundAsync<CourseDto>($"{StudentCourseBase}/mycourse", ct);
 }

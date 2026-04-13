@@ -23,28 +23,34 @@
             {
                 <BbAlert Variant="AlertVariant.Danger" Class="mb-0">@ActivityTypeError</BbAlert>
             }
-            <div>
-                <label class="form-label fw-medium" style="font-size:0.85rem;">Course</label>
-                <select class="form-select"
-                        value="@Model.CourseId"
-                        @onchange="HandleCourseChanged">
-                    <option value="0">Select active course</option>
-                    @foreach (var course in Courses)
-                    {
-                        <option value="@course.Id">@course.Name</option>
-                    }
-                </select>
-            </div>
-            <div>
-                <label class="form-label fw-medium" style="font-size:0.85rem;">Module</label>
-                <select class="form-select" @bind="Model.ModuleId" disabled="@(Model.CourseId <= 0 || !Modules.Any())">
-                    <option value="0">Select module</option>
-                    @foreach (var module in Modules)
-                    {
-                        <option value="@module.Id">@module.Name</option>
-                    }
-                </select>
-            </div>
+
+            @* Course / Module selectors — hidden when context is already known (e.g. ModuleDetails) *@
+            @if (!HideModuleSelection)
+            {
+                <div>
+                    <label class="form-label fw-medium" style="font-size:0.85rem;">Course</label>
+                    <select class="form-select"
+                            value="@Model.CourseId"
+                            @onchange="HandleCourseChanged">
+                        <option value="0">Select active course</option>
+                        @foreach (var course in Courses)
+                        {
+                            <option value="@course.Id">@course.Name</option>
+                        }
+                    </select>
+                </div>
+                <div>
+                    <label class="form-label fw-medium" style="font-size:0.85rem;">Module</label>
+                    <select class="form-select" @bind="Model.ModuleId" disabled="@(Model.CourseId <= 0 || !Modules.Any())">
+                        <option value="0">Select module</option>
+                        @foreach (var module in Modules)
+                        {
+                            <option value="@module.Id">@module.Name</option>
+                        }
+                    </select>
+                </div>
+            }
+
             <div>
                 <label class="form-label fw-medium" style="font-size:0.85rem;">Name</label>
                 <BbInput @bind-Value="Model.Name" Placeholder="e.g. Lecture 1" />
@@ -55,37 +61,10 @@
                 <BbTextarea @bind-Value="Model.Description" Placeholder="Optional description..." Rows="3" />
             </div>
 
-            <div class="row g-2">
-                <div class="col-md-8">
-                    <label class="form-label">Activity Type</label>
-                    <InputSelect class="form-select" @bind-Value="Model.ActivityTypeId">
-                        <option value="0">Select activity type</option>
-                        @foreach (var type in ActivityTypes)
-                        {
-                            <option value="@type.Id">@type.Name</option>
-                        }
-                    </InputSelect>
-                </div>
-
-                <div class="col-md-2 d-flex align-items-end">
-                    <BbButton Type="ButtonType.Button"
-                              Class="w-100"
-                              OnClick="HandleAddActivityTypeClick">
-                        <i class="bi bi-plus-lg"></i>
-                    </BbButton>
-                </div>
-
-                <div class="col-md-2 d-flex align-items-end">
-                    <BbButton Type="ButtonType.Button"
-                              Variant="ButtonVariant.Destructive"
-                              Class="w-100"
-                              Disabled="@(Model.ActivityTypeId <= 0)"
-                              OnClick="HandleDeleteActivityTypeClick">
-                        <i class="bi bi-dash-lg"></i>
-                    </BbButton>
-                </div>
-            </div>
-            </div>
+            <ActivityTypeSelector ActivityTypes="ActivityTypes"
+                                  @bind-SelectedActivityTypeId="Model.ActivityTypeId"
+                                  OnAddClicked="OnAddActivityType"
+                                  OnDeleteClicked="OnDeleteActivityType" />
 
             <div class="row g-2">
                 <div class="col-6">
@@ -101,6 +80,7 @@
                              Style="width:100%;" />
                 </div>
             </div>
+        </div>
 
         <BbDialogFooter>
             <BbButton Variant="ButtonVariant.Outline" OnClick="HandleCancel">Cancel</BbButton>
@@ -113,6 +93,13 @@
     [Parameter] public bool Open { get; set; }
     [Parameter] public EventCallback<bool> OpenChanged { get; set; }
     [Parameter] public bool IsEditing { get; set; }
+
+    /// <summary>
+    /// When true, hides the Course/Module dropdowns and skips their validation.
+    /// Use this when the module context is already known (e.g. inside ModuleDetails or ActivityDetails).
+    /// </summary>
+    [Parameter] public bool HideModuleSelection { get; set; }
+
     [Parameter, EditorRequired] public ActivityFormModel Model { get; set; } = default!;
     [Parameter] public List<ActivityTypeDto> ActivityTypes { get; set; } = [];
     [Parameter] public EventCallback OnSave { get; set; }
@@ -134,16 +121,22 @@
             validationError = "Name is required.";
             return;
         }
-        if (Model.CourseId <= 0)
+
+        // Only validate course/module when the dropdowns are visible
+        if (!HideModuleSelection)
         {
-            validationError = "Please select an active course.";
-            return;
+            if (Model.CourseId <= 0)
+            {
+                validationError = "Please select an active course.";
+                return;
+            }
+            if (Model.ModuleId <= 0)
+            {
+                validationError = "Please select a module.";
+                return;
+            }
         }
-        if (Model.ModuleId <= 0)
-        {
-            validationError = "Please select a module.";
-            return;
-        }
+
         if (Model.ActivityTypeId <= 0)
         {
             validationError = "Please select an activity type.";
@@ -173,22 +166,10 @@
         }
     }
 
-    private async Task HandleAddActivityTypeClick()
-    {
-        await OnAddActivityType.InvokeAsync();
-    }
-
-    private async Task HandleDeleteActivityTypeClick()
-    {
-        if (Model.ActivityTypeId > 0)
-        {
-            await OnDeleteActivityType.InvokeAsync(Model.ActivityTypeId);
-        }
-    }
-
     private async Task OnOpenChanged(bool value)
     {
         Open = value;
+        validationError = null;
         await OpenChanged.InvokeAsync(value);
     }
 

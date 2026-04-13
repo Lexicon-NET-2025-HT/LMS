@@ -27,8 +27,8 @@ public class ActivityService : IActivityService
         return _apiService.GetAsync<PagedResultDto<ActivityDto>>(query, ct);
     }
 
-    public Task<ActivityDto?> GetActivityByIdAsync(int id, CancellationToken ct = default)
-        => _apiService.GetAsync<ActivityDto>($"{Base}/{id}", ct);
+    public Task<ActivityDetailDto?> GetActivityByIdAsync(int id, CancellationToken ct = default)
+        => _apiService.GetAsync<ActivityDetailDto>($"{Base}/{id}/detail", ct);
 
     public Task<ActivityDto?> CreateActivityAsync(CreateActivityDto dto, CancellationToken ct = default)
         => _apiService.PostAsync<ActivityDto>(Base, dto, ct);
