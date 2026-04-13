@@ -14,7 +14,7 @@ public class ActivityService : IActivityService
     }
 
     public Task<PagedResultDto<ActivityDto>?> GetAllActivitiesAsync(
-        int page = 1, 
+        int page = 1,
         int pageSize = 10,
         int? moduleId = null,
         CancellationToken ct = default)
@@ -38,15 +38,15 @@ public class ActivityService : IActivityService
 
     public Task UpdateActivityAsync(int id, UpdateActivityDto dto, CancellationToken ct = default)
     => _apiService.PutAsync<object>($"{Base}/{id}", dto, ct);
-    public async Task DeleteActivityAsync(int id, CancellationToken ct = default)
-    {
-        await _apiService.DeleteAsync($"{Base}/{id}", ct);
-    }
+    //public async Task DeleteActivityAsync(int id, CancellationToken ct = default)
+    //{
+    //    await _apiService.DeleteAsync($"{Base}/{id}", ct);
+    //}
 
     public async Task<PagedResultDto<ActivityDto>> GetAllActivitiesByModuleAsync(
         int moduleId,
-        int page = 1, 
-        int pageSize = 10, 
+        int page = 1,
+        int pageSize = 10,
         CancellationToken ct = default)
     {
         var pagedResult = await _apiService.GetAsync<PagedResultDto<ActivityDto>>(

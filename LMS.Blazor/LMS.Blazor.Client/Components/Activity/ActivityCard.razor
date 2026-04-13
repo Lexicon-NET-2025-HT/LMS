@@ -1,13 +1,13 @@
-﻿@using LMS.Shared.DTOs.Activity
-@using Domain.Models.Enums
+﻿@using Domain.Models.Entities
+@using LMS.Shared.DTOs.Activity
 @using BlazorBlueprint.Components
 
 <BbCard class="overflow-hidden transition-all duration-200 hover:shadow-md hover:scale-[1.01]">
 
     <div class="px-3 py-2 text-xs font-bold text-white"
-         style="background: @GetGradient(Activity.Type);">
+         style="background: @GetGradient(Activity.ActivityTypeName);">
 
-        @Activity.Type
+        @Activity.ActivityTypeName
     </div>
 
     <BbCardHeader class="py-2">
@@ -27,7 +27,7 @@
     <BbCardFooter class="flex items-center justify-end gap-3 text-xs opacity-70 py-2">
 
         <div class="flex items-center gap-1">
-            <span>@Activity.StartTime.ToString("MMM dd HH:mm")</span>
+            <span>@Activity.StartTime?.ToString("MMM dd HH:mm") ?? ""</span>
         </div>
 
         <span class="opacity-50">→</span>
@@ -43,18 +43,18 @@
 @code {
     [Parameter] public ActivityDto Activity { get; set; } = default!;
 
-    private string GetGradient(ActivityType type) => type switch
+    private string GetGradient(string activityTypeName) => activityTypeName switch
     {
-        ActivityType.Lecture =>
+        "Lecture" =>
             "linear-gradient(135deg,#2563eb,#60a5fa)",
 
-        ActivityType.Exercise =>
+        "Exercise" =>
             "linear-gradient(135deg,#16a34a,#4ade80)",
 
-        ActivityType.Assignment =>
+        "Assignment" =>
             "linear-gradient(135deg,#f97316,#fb923c)",
 
-        ActivityType.ELearning =>
+        "ELearning" =>
             "linear-gradient(135deg,#7c3aed,#a78bfa)",
 
         _ =>

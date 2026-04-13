@@ -86,15 +86,16 @@ namespace LMS.Services
 
             var activityType = await _unitOfWork.ActivityTypes.FindByIdAsync(dto.ActivityTypeId) ??
                 throw new NotFoundException($"ActivityType with id: '{dto.ActivityTypeId}' does not exist");
+
             await _lmsAccessService.EnsureTeacherForCourseAsync(userId, module.CourseId);
 
             var activity = _mapper.Map<Activity>(dto);
-
-            activity.Module = module;
-            activity.ActivityType = activityType;
-
             _unitOfWork.Activities.Create(activity);
             await _unitOfWork.CompleteAsync();
+
+            // Assign nav properties AFTER save, purely for DTO mapping
+            activity.Module = module;
+            activity.ActivityType = activityType;
 
             return _mapper.Map<ActivityDto>(activity);
         }
