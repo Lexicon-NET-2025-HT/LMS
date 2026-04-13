@@ -33,10 +33,29 @@ public class MapperProfile : Profile
 
         // Course mappings
         CreateMap<Course, CourseDto>()
-            .ForMember(dest => dest.StudentCount, opt => opt.MapFrom(src => src.Students.Count))
+            .ForMember(dest => dest.StudentCount, opt => opt.MapFrom(src => (src.Students != null) ? src.Students.Count : 0))
             .ForMember(dest => dest.ModuleCount, opt => opt.MapFrom(src => src.Modules.Count))
             .ForMember(dest => dest.TeacherIds, opt => opt.MapFrom(src =>
-                src.CourseTeachers.Select(ct => ct.TeacherId).ToList()));
+                (src.CourseTeachers != null) ? src.CourseTeachers.Select(ct => ct.TeacherId).ToList() : new List<string>()))
+            .ForMember(dest => dest.CurrentUserHasAccess, opt => opt.MapFrom((src, dest, _, context) =>
+            {
+                if (!context.TryGetItems(out var items))
+                    return false;
+
+                if (!items.TryGetValue("UserId", out var userIdObj))
+                    return false;
+
+                var userId = userIdObj as string;
+
+                if (string.IsNullOrEmpty(userId))
+                    return false;
+
+                var isTeacher = src.CourseTeachers?.Any(ct => ct.TeacherId == userId) ?? false;
+                var isStudent = src.Students?.Any(s => s.Id == userId) ?? false;
+
+                return isTeacher || isStudent;
+            }));
+
 
         CreateMap<Course, CourseDetailDto>()
             .IncludeBase<Course, CourseDto>();

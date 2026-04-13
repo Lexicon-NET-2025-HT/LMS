@@ -44,7 +44,10 @@ public class CourseService : ICourseService
 
         return new PagedResultDto<CourseDto>
         {
-            Items = mapper.Map<List<CourseDto>>(courses),
+            Items = mapper.Map<List<CourseDto>>(courses, opt =>
+            {
+                opt.Items["UserId"] = userId;
+            }),
             TotalCount = totalCount,
             PageNumber = page,
             PageSize = pageSize
@@ -57,7 +60,10 @@ public class CourseService : ICourseService
         var course = await unitOfWork.Courses.GetCourseAsync(id)
             ?? throw new NotFoundException($"Course with id {id} not found");
 
-        return mapper.Map<CourseDto>(course);
+        return mapper.Map<CourseDto>(course, opt =>
+        {
+            opt.Items["UserId"] = userId;
+        });
     }
 
 
@@ -68,7 +74,10 @@ public class CourseService : ICourseService
 
         await lmsAccessService.EnsureCanAccessCourseAsync(userId, course);
 
-        return mapper.Map<CourseDetailDto>(course);
+        return mapper.Map<CourseDetailDto>(course, opt =>
+        {
+            opt.Items["UserId"] = userId;
+        });
     }
 
     public async Task<CourseDto> CreateCourseAsync(string userId, CreateCourseDto dto)
@@ -85,7 +94,10 @@ public class CourseService : ICourseService
         unitOfWork.Courses.Create(course);
         await unitOfWork.CompleteAsync();
 
-        return mapper.Map<CourseDto>(course);
+        return mapper.Map<CourseDto>(course, opt =>
+        {
+            opt.Items["UserId"] = userId;
+        });
     }
 
     public async Task UpdateCourseAsync(int id, string userId, UpdateCourseDto dto)
