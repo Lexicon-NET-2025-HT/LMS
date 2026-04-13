@@ -89,16 +89,22 @@
     [Parameter] public EventCallback<int> OnViewActivities { get; set; }
     [Parameter] public EventCallback<int> OnViewDetails { get; set; }
 
-    private (string Label, BadgeVariant Variant) Status => DateTime.Now switch
+    private (string Label, BadgeVariant Variant) Status
     {
-        var n when Module.EndDate < n => ("Completed", BadgeVariant.Secondary),
-        var n when Module.StartDate > n => ("Upcoming", BadgeVariant.Outline),
-        _ => ("Active", BadgeVariant.Default),
-    };
+        get
+        {
+            var now = DateTime.Now;
+            if (Module.EndDate < Module.StartDate) return ("Invalid Range", BadgeVariant.Outline);
+            if (Module.EndDate < now) return ("Completed", BadgeVariant.Secondary);
+            if (Module.StartDate > now) return ("Upcoming", BadgeVariant.Outline);
+            return ("Active", BadgeVariant.Default);
+        }
+    }
 
     private int GetProgress()
     {
         var total = (Module.EndDate - Module.StartDate).TotalDays;
+        if (total <= 0) return 0;
         var elapsed = (DateTime.Now - Module.StartDate).TotalDays;
         return (int)Math.Clamp(elapsed / total * 100, 0, 100);
     }

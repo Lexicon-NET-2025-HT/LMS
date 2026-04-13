@@ -180,7 +180,7 @@
     }
 
 
-    private bool IsActive(ModuleDto m) => m.StartDate <= DateTime.Now && m.EndDate >= DateTime.Now;
+    private bool IsActive(ModuleDto m) => m.EndDate >= m.StartDate && m.StartDate <= DateTime.Now && m.EndDate >= DateTime.Now;
 
     private void OpenCreateDialog()
     {
