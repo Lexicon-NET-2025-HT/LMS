@@ -19,6 +19,9 @@ public class MapperProfile : Profile
         // user mappings
         CreateMap<UserRegistrationDto, ApplicationUser>();
 
+        CreateMap<CreateUserDto, ApplicationUser>()
+            .ForMember(dest => dest.UserName, opt => opt.MapFrom(src => src.Name));
+
         CreateMap<ApplicationUser, UserBasicDto>();
 
         CreateMap<ApplicationUser, StudentBasicDto>()
@@ -26,6 +29,7 @@ public class MapperProfile : Profile
             .ForMember(dest => dest.CourseName, opt => opt.MapFrom(src => src.Course != null ? src.Course.Name : null));
 
         CreateMap<ApplicationUser, UserDto>()
+            .ForMember(dest => dest.Name, opt => opt.MapFrom(src => src.UserName))
             .ForMember(dest => dest.CourseName, opt => opt.MapFrom(src => src.Course != null ? src.Course.Name : null));
 
         // Course mappings

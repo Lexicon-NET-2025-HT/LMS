@@ -11,11 +11,11 @@
     </div>
     <div class="card-body">
 
-        @if (!string.IsNullOrEmpty(errorMessage))
+        @foreach (var errorMessage in errorMessages)
         {
             <div class="alert alert-danger alert-dismissible">
                 @errorMessage
-                <button type="button" class="btn-close" @onclick="() => errorMessage = null"></button>
+                <button type="button" class="btn-close" @onclick="() => errorMessages.Remove(errorMessage)"></button>
             </div>
         }
 
@@ -33,7 +33,9 @@
 
             @* ---- Email ---- *@
             <div class="mb-3">
-                <label class="form-label fw-semibold">Email</label>
+                <label class="form-label fw-semibold">
+                    Email <span class="text-danger">*</span>
+                </label>
                 <InputText class="form-control" @bind-Value="model.Email" placeholder="user@example.com" />
                 <ValidationMessage For="() => model.Email" class="text-danger small" />
             </div>
@@ -112,7 +114,8 @@
     private UserFormModel model = new();
     private bool isEditMode;
     private bool isSubmitting;
-    private string? errorMessage;
+    List<string> errorMessages = new List<string>();
+
     private IEnumerable<CourseDto>? courses;
 
     protected override async Task OnInitializedAsync()
@@ -124,7 +127,7 @@
         }
         catch (Exception ex)
         {
-            errorMessage = $"Failed to load courses. {ex.Message}";
+            errorMessages.Add($"Failed to load courses. {ex.Message}");
         }
     }
 
@@ -146,7 +149,7 @@
     private async Task HandleValidSubmitAsync()
     {
         isSubmitting = true;
-        errorMessage = null;
+        errorMessages.Clear();
 
         try
         {
@@ -165,46 +168,32 @@
                 if (updated is not null)
                     await OnSubmit.InvokeAsync(updated);
                 else
-                    errorMessage = "Failed to update user. Please try again.";
+                    errorMessages.Add("Failed to update user. Please try again.");
             }
             else
             {
-                // POST api/auth — full registration
-                var registerDto = new UserRegistrationDto
+                // POST api/users
+                var createDto = new CreateUserDto
                 {
-                    UserName = model.UserName,
-                    Email = model.Email,
-                    Password = model.Password,
-                    Role = model.Role
-                };
-
-                // auth/register returns 201 with no body — use a raw post
-                var response = await ApiService.PostAsync<object>("api/auth", registerDto);
-
-                // Enroll in course if one was selected
-                if (model.CourseId is not null)
-                {
-                    // fetch the new user by email to get their id
-                    var allUsers = await ApiService.GetAsync<PagedResultDto<UserDto>>("api/users?page=1&pageSize=9999");
-                    var newUser = allUsers?.Items.FirstOrDefault(u => u.Email == model.Email);
-                    if (newUser is not null)
-                        await ApiService.PutAsync<object>($"api/users/{newUser.Id}/enroll/{model.CourseId}", new { });
-                }
-
-                // build a synthetic UserDto to pass back to the parent
-                await OnSubmit.InvokeAsync(new UserDto
-                {
-                    Id = string.Empty,
+                    Role = model?.Role,
                     Name = model.UserName,
+                    Password = model.Password,
                     Email = model.Email,
-                    Role = model.Role ?? string.Empty,
                     CourseId = model.CourseId
-                });
+                };
+                var result = await ApiService.PostAsync<UserDto>($"api/users", createDto);
+                await OnSubmit.InvokeAsync(result);
             }
+
+        }
+        catch (HttpRequestException ex)
+        {
+            if(ex.Data == null || ex.Data.Count == 0) errorMessages.Add($"An error occurred: {ex.Message}");
+            else foreach (object key in ex.Data.Keys) errorMessages.Add($"{ex.Data[key]}");
         }
         catch (Exception ex)
         {
-            errorMessage = $"An error occurred: {ex.Message}";
+            errorMessages.Add($"An error occurred: {ex.Message}");
         }
         finally
         {
@@ -219,10 +208,13 @@
         [MaxLength(200, ErrorMessage = "Username cannot exceed 200 characters.")]
         public string UserName { get; set; } = string.Empty;
 
+        [Required(ErrorMessage = "Email is required.")]
         [MaxLength(254, ErrorMessage = "Email cannot exceed 254 characters.")]
+        [EmailAddress]
         public string Email { get; set; } = string.Empty;
 
         [MaxLength(100)]
+        [DataType(DataType.Password)]
         public string Password { get; set; } = string.Empty;
 
         public string? Role { get; set; }
