@@ -1,9 +1,10 @@
-﻿using LMS.Shared.DTOs.User;
+using LMS.Shared.DTOs.User;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Service.Contracts;
 using Swashbuckle.AspNetCore.Annotations;
 using System.Security.Claims;
+using Domain.Models.Exceptions;
 
 namespace LMS.Presentation.Controllers;
 
@@ -82,6 +83,21 @@ public class UsersController : ControllerBase
         return Ok(result);
     }
 
+    // POST api/users
+    [Authorize(Roles = "Teacher,Admin")]
+    [HttpPost]
+    [SwaggerOperation(Summary = "Create a user")]
+    [SwaggerResponse(201, "Created successfully")]
+    [SwaggerResponse(400, "Failed to create user")]
+    public async Task<IActionResult> CreateUser(CreateUserDto userDto, CancellationToken cancellationToken)
+    {
+        var (result, user) = await _serviceManager.UserService.CreateUserAsync(userDto, cancellationToken);
+        // couldnt throw bc limitations in <Microsoft.AspNetCore.Mvc.Infrastructure.ProblemDetailsFactory>.CreateProblemDetails() (used in /LMS.API/Extensions/ExceptionMiddlewareExtetensions.cs)
+        // if(!result.Succeeded) throw new BadRequestException(message:"Failed to create user", data:result.Errors.ToDictionary(err=>err.Code, err=>err.Description));
+        if(!result.Succeeded) return BadRequest(new BadRequestException(message:"Failed to create user", data:result.Errors.ToDictionary(err=>err.Code, err=>err.Description)));
+        return Created((string?)null, user);
+    }
+
     // PUT api/users/{userId}/enroll/{courseId}
     [Authorize(Roles = "Teacher")]
     [HttpPut("{userId}/enroll/{courseId:int}")]
@@ -91,6 +107,7 @@ public class UsersController : ControllerBase
     public async Task<IActionResult> EnrollUserInCourse(
         string userId, int courseId, CancellationToken cancellationToken)
     {
+        // TODO: handle exceptions with middleware
         try
         {
             await _serviceManager.UserService.EnrollUserInCourseAsync(userId, courseId, cancellationToken);
@@ -108,6 +125,7 @@ public class UsersController : ControllerBase
     [SwaggerResponse(404, "User not found")]
     public async Task<IActionResult> RemoveUserFromCourse(string userId, CancellationToken cancellationToken)
     {
+        // TODO: handle exceptions with middleware
         try
         {
             await _serviceManager.UserService.RemoveUserFromCourseAsync(userId, cancellationToken);
@@ -126,6 +144,7 @@ public class UsersController : ControllerBase
     [SwaggerResponse(404, "User not found")]
     public async Task<IActionResult> DeleteUser(string id, CancellationToken cancellationToken)
     {
+        // TODO: handle exceptions with middleware
         try
         {
             var currentUserId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value
