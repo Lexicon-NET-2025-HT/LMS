@@ -1,5 +1,5 @@
-﻿@page "/admin/modules/{ModuleId:int}/details"
-@attribute [Authorize(Roles = "Teacher")]
+@page "/admin/modules/{ModuleId:int}/details"
+@attribute [Authorize(Roles = "Teacher,Student")]
 @using LMS.Shared.DTOs.Activity
 @using LMS.Shared.DTOs.Document
 @using LMS.Shared.DTOs.Module
@@ -7,6 +7,7 @@
 @inject IModuleService ModuleService
 @inject IActivityService ActivityService
 @inject NavigationManager Navigation
+@inject AuthenticationStateProvider AuthStateProvider
 
 <PageTitle>Module Details</PageTitle>
 
@@ -98,10 +99,13 @@
         <div class="card mb-4">
             <div class="card-header d-flex flex-wrap justify-content-between align-items-center gap-2">
                 <h6 class="mb-0"><i class="bi bi-lightning me-2"></i>Activities</h6>
-                <button class="btn btn-sm btn-primary" @onclick="() => showAddActivity = !showAddActivity">
-                    <i class="bi bi-plus-lg"></i>
-                    <span class="d-none d-md-inline ms-1">Add Activity</span>
-                </button>
+                @if (isTeacher)
+                {
+                    <button class="btn btn-sm btn-primary" @onclick="() => showAddActivity = !showAddActivity">
+                        <i class="bi bi-plus-lg"></i>
+                        <span class="d-none d-md-inline ms-1">Add Activity</span>
+                    </button>
+                }
             </div>
 
             @* ---- Add Activity Panel ---- *@
@@ -232,11 +236,14 @@
                                                     @onclick="() => Navigation.NavigateTo(GetDetailsUrl(act.Id))">
                                                 <i class="bi bi-eye"></i>
                                             </button>
-                                            <button class="btn btn-sm btn-outline-danger"
-                                                    title="Delete"
-                                                    @onclick="() => HandleDeleteActivity(act)">
-                                                <i class="bi bi-trash"></i>
-                                            </button>
+                                            @if (isTeacher)
+                                            {
+                                                <button class="btn btn-sm btn-outline-danger"
+                                                        title="Delete"
+                                                        @onclick="() => HandleDeleteActivity(act)">
+                                                    <i class="bi bi-trash"></i>
+                                                </button>
+                                            }
                                         </td>
                                     </tr>
                                 }
@@ -253,12 +260,15 @@
         <div class="card mb-4">
             <div class="card-header d-flex flex-wrap justify-content-between align-items-center gap-2">
                 <h6 class="mb-0"><i class="bi bi-file-earmark me-2"></i>Documents</h6>
-                <button class="btn btn-sm btn-primary"
-                        title="Upload Document"
-                        @onclick="() => showUploadDocument = !showUploadDocument">
-                    <i class="bi bi-upload"></i>
-                    <span class="d-none d-md-inline ms-1">Upload Document</span>
-                </button>
+                @if (isTeacher)
+                {
+                    <button class="btn btn-sm btn-primary"
+                            title="Upload Document"
+                            @onclick="() => showUploadDocument = !showUploadDocument">
+                        <i class="bi bi-upload"></i>
+                        <span class="d-none d-md-inline ms-1">Upload Document</span>
+                    </button>
+                }
             </div>
 
             @if (showUploadDocument)
@@ -311,11 +321,14 @@
                                             @doc.UploadedByUserName
                                         </td>
                                         <td class="text-end">
-                                            <button class="btn btn-sm btn-outline-danger"
-                                                    title="Remove Document"
-                                                    @onclick="() => HandleDeleteDocument(doc)">
-                                                <i class="bi bi-trash"></i>
-                                            </button>
+                                            @if (isTeacher)
+                                            {
+                                                <button class="btn btn-sm btn-outline-danger"
+                                                        title="Remove Document"
+                                                        @onclick="() => HandleDeleteDocument(doc)">
+                                                    <i class="bi bi-trash"></i>
+                                                </button>
+                                            }
                                         </td>
                                     </tr>
                                 }
@@ -384,6 +397,7 @@
     private ModuleDetailDto? module;
     private List<ActivityDto> activities = [];
     private List<DocumentDto> documents = [];
+    private bool isTeacher;
 
     // ---- Page state ----
     private bool isLoading;
@@ -409,7 +423,11 @@
 
     // ---- Lifecycle ----
     protected override async Task OnInitializedAsync()
-        => await LoadModuleAsync();
+    {
+        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+        isTeacher = authState.User.IsInRole("Teacher");
+        await LoadModuleAsync();
+    }
 
     private async Task LoadModuleAsync()
     {

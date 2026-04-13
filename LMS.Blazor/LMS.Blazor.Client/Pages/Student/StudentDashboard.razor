@@ -1,4 +1,4 @@
-﻿@page "/student/dashboard"
+@page "/student/dashboard"
 @attribute [Authorize(Roles = "Student")]
 @using LMS.Blazor.Client.Components.User
 @using LMS.Shared.DTOs.Activity
@@ -138,7 +138,7 @@
                             @foreach (var module in modules)
                             {
                                 var isActive = module.StartDate <= DateTime.Now &&
-                                               (module.EndDate == null || module.EndDate >= DateTime.Now);
+                                               module.EndDate >= DateTime.Now;
                                 var isPast   = module.EndDate < DateTime.Now;
 
                                 <div class="border-bottom">
