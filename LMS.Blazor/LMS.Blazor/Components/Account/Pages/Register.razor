@@ -157,8 +157,9 @@
         }
         else
         {
-            await SignInManager.SignInAsync(user, isPersistent: false);
-            RedirectManager.RedirectTo(ReturnUrl);
+            // await SignInManager.SignInAsync(user, isPersistent: false);
+            // RedirectManager.RedirectTo(ReturnUrl);
+            RedirectManager.RedirectTo("Account/Login");
         }
     }
 
