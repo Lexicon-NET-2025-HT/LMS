@@ -27,8 +27,8 @@ namespace LMS.Services
         private readonly UserManager<ApplicationUser> _userManager = userManager;
         private readonly IUnitOfWork _unitOfWork = unitOfWork;
         private readonly IMapper _mapper = mapper;
-        private readonly IDocumentManager _documentManager = documentManager;
-        private readonly ILmsAccessService _lmsAccessService = lmsAccessService;
+        //private readonly IDocumentManager _documentManager = documentManager;
+        //private readonly ILmsAccessService _lmsAccessService = lmsAccessService;
         private readonly IUserAccessContextFactory _userAccessContextFactory = userAccessContextFactory;
 
         public async Task<PagedResultDto<ActivityDto>> GetAllActivitiesAsync(string userId, ActivitiesRequestParams queryDto)
@@ -64,7 +64,7 @@ namespace LMS.Services
             var activity = await _unitOfWork.Activities.GetActivityWithRelationsAsync(id) ??
                 throw new NotFoundException($"Activity by id: '{id}', does not exist");
 
-            await _lmsAccessService.EnsureCanAccessActivityAsync(userId, activity);
+            //await _lmsAccessService.EnsureCanAccessActivityAsync(userId, activity);
 
             return _mapper.Map<ActivityDto>(activity);
         }
@@ -74,7 +74,7 @@ namespace LMS.Services
             var activity = await _unitOfWork.Activities.GetActivityWithRelationsAsync(id) ??
                throw new NotFoundException($"Activity by id: '{id}', does not exist");
 
-            await _lmsAccessService.EnsureCanAccessActivityAsync(userId, activity);
+            //await _lmsAccessService.EnsureCanAccessActivityAsync(userId, activity);
 
             return _mapper.Map<ActivityDetailDto>(activity);
         }
@@ -87,7 +87,7 @@ namespace LMS.Services
             var activityType = await _unitOfWork.ActivityTypes.FindByIdAsync(dto.ActivityTypeId) ??
                 throw new NotFoundException($"ActivityType with id: '{dto.ActivityTypeId}' does not exist");
 
-            await _lmsAccessService.EnsureTeacherForCourseAsync(userId, module.CourseId);
+            //await _lmsAccessService.EnsureTeacherForCourseAsync(userId, module.CourseId);
 
             var activity = _mapper.Map<Activity>(dto);
             _unitOfWork.Activities.Create(activity);
@@ -138,7 +138,7 @@ namespace LMS.Services
             var activity = await _unitOfWork.Activities.GetActivityWithRelationsAsync(id) ??
                 throw new NotFoundException($"Activity by id: '{id}', does not exist");
 
-            await _lmsAccessService.EnsureTeacherForCourseAsync(userId, activity.Module.CourseId);
+            //await  _lmsAccessService.EnsureTeacherForCourseAsync(userId, activity.Module.CourseId);
             return activity;
         }
     }

@@ -261,11 +261,9 @@
     // ---- Module state ----
     private List<ModuleDto> modules = [];
     private List<StudentBasicDto> students = [];
-    private bool showAddModule;
     private string? moduleError;
     private int? expandedModuleId;
     private NewModuleModel newModule = new();
-    private bool isAddingModule;
     private Dictionary<int, List<ActivityDto>> moduleActivities = new();
 
     // ---- Activity state ----
@@ -274,7 +272,6 @@
     private int newActivityTypeId;
     private DateTime newActivityStart = DateTime.Today.AddHours(9);
     private DateTime newActivityEnd = DateTime.Today.AddHours(17);
-    private bool isAddingActivity;
     private string? activityError;
 
     // ---- Student state ----
@@ -353,8 +350,6 @@
             moduleError = "End date must be after start date.";
             return;
         }
-
-        isAddingModule = true;
         try
         {
             var dto = new CreateModuleDto
@@ -372,7 +367,6 @@
                 modules.Add(created);
                 successMessage = $"Module '{created.Name}' created.";
                 newModule = new();
-                showAddModule = false;
             }
             else
             {
@@ -382,10 +376,6 @@
         catch (Exception ex)
         {
             moduleError = $"Error: {ex.Message}";
-        }
-        finally
-        {
-            isAddingModule = false;
         }
     }
 
@@ -425,7 +415,6 @@
             return;
         }
 
-        isAddingActivity = true;
         try
         {
             var assignmentType = activityTypes.FirstOrDefault(t => t.Name == "Assignment");
@@ -462,10 +451,6 @@
         catch (Exception ex)
         {
             activityError = $"Error: {ex.Message}";
-        }
-        finally
-        {
-            isAddingActivity = false;
         }
     }
 
