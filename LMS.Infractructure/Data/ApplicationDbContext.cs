@@ -159,14 +159,14 @@ namespace LMS.Infractructure.Data
 
                 // Ensure that exactly one of CourseId, ModuleId, ActivityId, SubmissionId is non-null
                 entity.ToTable(t => t.HasCheckConstraint(
-                    "CK_Document_ExactlyOneOwner",
+                    "CK_Document_AtMostOneOwner",
                     """
                     (
                         CASE WHEN CourseId IS NOT NULL THEN 1 ELSE 0 END +
                         CASE WHEN ModuleId IS NOT NULL THEN 1 ELSE 0 END +
                         CASE WHEN ActivityId IS NOT NULL THEN 1 ELSE 0 END +
                         CASE WHEN SubmissionId IS NOT NULL THEN 1 ELSE 0 END
-                    ) = 1
+                    ) <= 1
                     """));
             });
 
