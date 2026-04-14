@@ -91,6 +91,15 @@ public class CourseService : ICourseService
         }
 
         var course = mapper.Map<Course>(dto);
+
+        course.CourseTeachers = new List<CourseTeacher>
+        {
+            new CourseTeacher
+            {
+                TeacherId = userId
+            }
+        };
+
         unitOfWork.Courses.Create(course);
         await unitOfWork.CompleteAsync();
 
