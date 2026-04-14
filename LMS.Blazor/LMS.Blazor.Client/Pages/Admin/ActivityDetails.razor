@@ -1,13 +1,16 @@
 ﻿@page "/admin/activities/{ActivityId:int}/details"
 @attribute [Authorize(Roles = "Teacher")]
+@using LMS.Blazor.Client.Components
 @using LMS.Blazor.Client.Components.Activity
 @using LMS.Shared.DTOs.Activity
 @using LMS.Shared.DTOs.ActivityType
 @using LMS.Shared.DTOs.Document
 @using LMS.Shared.DTOs.Submission
+@using LMS.Blazor.Client.Uploads
 @inject IActivityService ActivityService
 @inject IActivityTypeService ActivityTypeService
 @inject NavigationManager Navigation
+@inject IDocumentService DocumentService
 
 <PageTitle>Activity Details</PageTitle>
 
@@ -249,10 +252,27 @@
             @if (showUploadDocument)
             {
                 <div class="card-body border-bottom bg-light">
-                    <div class="alert alert-info mb-0 py-2">
-                        <i class="bi bi-info-circle me-2"></i>
-                        Document upload requires an authenticated user context
-                        (<code>UploadedByUserId</code>) — not yet wired up on this page.
+                    <UploadDocumentField @bind-Value="uploadValue"
+                                         Label="Document"
+                                         FileHelpText="PDF, Word, or image files." />
+                    @if (!string.IsNullOrEmpty(uploadError))
+                    {
+                        <div class="text-danger small mb-2">@uploadError</div>
+                    }
+                    <div class="d-flex gap-2">
+                        <button class="btn btn-sm btn-success"
+                                @onclick="UploadDocumentAsync"
+                                disabled="@(isUploading || uploadValue?.HasFile != true)">
+                            @if (isUploading)
+                            {
+                                <span class="spinner-border spinner-border-sm me-1"></span>
+                            }
+                            Upload
+                        </button>
+                        <button class="btn btn-sm btn-secondary"
+                                @onclick="() => { showUploadDocument = false; uploadValue = null; uploadError = null; }">
+                            Cancel
+                        </button>
                     </div>
                 </div>
             }
@@ -279,25 +299,9 @@
                                 @foreach (var doc in documents)
                                 {
                                     <tr>
-                                        <td>
-                                            <div class="fw-semibold">@doc.DisplayName</div>
-                                            @if (!string.IsNullOrEmpty(doc.Description))
-                                            {
-                                                <div class="text-muted small text-truncate" style="max-width:200px;">@doc.Description</div>
-                                            }
-                                        </td>
-                                        <td class="d-none d-md-table-cell text-muted small">
-                                            <i class="bi bi-file-earmark me-1"></i>@doc.DisplayName
-                                        </td>
-                                        <td class="d-none d-sm-table-cell text-muted small">
-                                            @doc.UploadedAt.ToString("yyyy-MM-dd")
-                                        </td>
-                                        <td class="d-none d-sm-table-cell text-muted small">
-                                            @doc.UploadedByUserName
-                                        </td>
+                                        <td><DocumentWithDownload Document="doc" /></td>
                                         <td class="text-end">
                                             <button class="btn btn-sm btn-outline-danger"
-                                                    title="Remove"
                                                     @onclick="() => HandleDeleteDocument(doc)">
                                                 <i class="bi bi-trash"></i>
                                             </button>
@@ -387,6 +391,45 @@
     private bool showUploadDocument;
     private bool showDeleteDocumentConfirm;
     private DocumentDto? documentToDelete;
+    // ---- Upload ----
+    private UploadDocumentValue? uploadValue;
+    private bool isUploading;
+    private string? uploadError;
+
+    private async Task UploadDocumentAsync()
+    {
+        if (uploadValue?.HasFile != true) return;
+
+        isUploading = true;
+        uploadError = null;
+
+        try
+        {
+            var created = await DocumentService.CreateDocumentAsync(
+                new CreateDocumentDto { ActivityId = ActivityId },
+                uploadValue);
+
+            if (created is not null)
+            {
+                documents.Add(created);
+                successMessage = $"'{created.DisplayName}' uploaded.";
+                showUploadDocument = false;
+                uploadValue = null;
+            }
+            else
+            {
+                uploadError = "Upload failed. Please try again.";
+            }
+        }
+        catch (Exception ex)
+        {
+            uploadError = $"Upload failed. {ex.Message}";
+        }
+        finally
+        {
+            isUploading = false;
+        }
+    }
 
     // ---- Lifecycle ----
     protected override async Task OnInitializedAsync()
@@ -403,24 +446,24 @@
             var typesResult = await ActivityTypeService.GetAllActivityTypesAsync();
             activityTypes = typesResult?.ToList() ?? [];
 
-            var basic = await ActivityService.GetActivityByIdAsync(ActivityId);
-            if (basic is not null)
+            var response = await ActivityService.GetActivityByIdAsync(ActivityId);
+            if (response is not null)
             {
                 activity = new ActivityDetailDto
                 {
-                    Id            = basic.Id,
-                    ModuleId      = basic.ModuleId,
-                    ModuleName    = basic.ModuleName,
-                    Name          = basic.Name,
-                    Description   = basic.Description,
-                    ActivityTypeId   = basic.ActivityTypeId,
-                    ActivityTypeName = basic.ActivityTypeName,
-                    StartTime     = basic.StartTime,
-                    EndTime       = basic.EndTime,
-                    DocumentCount    = basic.DocumentCount,
-                    SubmissionCount  = basic.SubmissionCount,
-                    Documents     = [],
-                    Submissions   = []
+                    Id               = response.Id,
+                    ModuleId         = response.ModuleId,
+                    ModuleName       = response.ModuleName,
+                    Name             = response.Name,
+                    Description      = response.Description,
+                    ActivityTypeId   = response.ActivityTypeId,
+                    ActivityTypeName = response.ActivityTypeName,
+                    StartTime        = response.StartTime,
+                    EndTime          = response.EndTime,
+                    DocumentCount    = response.DocumentCount,
+                    SubmissionCount  = response.SubmissionCount,
+                    Documents        = response.Documents?.ToList() ?? [],
+                    Submissions      = response.Submissions?.ToList() ?? []
                 };
 
                 submissions = activity.Submissions;

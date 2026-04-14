@@ -1,0 +1,409 @@
+﻿@page "/activities/{ActivityId:int}/details"
+@attribute [Authorize(Roles = "Student")]
+@using LMS.Blazor.Client.Components
+@using LMS.Blazor.Client.Components.Activity
+@using LMS.Shared.DTOs.Activity
+@using LMS.Shared.DTOs.Document
+@using LMS.Shared.DTOs.Submission
+@using LMS.Blazor.Client.Uploads
+@inject IActivityService ActivityService
+@inject ISubmissionService SubmissionService
+@inject NavigationManager Navigation
+@inject AuthenticationStateProvider AuthStateProvider
+
+<PageTitle>Activity Details</PageTitle>
+
+<div class="container-fluid py-4">
+
+    @* ---- Header ---- *@
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4">
+        <h2 class="mb-0">Activity Details</h2>
+        <button class="btn btn-outline-secondary" @onclick="GoBack">
+            <i class="bi bi-arrow-left"></i>
+            <span class="d-none d-md-inline ms-1">Back to Module</span>
+        </button>
+    </div>
+
+    @* ---- Feedback ---- *@
+    @if (!string.IsNullOrEmpty(successMessage))
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            @successMessage
+            <button type="button" class="btn-close" @onclick="() => successMessage = null"></button>
+        </div>
+    }
+    @if (!string.IsNullOrEmpty(errorMessage))
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            @errorMessage
+            <button type="button" class="btn-close" @onclick="() => errorMessage = null"></button>
+        </div>
+    }
+
+    @* ---- Loading / error / not found ---- *@
+    @if (isLoading)
+    {
+        <div class="text-center py-5">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+            <p class="mt-2 text-muted">Loading activity details...</p>
+        </div>
+    }
+    else if (!string.IsNullOrEmpty(loadError))
+    {
+        <div class="alert alert-danger">
+            <p>@loadError</p>
+            <button class="btn btn-outline-danger btn-sm" @onclick="LoadActivityAsync">Retry</button>
+        </div>
+    }
+    else if (activity is null)
+    {
+        <div class="alert alert-warning">Activity not found.</div>
+    }
+    else
+    {
+        @* ==============================
+           ACTIVITY INFO CARD
+           ============================== *@
+        <div class="card mb-4">
+            <div class="card-header d-flex flex-wrap justify-content-between align-items-center gap-2">
+                <h5 class="mb-0">@activity.Name</h5>
+                <div class="d-flex gap-2 flex-wrap align-items-center">
+                    <span class="badge @ActivityHelpers.GetActivityTypeBadge(activity.ActivityTypeName) fs-6">
+                        @activity.ActivityTypeName
+                    </span>
+                    @if (activity.EndTime < DateTime.Now)
+                    {
+                        <span class="badge bg-danger">Past Deadline</span>
+                    }
+                    else
+                    {
+                        <span class="badge bg-success">Open</span>
+                    }
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <p class="text-muted mb-1 small">Module</p>
+                        <p class="mb-0 fw-semibold">@activity.ModuleName</p>
+                    </div>
+                    <div class="col-md-4">
+                        <p class="text-muted mb-1 small">Description</p>
+                        <p class="mb-0">@(string.IsNullOrEmpty(activity.Description) ? "—" : activity.Description)</p>
+                    </div>
+                    <div class="col-md-2 col-6">
+                        <p class="text-muted mb-1 small">Start</p>
+                        <p class="mb-0">@activity.StartTime?.ToString("yyyy-MM-dd HH:mm")</p>
+                    </div>
+                    <div class="col-md-2 col-6">
+                        <p class="text-muted mb-1 small">Deadline</p>
+                        <p class="mb-0 @(activity.EndTime < DateTime.Now ? "text-danger fw-semibold" : "")">
+                            @activity.EndTime.ToString("yyyy-MM-dd HH:mm")
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        @* ==============================
+           DOCUMENTS SECTION (read-only)
+           ============================== *@
+        <div class="card mb-4">
+            <div class="card-header">
+                <h6 class="mb-0"><i class="bi bi-file-earmark me-2"></i>Documents</h6>
+            </div>
+            <div class="card-body p-0">
+                @if (!documents.Any())
+                {
+                    <p class="text-muted p-3 mb-0">No documents attached to this activity.</p>
+                }
+                else
+                {
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <tbody>
+                                @foreach (var doc in documents)
+                                {
+                                    <tr>
+                                        <td>
+                                            <DocumentWithDownload Document="doc"
+                                                                  ShowUploadedBy="true"
+                                                                  ShowUploadedDate="false" />
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+            </div>
+        </div>
+
+        @* ==============================
+           MY SUBMISSION SECTION
+           ============================== *@
+        <div class="card mb-4">
+            <div class="card-header d-flex flex-wrap justify-content-between align-items-center gap-2">
+                <h6 class="mb-0"><i class="bi bi-send me-2"></i>My Submission</h6>
+                @if (mySubmission is not null)
+                {
+                    @if (mySubmission.IsLate)
+                    {
+                        <span class="badge bg-danger">Submitted Late</span>
+                    }
+                    else
+                    {
+                        <span class="badge bg-success">Submitted On Time</span>
+                    }
+                }
+            </div>
+
+            <div class="card-body">
+
+                @* ---- Already submitted ---- *@
+                @if (mySubmission is not null)
+                {
+                    <div class="mb-3">
+                        <p class="text-muted small mb-1">Submitted at</p>
+                        <p class="mb-0 fw-semibold">@mySubmission.SubmittedAt.ToString("yyyy-MM-dd HH:mm")</p>
+                    </div>
+
+                    <div class="mb-0">
+                        <p class="text-muted small mb-1">Content</p>
+                        @if (!string.IsNullOrEmpty(mySubmission.Body))
+                        {
+                            <div class="border rounded p-3 bg-light small" style="white-space:pre-wrap;">
+                                @mySubmission.Body
+                            </div>
+                        }
+                        else if (mySubmission.Document is not null)
+                        {
+                            <DocumentWithDownload Document="mySubmission.Document"
+                                                  ShowUploadedBy="false"
+                                                  ShowUploadedDate="false" />
+                        }
+                        else
+                        {
+                            <p class="text-muted small mb-0">No content recorded.</p>
+                        }
+                    </div>
+                }
+
+                @* ---- Not yet submitted ---- *@
+                else if (activity.EndTime < DateTime.Now)
+                {
+                    <div class="alert alert-warning mb-0">
+                        <i class="bi bi-exclamation-triangle me-2"></i>
+                        The deadline has passed. You can no longer submit.
+                    </div>
+                }
+                else
+                {
+                    @* ---- Submit form ---- *@
+                    <div class="mb-3">
+                        <div class="d-flex gap-3 mb-3">
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio"
+                                       id="submitText"
+                                       checked="@(submitMode == SubmitMode.Text)"
+                                       @onchange="() => submitMode = SubmitMode.Text" />
+                                <label class="form-check-label" for="submitText">Text</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio"
+                                       id="submitFile"
+                                       checked="@(submitMode == SubmitMode.File)"
+                                       @onchange="() => submitMode = SubmitMode.File" />
+                                <label class="form-check-label" for="submitFile">File</label>
+                            </div>
+                        </div>
+
+                        @if (submitMode == SubmitMode.Text)
+                        {
+                            <textarea class="form-control @(submitError is not null ? "is-invalid" : "")"
+                                      rows="5"
+                                      placeholder="Write your answer here..."
+                                          @bind="submitBody">
+                            </textarea>
+                            }
+                        else
+                            {
+                                <UploadDocumentField @bind-Value="submitFile"
+                                                     Label=""
+                                                     DescriptionLabel=""
+                                                     FileHelpText="PDF, Word, or image files."
+                                                     AllowRemoveExistingDocument="false" />
+                            }
+
+                            @if (!string.IsNullOrEmpty(submitError))
+                            {
+                                <div class="text-danger small mt-1">@submitError</div>
+                            }
+                        </div>
+
+                        <button class="btn btn-primary"
+                                @onclick="SubmitAsync"
+                                disabled="@isSubmitting">
+                            @if (isSubmitting)
+                            {
+                                <span class="spinner-border spinner-border-sm me-1"></span>
+                            }
+                            <i class="bi bi-send me-1"></i>
+                            Submit
+                        </button>
+                    }
+                </div>
+            </div>
+        }
+    </div>
+
+@code {
+    [Parameter] public int ActivityId { get; set; }
+
+    // ---- Data ----
+    private ActivityDetailDto? activity;
+    private List<DocumentDto> documents = [];
+    private SubmissionDto? mySubmission;
+    private string? currentUserId;
+
+    // ---- Page state ----
+    private bool isLoading;
+    private string? loadError;
+    private string? successMessage;
+    private string? errorMessage;
+
+    // ---- Submit form ----
+    private enum SubmitMode { Text, File }
+    private SubmitMode submitMode = SubmitMode.Text;
+    private string submitBody = string.Empty;
+    private UploadDocumentValue? submitFile;
+    private bool isSubmitting;
+    private string? submitError;
+
+    // ---- Lifecycle ----
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+        currentUserId = authState.User.FindFirst(
+            System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+
+        await LoadActivityAsync();
+    }
+
+    private async Task LoadActivityAsync()
+    {
+        isLoading = true;
+        loadError = null;
+        StateHasChanged();
+
+        try
+        {
+            var response = await ActivityService.GetActivityByIdAsync(ActivityId);
+            if (response is not null)
+            {
+                activity = new ActivityDetailDto
+                {
+                    Id = response.Id,
+                    ModuleId = response.ModuleId,
+                    ModuleName = response.ModuleName,
+                    Name = response.Name,
+                    Description = response.Description,
+                    ActivityTypeId = response.ActivityTypeId,
+                    ActivityTypeName = response.ActivityTypeName,
+                    StartTime = response.StartTime,
+                    EndTime = response.EndTime,
+                    DocumentCount = response.DocumentCount,
+                    SubmissionCount = response.SubmissionCount,
+                    Documents = response.Documents?.ToList() ?? [],
+                    Submissions = response.Submissions?.ToList() ?? []
+                };
+
+                documents = activity.Documents;
+                mySubmission = activity.Submissions
+                    .FirstOrDefault(s => s.StudentId == currentUserId);
+            }
+        }
+        catch (Exception ex)
+        {
+            loadError = $"Failed to load activity. {ex.Message}";
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    // ---- Submit ----
+    private async Task SubmitAsync()
+    {
+        submitError = null;
+
+        if (submitMode == SubmitMode.Text && string.IsNullOrWhiteSpace(submitBody))
+        {
+            submitError = "Please write something before submitting.";
+            return;
+        }
+        if (submitMode == SubmitMode.File && submitFile?.HasFile != true)
+        {
+            submitError = "Please select a file before submitting.";
+            return;
+        }
+
+        isSubmitting = true;
+        try
+        {
+            var dto = new CreateSubmissionDto
+            {
+                ActivityId = ActivityId,
+                Body = submitMode == SubmitMode.Text ? submitBody.Trim() : null
+            };
+
+            var created = await SubmissionService.CreateSubmissionAsync(
+                dto,
+                submitMode == SubmitMode.File ? submitFile : null);
+
+            if (created is not null)
+            {
+                mySubmission = created;
+                submitBody = string.Empty;
+                submitFile = null;
+                successMessage = "Your submission was received.";
+            }
+            else
+            {
+                submitError = "Submission failed. Please try again.";
+            }
+        }
+        catch (Exception ex)
+        {
+            submitError = $"Submission failed. {ex.Message}";
+        }
+        finally
+        {
+            isSubmitting = false;
+        }
+    }
+
+    // ---- Helpers ----
+    private void GoBack()
+    {
+        if (activity is not null)
+            Navigation.NavigateTo($"/modules/{activity.ModuleId}/details");
+        else
+            Navigation.NavigateTo("/modules");
+    }
+
+    private static class ActivityHelpers
+    {
+        public static string GetActivityTypeBadge(string? typeName) => typeName switch
+        {
+            "Assignment" => "bg-warning text-dark",
+            "Exercise" => "bg-danger",
+            "Lecture" => "bg-primary",
+            "E-Learning" => "bg-success",
+            _ => "bg-secondary"
+        };
+    }
+}
