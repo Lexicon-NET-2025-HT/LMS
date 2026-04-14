@@ -1,6 +1,7 @@
-@page "/student/dashboard"
+@page "/student/overview"
 @attribute [Authorize(Roles = "Student")]
 @using Domain.Models.Entities
+@using LMS.Blazor.Client.Components
 @using LMS.Blazor.Client.Components.User
 @using LMS.Shared.DTOs.Activity
 @using LMS.Shared.DTOs.Course
@@ -11,14 +12,14 @@
 @inject IActivityService ActivityService
 @inject NavigationManager Navigation
 
-<PageTitle>My Dashboard</PageTitle>
+<PageTitle>Course Overview</PageTitle>
 
 <div class="container-fluid py-4">
 
     @* ---- Header ---- *@
     <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4">
         <div>
-            <h2 class="mb-0">My Dashboard</h2>
+            <h2 class="mb-2">Course Overview</h2>
             <p class="text-muted small mb-0">Welcome back! Here's what's happening in your course.</p>
         </div>
     </div>
@@ -314,6 +315,8 @@
                 <ClassmateList CourseId="@course!.Id" Class="mb-4" />
                 </div>
         </div>
+
+        <CourseDocumentTable CourseId="@course.Id" />
     }
 </div>
 
