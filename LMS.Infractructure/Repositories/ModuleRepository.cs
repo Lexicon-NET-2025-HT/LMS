@@ -1,4 +1,4 @@
-﻿using Domain.Contracts.Repositories;
+using Domain.Contracts.Repositories;
 using Domain.Models.Entities;
 using LMS.Infractructure.Data;
 using Microsoft.EntityFrameworkCore;
@@ -25,6 +25,7 @@ public class ModuleRepository(ApplicationDbContext context) : RepositoryBase<Mod
             .Include(m => m.Activities)
                 .ThenInclude(a => a.Documents)
             .Include(m => m.Documents)
+                .ThenInclude(d => d.UploadedByUser)
             .Include(m => m.Course)
             .FirstOrDefaultAsync();
     }

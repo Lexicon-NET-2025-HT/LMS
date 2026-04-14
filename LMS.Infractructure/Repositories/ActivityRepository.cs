@@ -1,4 +1,4 @@
-﻿using Domain.Contracts.Repositories;
+using Domain.Contracts.Repositories;
 using Domain.Models.Entities;
 using LMS.Infractructure.Data;
 using LMS.Infractructure.Extensions;
@@ -12,6 +12,7 @@ public class ActivityRepository(ApplicationDbContext context) : RepositoryBase<A
     {
         return await DbSet
             .Include(a => a.Documents)
+                .ThenInclude(d => d.UploadedByUser)
             .Include(a => a.Submissions)
             .FirstAsync(a => a.Id == id);
     }
@@ -23,6 +24,7 @@ public class ActivityRepository(ApplicationDbContext context) : RepositoryBase<A
             .ThenInclude(m => m.Course)
             .Include(a => a.ActivityType)
             .Include(a => a.Documents)
+                .ThenInclude(d => d.UploadedByUser)
             .Include(a => a.Submissions)
             .FirstOrDefaultAsync();
     }

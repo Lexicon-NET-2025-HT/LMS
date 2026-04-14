@@ -1,4 +1,4 @@
-﻿using LMS.Shared.DTOs.Activity;
+using LMS.Shared.DTOs.Activity;
 using LMS.Shared.DTOs.Common;
 
 namespace LMS.Blazor.Client.Services;
@@ -28,6 +28,9 @@ public class ActivityService : IActivityService
     }
 
     public Task<ActivityDetailDto?> GetActivityByIdAsync(int id, CancellationToken ct = default)
+        => _apiService.GetAsync<ActivityDetailDto>($"{Base}/{id}/detail", ct);
+
+    public Task<ActivityDetailDto?> GetActivityDetailByIdAsync(int id, CancellationToken ct = default)
         => _apiService.GetAsync<ActivityDetailDto>($"{Base}/{id}/detail", ct);
 
     public Task<ActivityDto?> CreateActivityAsync(CreateActivityDto dto, CancellationToken ct = default)

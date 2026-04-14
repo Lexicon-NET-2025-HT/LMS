@@ -1,4 +1,4 @@
-﻿using LMS.Blazor.Client.Uploads;
+using LMS.Blazor.Client.Uploads;
 using LMS.Shared.DTOs.Common;
 using LMS.Shared.DTOs.Document;
 
@@ -38,6 +38,9 @@ public class DocumentService : IDocumentService
 
             if (query?.SubmissionId.HasValue == true)
                 url += $"&submissionId={query.SubmissionId.Value}";
+
+            if (!string.IsNullOrEmpty(query?.ScopeTarget))
+                url += $"&scopeTarget={query.ScopeTarget}";
 
             return await _apiService.GetAsync<PagedResultDto<DocumentDto>>(url, ct);
         }

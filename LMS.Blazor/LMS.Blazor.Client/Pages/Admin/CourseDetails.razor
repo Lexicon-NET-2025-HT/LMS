@@ -1,17 +1,25 @@
-﻿@page "/admin/courses/{CourseId:int}/details"
+@page "/admin/courses/{CourseId:int}/details"
 @attribute [Authorize(Roles = "Teacher")]
 @using Domain.Models.Entities
 @using LMS.Shared.DTOs.Activity
 @using LMS.Shared.DTOs.Course
 @using LMS.Shared.DTOs.Module
 @using LMS.Shared.DTOs.User
+@using LMS.Shared.DTOs.Document
 @using LMS.Shared.DTOs.ActivityType
 @inject ICourseService CourseService
 @inject NavigationManager Navigation
 @inject IModuleService ModuleService
 @inject IActivityService ActivityService
+@inject ICourseService CourseService
+@inject IDocumentService DocumentService
 @inject IUserService UserService
 @inject IActivityTypeService ActivityTypeService
+@inject NavigationManager Navigation
+@using Domain.Models.Enums
+@using LMS.Blazor.Client.Uploads
+@using LMS.Blazor.Client.Components.Document
+@using LMS.Blazor.Client.Components
 
 <PageTitle>Course Details</PageTitle>
 
@@ -175,36 +183,73 @@
             @if (showUploadDocument)
             {
                 <div class="card-body border-bottom bg-light">
-                    <div class="row g-2 align-items-end">
-                        <div class="col-12 col-md-5">
-                            <label class="form-label small fw-semibold">Display Name *</label>
-                            <input class="form-control form-control-sm" @bind="newDocName" placeholder="e.g. Lecture Slides Week 1" />
-                        </div>
-                        <div class="col-12 col-md-5">
-                            <label class="form-label small fw-semibold">File (mock)</label>
-                            <input type="file" class="form-control form-control-sm" @onchange="HandleFilePicked" />
-                        </div>
-                        <div class="col-12 col-md-auto d-flex gap-1">
-                            <button class="btn btn-sm btn-success" @onclick="AddDocument">Add</button>
-                            <button class="btn btn-sm btn-secondary" @onclick="() => showUploadDocument = false">✕</button>
-                        </div>
-                    </div>
-                    @if (!string.IsNullOrEmpty(documentError))
-                    {
-                        <p class="text-danger small mt-1 mb-0">@documentError</p>
-                    }
+                    <UploadDocumentField 
+                        Label="Select Document"
+                        @bind-Value="documentUpload"
+                        HandleSubmit="SaveDocumentAsync" />
                 </div>
             }
 
-            <div class="card-body">
-                <div class="alert alert-info mb-0">
-                    <i class="bi bi-info-circle me-2"></i>
-                    Document upload requires authentication context and is not yet available.
-                </div>
+            <div class="card-body p-0">
+                @if (!documents.Any())
+                {
+                    <p class="text-muted p-3 mb-0">No documents attached to this course yet.</p>
+                }
+                else
+                {
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                             <thead class="table-light">
+                                <tr>
+                                    <th style="width:100%"></th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var doc in documents)
+                                {
+                                    <tr>
+                                        <td class="align-middle" colspan="4">
+                                            <DocumentWithDownload Document="doc" />
+                                        </td>
+                                        <td class="align-middle text-end pe-3">
+                                            <button class="btn btn-sm btn-outline-danger"
+                                                    title="Remove"
+                                                    @onclick="() => HandleDeleteDocument(doc)">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
             </div>
         </div>
     }
 </div>
+
+@* ---- Delete Document modal ---- *@
+@if (showDeleteDocumentConfirm && documentToDelete is not null)
+{
+    <div class="modal fade show d-block" tabindex="-1" style="background:rgba(0,0,0,0.5)">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Confirm Delete</h5>
+                </div>
+                <div class="modal-body">
+                    Are you sure you want to remove <strong>@documentToDelete.DisplayName</strong>?
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" @onclick="() => showDeleteDocumentConfirm = false">Cancel</button>
+                    <button class="btn btn-danger" @onclick="ConfirmDeleteDocumentAsync">Delete</button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
 
 @code {
     [Parameter] public int CourseId { get; set; }
@@ -241,10 +286,11 @@
     private string? studentError;
 
     // ---- Document state ----
+    private List<DocumentDto> documents = [];
     private bool showUploadDocument;
-    private string newDocName = string.Empty;
-    private string pickedFileName = string.Empty;
-    private string? documentError;
+    private UploadDocumentValue documentUpload = new();
+    private bool showDeleteDocumentConfirm;
+    private DocumentDto? documentToDelete;
 
     // ---- Lifecycle ----
     protected override async Task OnInitializedAsync()
@@ -269,6 +315,7 @@
                 course = detail;
                 modules = detail.Modules;
                 students = detail.Students;
+                documents = detail.Documents ?? [];
             }
 
             var result = await UserService.GetUsersWithoutCourseAsync();
@@ -531,12 +578,43 @@
     }
 
     // ---- Document actions ----
-    private void HandleFilePicked(ChangeEventArgs e)
-        => pickedFileName = e.Value?.ToString() ?? string.Empty;
-
-    private void AddDocument()
+    private async Task SaveDocumentAsync()
     {
-        documentError = "Document upload requires backend auth context — not yet wired up.";
+        var createdDocument = await DocumentService.CreateDocumentAsync(new CreateDocumentDto
+        {
+            CourseId = CourseId,
+            Description = documentUpload.Description
+        }, documentUpload);
+
+        if(createdDocument is not null)
+        {
+            documents.Add(createdDocument);
+            successMessage = $"Document '{createdDocument.DisplayName}' uploaded.";
+            documentUpload = new UploadDocumentValue();
+            showUploadDocument = false;
+        }
+        else
+        {
+            errorMessage = "Failed to upload document. Please try again.";
+        }
+    }
+
+    private void HandleDeleteDocument(DocumentDto doc)
+    {
+        documentToDelete = doc;
+        showDeleteDocumentConfirm = true;
+    }
+
+    private async Task ConfirmDeleteDocumentAsync()
+    {
+        if (documentToDelete is null) return;
+
+        await DocumentService.DeleteDocumentAsync(documentToDelete.Id);
+        documents.RemoveAll(d => d.Id == documentToDelete.Id);
+        successMessage = $"Document '{documentToDelete.DisplayName}' removed.";
+        documentToDelete = null;
+        showDeleteDocumentConfirm = false;
+        await Task.CompletedTask;
     }
 
     private void GoBack() => Navigation.NavigateTo("/admin/courses");

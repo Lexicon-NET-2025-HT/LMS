@@ -1,4 +1,4 @@
-﻿@page "/admin/activities/{ActivityId:int}/details"
+@page "/admin/activities/{ActivityId:int}/details"
 @attribute [Authorize(Roles = "Teacher")]
 @using LMS.Blazor.Client.Components
 @using LMS.Blazor.Client.Components.Activity
@@ -6,7 +6,10 @@
 @using LMS.Shared.DTOs.ActivityType
 @using LMS.Shared.DTOs.Document
 @using LMS.Shared.DTOs.Submission
+@using Domain.Models.Enums
 @using LMS.Blazor.Client.Uploads
+@using LMS.Blazor.Client.Components.Document
+@using LMS.Blazor.Client.Components
 @inject IActivityService ActivityService
 @inject IActivityTypeService ActivityTypeService
 @inject NavigationManager Navigation
@@ -252,28 +255,10 @@
             @if (showUploadDocument)
             {
                 <div class="card-body border-bottom bg-light">
-                    <UploadDocumentField @bind-Value="uploadValue"
-                                         Label="Document"
-                                         FileHelpText="PDF, Word, or image files." />
-                    @if (!string.IsNullOrEmpty(uploadError))
-                    {
-                        <div class="text-danger small mb-2">@uploadError</div>
-                    }
-                    <div class="d-flex gap-2">
-                        <button class="btn btn-sm btn-success"
-                                @onclick="UploadDocumentAsync"
-                                disabled="@(isUploading || uploadValue?.HasFile != true)">
-                            @if (isUploading)
-                            {
-                                <span class="spinner-border spinner-border-sm me-1"></span>
-                            }
-                            Upload
-                        </button>
-                        <button class="btn btn-sm btn-secondary"
-                                @onclick="() => { showUploadDocument = false; uploadValue = null; uploadError = null; }">
-                            Cancel
-                        </button>
-                    </div>
+                    <UploadDocumentField 
+                        Label="Select Document"
+                        @bind-Value="documentUpload"
+                        HandleSubmit="SaveDocumentAsync" />
                 </div>
             }
 
@@ -286,21 +271,20 @@
                 {
                     <div class="table-responsive">
                         <table class="table table-hover mb-0">
-                            <thead class="table-light">
+                             <thead class="table-light">
                                 <tr>
-                                    <th>Name</th>
-                                    <th class="d-none d-md-table-cell">File</th>
-                                    <th class="d-none d-sm-table-cell">Uploaded</th>
-                                    <th class="d-none d-sm-table-cell">By</th>
-                                    <th style="width:60px;"></th>
+                                    <th style="width:100%"></th>
+                                    <th></th>
                                 </tr>
                             </thead>
                             <tbody>
                                 @foreach (var doc in documents)
                                 {
                                     <tr>
-                                        <td><DocumentWithDownload Document="doc" /></td>
-                                        <td class="text-end">
+                                        <td class="align-middle" colspan="4">
+                                            <DocumentWithDownload Document="doc" />
+                                        </td>
+                                        <td class="align-middle text-end pe-3">
                                             <button class="btn btn-sm btn-outline-danger"
                                                     @onclick="() => HandleDeleteDocument(doc)">
                                                 <i class="bi bi-trash"></i>
@@ -391,23 +375,7 @@
     private bool showUploadDocument;
     private bool showDeleteDocumentConfirm;
     private DocumentDto? documentToDelete;
-    // ---- Upload ----
-    private UploadDocumentValue? uploadValue;
-    private bool isUploading;
-    private string? uploadError;
-
-    private async Task UploadDocumentAsync()
-    {
-        if (uploadValue?.HasFile != true) return;
-
-        isUploading = true;
-        uploadError = null;
-
-        try
-        {
-            var created = await DocumentService.CreateDocumentAsync(
-                new CreateDocumentDto { ActivityId = ActivityId },
-                uploadValue);
+    private UploadDocumentValue documentUpload = new();
 
             if (created is not null)
             {
@@ -468,6 +436,10 @@
 
                 submissions = activity.Submissions;
                 documents   = activity.Documents;
+
+                // Seed feedback draft slots
+                foreach (var s in submissions)
+                    feedbackDrafts.TryAdd(s.Id, string.Empty);
             }
         }
         catch (Exception ex)
@@ -605,11 +577,31 @@
 
     private void ToggleSubmission(int submissionId)
     {
+    private async Task SaveDocumentAsync()
+    {
+        var createdDocument = await DocumentService.CreateDocumentAsync(new CreateDocumentDto
+        {
+            ActivityId = ActivityId,
+            Description = documentUpload.Description
+        }, documentUpload);
+
+        if(createdDocument is not null)
+        {
+            documents.Add(createdDocument);
+            successMessage = $"Document '{createdDocument.DisplayName}' uploaded.";
+            documentUpload = new UploadDocumentValue();
+            showUploadDocument = false;
+        }
+        else
+        {
+            errorMessage = "Failed to upload document. Please try again.";
+        }
+    }
+
         expandedSubmissionId = expandedSubmissionId == submissionId ? null : submissionId;
     }
 
     // ---- Document actions ----
-
     private void HandleDeleteDocument(DocumentDto doc)
     {
         documentToDelete = doc;
@@ -620,7 +612,7 @@
     {
         if (documentToDelete is null) return;
 
-        // TODO: wire IDocumentService to client
+        await DocumentService.DeleteDocumentAsync(documentToDelete.Id);
         documents.RemoveAll(d => d.Id == documentToDelete.Id);
         successMessage = $"Document '{documentToDelete.DisplayName}' removed.";
         documentToDelete = null;
