@@ -1,15 +1,20 @@
 @page "/admin/courses/{CourseId:int}/details"
 @attribute [Authorize(Roles = "Teacher")]
+@using Domain.Models.Entities
 @using LMS.Shared.DTOs.Activity
 @using LMS.Shared.DTOs.Course
 @using LMS.Shared.DTOs.Module
 @using LMS.Shared.DTOs.User
 @using LMS.Shared.DTOs.Document
+@using LMS.Shared.DTOs.ActivityType
+@inject ICourseService CourseService
+@inject NavigationManager Navigation
 @inject IModuleService ModuleService
 @inject IActivityService ActivityService
 @inject ICourseService CourseService
 @inject IDocumentService DocumentService
 @inject IUserService UserService
+@inject IActivityTypeService ActivityTypeService
 @inject NavigationManager Navigation
 @using Domain.Models.Enums
 @using LMS.Blazor.Client.Uploads
@@ -267,7 +272,8 @@
 
     // ---- Activity state ----
     private string newActivityName = string.Empty;
-    private ActivityType newActivityType = ActivityType.Lecture;
+    private List<ActivityTypeDto> activityTypes = [];
+    private int newActivityTypeId;
     private DateTime newActivityStart = DateTime.Today.AddHours(9);
     private DateTime newActivityEnd = DateTime.Today.AddHours(17);
     private bool isAddingActivity;
@@ -298,6 +304,10 @@
 
         try
         {
+            var typesResult = await ActivityTypeService.GetAllActivityTypesAsync();
+            activityTypes = typesResult?.ToList() ?? [];
+            newActivityTypeId = activityTypes.FirstOrDefault()?.Id ?? 0;
+
             var detail = await CourseService.GetCourseDetailByIdAsync(CourseId);
 
             if (detail is not null)
@@ -417,24 +427,23 @@
             return;
         }
 
-        var type = kind == ActivityKind.Assignment
-            ? ActivityType.Assignment
-            : newActivityType;
-
         isAddingActivity = true;
         try
         {
-            var dto = new CreateActivityDto
+            var assignmentType = activityTypes.FirstOrDefault(t => t.Name == "Assignment");
+            var activityDto = new CreateActivityDto
             {
                 ModuleId = moduleId,
                 Name = newActivityName,
                 Description = string.Empty,
-                Type = type,
+                ActivityTypeId = kind == ActivityKind.Assignment
+                                    ? (assignmentType?.Id ?? newActivityTypeId)
+                                    : newActivityTypeId,
                 StartTime = newActivityStart,
                 EndTime = newActivityEnd
             };
 
-            var created = await ActivityService.CreateActivityAsync(dto);
+            var created = await ActivityService.CreateActivityAsync(activityDto);
             if (created is not null)
             {
                 if (moduleActivities.TryGetValue(moduleId, out var list))

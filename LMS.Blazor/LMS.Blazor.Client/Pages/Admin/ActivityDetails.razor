@@ -1,6 +1,9 @@
 @page "/admin/activities/{ActivityId:int}/details"
 @attribute [Authorize(Roles = "Teacher")]
+@using LMS.Blazor.Client.Components
+@using LMS.Blazor.Client.Components.Activity
 @using LMS.Shared.DTOs.Activity
+@using LMS.Shared.DTOs.ActivityType
 @using LMS.Shared.DTOs.Document
 @using LMS.Shared.DTOs.Submission
 @using Domain.Models.Enums
@@ -8,8 +11,9 @@
 @using LMS.Blazor.Client.Components.Document
 @using LMS.Blazor.Client.Components
 @inject IActivityService ActivityService
-@inject IDocumentService DocumentService
+@inject IActivityTypeService ActivityTypeService
 @inject NavigationManager Navigation
+@inject IDocumentService DocumentService
 
 <PageTitle>Activity Details</PageTitle>
 
@@ -18,10 +22,23 @@
     @* ---- Header ---- *@
     <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4">
         <h2 class="mb-0">Activity Details</h2>
-        <button class="btn btn-outline-secondary" @onclick="GoBack">
-            <i class="bi bi-arrow-left"></i>
-            <span class="d-none d-md-inline ms-1">Back to Module</span>
-        </button>
+        <div class="d-flex gap-2 flex-wrap align-items-center">
+            @if (activity is not null)
+            {
+                <button class="btn btn-sm btn-outline-secondary" @onclick="OpenActivityTypeDialog">
+                    <i class="bi bi-tag"></i>
+                    <span class="d-none d-md-inline ms-1">Add Type</span>
+                </button>
+                <button class="btn btn-sm btn-primary" @onclick="OpenEditDialog">
+                    <i class="bi bi-pencil"></i>
+                    <span class="d-none d-md-inline ms-1">Edit Activity</span>
+                </button>
+            }
+            <button class="btn btn-outline-secondary" @onclick="GoBack">
+                <i class="bi bi-arrow-left"></i>
+                <span class="d-none d-md-inline ms-1">Back to Module</span>
+            </button>
+        </div>
     </div>
 
     @* ---- Feedback ---- *@
@@ -70,7 +87,7 @@
             <div class="card-header d-flex flex-wrap justify-content-between align-items-center gap-2">
                 <h5 class="mb-0">@activity.Name</h5>
                 <div class="d-flex gap-2 flex-wrap align-items-center">
-                    <span class="badge @GetActivityTypeBadge(activity.Type) fs-6">@activity.Type</span>
+                    <span class="badge @ActivityHelpers.GetActivityTypeBadge(activity.ActivityTypeName) fs-6">@activity.ActivityTypeName</span>
                     <span class="badge bg-secondary">@submissions.Count Submissions</span>
                     <span class="badge bg-info text-dark">@documents.Count Documents</span>
                 </div>
@@ -87,7 +104,7 @@
                     </div>
                     <div class="col-md-2 col-6">
                         <p class="text-muted mb-1 small">Start</p>
-                        <p class="mb-0">@activity.StartTime.ToString("yyyy-MM-dd HH:mm")</p>
+                        <p class="mb-0">@activity.StartTime?.ToString("yyyy-MM-dd HH:mm")</p>
                     </div>
                     <div class="col-md-2 col-6">
                         <p class="text-muted mb-1 small">End / Deadline</p>
@@ -111,15 +128,7 @@
                 <h6 class="mb-0"><i class="bi bi-send me-2"></i>Submissions</h6>
                 @if (submissions.Any())
                 {
-                    <div class="d-flex gap-2 flex-wrap align-items-center">
-                        <span class="text-muted small">
-                            @* TODO: implement new submission comments *@
-                            @* @submissions.Count(s => s.FeedbackText is not null) / @submissions.Count reviewed *@
-                        </span>
-                        <span class="badge bg-danger">
-                            @submissions.Count(s => s.IsLate) Late
-                        </span>
-                    </div>
+                    <span class="badge bg-danger">@submissions.Count(s => s.IsLate) Late</span>
                 }
             </div>
 
@@ -166,15 +175,11 @@
                                         <td class="d-none d-lg-table-cell">
                                             @if (!string.IsNullOrEmpty(sub.Body))
                                             {
-                                                <span class="text-truncate d-inline-block" style="max-width:180px;">
-                                                    @sub.Body
-                                                </span>
+                                                <span class="text-truncate d-inline-block" style="max-width:180px;">@sub.Body</span>
                                             }
                                             else if (sub.DocumentId is not null)
                                             {
-                                                <span class="text-muted small">
-                                                    <i class="bi bi-file-earmark me-1"></i>Attachment
-                                                </span>
+                                                <span class="text-muted small"><i class="bi bi-file-earmark me-1"></i>Attachment</span>
                                             }
                                             else
                                             {
@@ -182,17 +187,7 @@
                                             }
                                         </td>
                                         <td>
-                                            @* TODO: implement new submission comments *@
-                                            @* @if (sub.FeedbackText is not null)
-                                            {
-                                                <span class="badge bg-success">
-                                                    <i class="bi bi-check-lg me-1"></i>Given
-                                                </span>
-                                            }
-                                            else
-                                            {
-                                                <span class="badge bg-warning text-dark">Pending</span>
-                                            } *@
+                                            @* TODO: implement submission feedback *@
                                         </td>
                                         <td class="text-end text-nowrap">
                                             <button class="btn btn-sm @(expandedSubmissionId == sub.Id ? "btn-primary" : "btn-outline-primary")"
@@ -210,8 +205,6 @@
                                             <td colspan="7" class="pt-0">
                                                 <div class="bg-white border rounded p-3 mt-1">
                                                     <div class="row g-3">
-
-                                                        @* Submission content *@
                                                         <div class="col-md-6">
                                                             <p class="small fw-semibold text-muted mb-1">Submission Content</p>
                                                             @if (!string.IsNullOrEmpty(sub.Body))
@@ -222,9 +215,7 @@
                                                             {
                                                                 <div class="d-flex align-items-center gap-2 border rounded p-2 bg-light">
                                                                     <i class="bi bi-file-earmark-text fs-4 text-muted"></i>
-                                                                    <div>
-                                                                        <div class="fw-semibold small">@sub.Document.DisplayName</div>
-                                                                    </div>
+                                                                    <div class="fw-semibold small">@sub.Document.DisplayName</div>
                                                                 </div>
                                                             }
                                                             else
@@ -232,44 +223,8 @@
                                                                 <p class="text-muted small">No content provided.</p>
                                                             }
                                                         </div>
-
-                                                        @* Feedback form *@
                                                         <div class="col-md-6">
-                                                            @* TODO: implement new submission comments *@
-                                                            @* <p class="small fw-semibold text-muted mb-1">
-                                                                @(sub.feedbacktext is not null ? "feedback (already given)" : "give feedback")
-                                                            </p>
-
-                                                            @if (sub.FeedbackText is not null)
-                                                            {
-                                                                <div class="border rounded p-2 bg-light small mb-2" style="white-space:pre-wrap;">
-                                                                    @sub.FeedbackText
-                                                                </div>
-                                                                <p class="text-muted small mb-0">
-                                                                    Given at @sub.FeedbackGivenAt?.ToString("yyyy-MM-dd HH:mm")
-                                                                </p>
-                                                            }
-                                                            else
-                                                            {
-                                                                <textarea class="form-control form-control-sm mb-2"
-                                                                          rows="4"
-                                                                          placeholder="Write your feedback here..."
-                                                                          @bind="feedbackDrafts[sub.Id]">
-                                                                </textarea>
-                                                                @if (feedbackErrors.TryGetValue(sub.Id, out var fbErr))
-                                                                {
-                                                                    <p class="text-danger small mt-1">@fbErr</p>
-                                                                }
-                                                                <button class="btn btn-sm btn-success"
-                                                                        @onclick="() => SubmitFeedbackAsync(sub.Id)"
-                                                                        disabled="@(submittingFeedbackId == sub.Id)">
-                                                                    @if (submittingFeedbackId == sub.Id)
-                                                                    {
-                                                                        <span class="spinner-border spinner-border-sm me-1"></span>
-                                                                    }
-                                                                    Submit Feedback
-                                                                </button>
-                                                            } *@
+                                                            @* TODO: implement submission feedback *@
                                                         </div>
                                                     </div>
                                                 </div>
@@ -331,7 +286,6 @@
                                         </td>
                                         <td class="align-middle text-end pe-3">
                                             <button class="btn btn-sm btn-outline-danger"
-                                                    title="Remove"
                                                     @onclick="() => HandleDeleteDocument(doc)">
                                                 <i class="bi bi-trash"></i>
                                             </button>
@@ -346,6 +300,26 @@
         </div>
     }
 </div>
+
+@* ---- Edit Activity dialog (reuses the shared ActivityDialog with module selection hidden) ---- *@
+<ActivityDialog @bind-Open="editDialogOpen"
+                IsEditing="true"
+                HideModuleSelection="true"
+                Model="editFormModel"
+                ActivityTypes="activityTypes"
+                OnSave="HandleEditSave"
+                OnAddActivityType="OpenActivityTypeDialog"
+                OnDeleteActivityType="HandleDeleteActivityType"
+                ActivityTypeError="@activityTypeError" />
+
+@* ---- Activity Type dialog ---- *@
+<ActivityTypeDialog @bind-Open="activityTypeDialogOpen"
+                    @bind-Name="newActivityTypeName"
+                    @bind-Description="newActivityTypeDescription"
+                    Error="@activityTypeError"
+                    IsSaving="isCreatingActivityType"
+                    OnSave="HandleCreateActivityType"
+                    OnCancel="() => activityTypeError = null" />
 
 @* ---- Delete Document modal ---- *@
 @if (showDeleteDocumentConfirm && documentToDelete is not null)
@@ -375,6 +349,7 @@
     private ActivityDetailDto? activity;
     private List<SubmissionDto> submissions = [];
     private List<DocumentDto> documents = [];
+    private List<ActivityTypeDto> activityTypes = [];
 
     // ---- Page state ----
     private bool isLoading;
@@ -382,17 +357,47 @@
     private string? successMessage;
     private string? errorMessage;
 
-    // ---- Submissions / feedback ----
+    // ---- Submissions ----
     private int? expandedSubmissionId;
-    private Dictionary<int, string> feedbackDrafts = new();
-    private Dictionary<int, string> feedbackErrors = new();
-    private int? submittingFeedbackId;
+
+    // ---- Edit dialog ----
+    private bool editDialogOpen;
+    private ActivityDialog.ActivityFormModel editFormModel = new();
+
+    // ---- Activity Type dialog ----
+    private bool activityTypeDialogOpen;
+    private string newActivityTypeName = string.Empty;
+    private string newActivityTypeDescription = string.Empty;
+    private string? activityTypeError;
+    private bool isCreatingActivityType;
 
     // ---- Documents ----
     private bool showUploadDocument;
     private bool showDeleteDocumentConfirm;
     private DocumentDto? documentToDelete;
     private UploadDocumentValue documentUpload = new();
+
+            if (created is not null)
+            {
+                documents.Add(created);
+                successMessage = $"'{created.DisplayName}' uploaded.";
+                showUploadDocument = false;
+                uploadValue = null;
+            }
+            else
+            {
+                uploadError = "Upload failed. Please try again.";
+            }
+        }
+        catch (Exception ex)
+        {
+            uploadError = $"Upload failed. {ex.Message}";
+        }
+        finally
+        {
+            isUploading = false;
+        }
+    }
 
     // ---- Lifecycle ----
     protected override async Task OnInitializedAsync()
@@ -406,11 +411,31 @@
 
         try
         {
-            activity = await ActivityService.GetActivityDetailByIdAsync(ActivityId);
-            if (activity is not null)
+            var typesResult = await ActivityTypeService.GetAllActivityTypesAsync();
+            activityTypes = typesResult?.ToList() ?? [];
+
+            var response = await ActivityService.GetActivityByIdAsync(ActivityId);
+            if (response is not null)
             {
-                submissions = activity.Submissions ?? [];
-                documents   = activity.Documents ?? [];
+                activity = new ActivityDetailDto
+                {
+                    Id               = response.Id,
+                    ModuleId         = response.ModuleId,
+                    ModuleName       = response.ModuleName,
+                    Name             = response.Name,
+                    Description      = response.Description,
+                    ActivityTypeId   = response.ActivityTypeId,
+                    ActivityTypeName = response.ActivityTypeName,
+                    StartTime        = response.StartTime,
+                    EndTime          = response.EndTime,
+                    DocumentCount    = response.DocumentCount,
+                    SubmissionCount  = response.SubmissionCount,
+                    Documents        = response.Documents?.ToList() ?? [],
+                    Submissions      = response.Submissions?.ToList() ?? []
+                };
+
+                submissions = activity.Submissions;
+                documents   = activity.Documents;
 
                 // Seed feedback draft slots
                 foreach (var s in submissions)
@@ -427,58 +452,131 @@
         }
     }
 
-    // ---- Submission / feedback actions ----
-    private void ToggleSubmission(int submissionId)
-    {
-        expandedSubmissionId = expandedSubmissionId == submissionId ? null : submissionId;
+    // ---- Edit dialog ----
 
-        // Ensure a draft slot exists
-        feedbackDrafts.TryAdd(submissionId, string.Empty);
+    private void OpenEditDialog()
+    {
+        activityTypeError = null;
+        if (activity is null) return;
+
+        editFormModel = new()
+        {
+            ModuleId       = activity.ModuleId,
+            Name           = activity.Name,
+            Description    = activity.Description,
+            ActivityTypeId = activity.ActivityTypeId,
+            StartTime      = activity.StartTime,
+            EndTime        = activity.EndTime
+        };
+
+        editDialogOpen = true;
     }
 
-    private async Task SubmitFeedbackAsync(int submissionId)
+    private async Task HandleEditSave()
     {
-        feedbackErrors.Remove(submissionId);
+        if (activity is null) return;
 
-        var draft = feedbackDrafts.GetValueOrDefault(submissionId, string.Empty);
-        if (string.IsNullOrWhiteSpace(draft))
-        {
-            feedbackErrors[submissionId] = "Feedback text cannot be empty.";
-            return;
-        }
-
-        submittingFeedbackId = submissionId;
         try
         {
-            // TODO: wire ISubmissionService to client and call SubmitFeedbackAsync
-            // For now we update the local list optimistically
-            var sub = submissions.FirstOrDefault(s => s.Id == submissionId);
-            // TODO: implement new submission comments
-            // if (sub is not null)
-            // {
-            //     var idx = submissions.IndexOf(sub);
-            //     submissions[idx] = sub with
-            //     {
-            //         FeedbackText    = draft,
-            //         FeedbackGivenAt = DateTime.Now
-            //     };
-            //     feedbackDrafts[submissionId] = string.Empty;
-            //     successMessage = $"Feedback submitted for {sub.StudentName}.";
-            // }
+            await ActivityService.UpdateActivityAsync(activity.Id, new UpdateActivityDto
+            {
+                Name           = editFormModel.Name,
+                Description    = editFormModel.Description,
+                ActivityTypeId = editFormModel.ActivityTypeId,
+                StartTime      = editFormModel.StartTime ?? DateTime.Now,
+                EndTime        = editFormModel.EndTime
+            });
 
-            await Task.CompletedTask;
+            editDialogOpen = false;
+            successMessage = "Activity updated successfully.";
+            await LoadActivityAsync();
         }
         catch (Exception ex)
         {
-            errorMessage = $"Failed to submit feedback. {ex.Message}";
-        }
-        finally
-        {
-            submittingFeedbackId = null;
+            errorMessage = $"Failed to update activity. {ex.Message}";
         }
     }
 
-    // ---- Document actions ----
+    // ---- Activity Type dialog ----
+
+    private void OpenActivityTypeDialog()
+    {
+        newActivityTypeName = string.Empty;
+        newActivityTypeDescription = string.Empty;
+        activityTypeError = null;
+        activityTypeDialogOpen = true;
+    }
+
+    private async Task HandleCreateActivityType()
+    {
+        activityTypeError = null;
+
+        if (string.IsNullOrWhiteSpace(newActivityTypeName))
+        {
+            activityTypeError = "Please enter an activity type name.";
+            return;
+        }
+        if (string.IsNullOrWhiteSpace(newActivityTypeDescription))
+        {
+            activityTypeError = "Please enter an activity type description.";
+            return;
+        }
+
+        isCreatingActivityType = true;
+        try
+        {
+            var created = await ActivityTypeService.CreateActivityTypeAsync(new CreateActivityTypeDto
+            {
+                Name        = newActivityTypeName.Trim(),
+                Description = newActivityTypeDescription
+            });
+
+            if (created is null)
+            {
+                activityTypeError = "Failed to create activity type.";
+                return;
+            }
+
+            var typesResult = await ActivityTypeService.GetAllActivityTypesAsync();
+            activityTypes = typesResult?.ToList() ?? [];
+
+            // Pre-select the new type in the edit form if it's open
+            editFormModel.ActivityTypeId = created.Id;
+
+            activityTypeDialogOpen = false;
+            newActivityTypeName = string.Empty;
+            newActivityTypeDescription = string.Empty;
+            successMessage = $"Activity type '{created.Name}' created.";
+        }
+        catch (Exception ex)
+        {
+            activityTypeError = $"Failed to create activity type. {ex.Message}";
+        }
+        finally
+        {
+            isCreatingActivityType = false;
+        }
+    }
+
+    private async Task HandleDeleteActivityType(int activityTypeId)
+    {
+        try
+        {
+            await ActivityTypeService.DeleteActivityTypeAsync(activityTypeId);
+            var typesResult = await ActivityTypeService.GetAllActivityTypesAsync();
+            activityTypes = typesResult?.ToList() ?? [];
+            editFormModel.ActivityTypeId = 0;
+        }
+        catch (Exception ex)
+        {
+            activityTypeError = $"Cannot delete this activity type: {ex.Message}";
+        }
+    }
+
+    // ---- Submission actions ----
+
+    private void ToggleSubmission(int submissionId)
+    {
     private async Task SaveDocumentAsync()
     {
         var createdDocument = await DocumentService.CreateDocumentAsync(new CreateDocumentDto
@@ -500,6 +598,10 @@
         }
     }
 
+        expandedSubmissionId = expandedSubmissionId == submissionId ? null : submissionId;
+    }
+
+    // ---- Document actions ----
     private void HandleDeleteDocument(DocumentDto doc)
     {
         documentToDelete = doc;
@@ -519,6 +621,7 @@
     }
 
     // ---- Helpers ----
+
     private void GoBack()
     {
         if (activity is not null)
@@ -527,12 +630,17 @@
             Navigation.NavigateTo("/admin/modules");
     }
 
-    private static string GetActivityTypeBadge(ActivityType type) => type switch
+    public static class ActivityHelpers
     {
-        ActivityType.Assignment => "bg-warning text-dark",
-        ActivityType.Exercise       => "bg-danger",
-        ActivityType.Lecture    => "bg-primary",
-        ActivityType.ELearning => "bg-success",
-        _                       => "bg-secondary"
-    };
+        public static string GetActivityTypeBadge(string? typeName) => typeName switch
+        {
+            "Assignment" => "bg-warning text-dark",
+            "Exercise" => "bg-danger",
+            "Lecture" => "bg-primary",
+            "E-Learning" => "bg-success",
+            _ => "bg-secondary"
+        };
+    }
+
+
 }
