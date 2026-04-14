@@ -370,40 +370,6 @@
     private DocumentDto? documentToDelete;
     private UploadDocumentValue documentUpload = new();
 
-    private async Task UploadDocumentAsync()
-    {
-        if (uploadValue?.HasFile != true) return;
-
-        isUploading = true;
-        uploadError = null;
-
-        try
-        {
-            var created = await DocumentService.CreateDocumentAsync(
-                new CreateDocumentDto { ModuleId = ModuleId },
-                uploadValue);
-
-            if (created is not null)
-            {
-                documents.Add(created);
-                successMessage = $"'{created.DisplayName}' uploaded.";
-                showUploadDocument = false;
-                uploadValue = null;
-            }
-            else
-            {
-                uploadError = "Upload failed. Please try again.";
-            }
-        }
-        catch (Exception ex)
-        {
-            uploadError = $"Upload failed. {ex.Message}";
-        }
-        finally
-        {
-            isUploading = false;
-        }
-    }
     // ---- Lifecycle ----
     protected override async Task OnInitializedAsync()
     {
