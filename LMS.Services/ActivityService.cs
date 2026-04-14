@@ -64,7 +64,7 @@ namespace LMS.Services
             var activity = await _unitOfWork.Activities.GetActivityWithRelationsAsync(id) ??
                 throw new NotFoundException($"Activity by id: '{id}', does not exist");
 
-            //await _lmsAccessService.EnsureCanAccessActivityAsync(userId, activity);
+            await lmsAccessService.EnsureCanAccessActivityAsync(userId, activity);
 
             return _mapper.Map<ActivityDto>(activity);
         }
@@ -74,7 +74,27 @@ namespace LMS.Services
             var activity = await _unitOfWork.Activities.GetActivityWithRelationsAsync(id) ??
                throw new NotFoundException($"Activity by id: '{id}', does not exist");
 
-            //await _lmsAccessService.EnsureCanAccessActivityAsync(userId, activity);
+            await lmsAccessService.EnsureCanAccessActivityAsync(userId, activity);
+
+            var access = await _userAccessContextFactory.CreateAsync(userId);
+            if (access.IsStudent && !access.IsTeacher && !access.IsAdmin)
+            {
+                activity.Submissions = lmsAccessService
+                    .ApplySubmissionAccessFilter(activity.Submissions.AsQueryable(), access)
+                    .OrderByDescending(s => s.SubmittedAt)
+                    .ToList();
+            }
+            else
+            {
+                activity.Submissions = activity.Submissions
+                    .GroupBy(s => s.StudentId)
+                    .Select(g => g
+                        .OrderByDescending(s => s.SubmittedAt)
+                        .ThenByDescending(s => s.Id)
+                        .First())
+                    .OrderByDescending(s => s.SubmittedAt)
+                    .ToList();
+            }
 
             return _mapper.Map<ActivityDetailDto>(activity);
         }

@@ -92,6 +92,37 @@ public class SubmissionService : ISubmissionService
 
         await lmsAccessService.EnsureCanAccessActivityAsync(userId, activity);
 
+        var existingSubmission = await unitOfWork.Submissions.GetByActivityAndStudentAsync(dto.ActivityId, userId, trackChanges: true);
+        if (existingSubmission is not null)
+        {
+            var timelineComment = BuildResubmissionTimelineComment(existingSubmission, dto.Body, dto.File, dto.RemoveFile);
+
+            existingSubmission.Body = dto.Body;
+            existingSubmission.SubmittedAt = DateTime.UtcNow;
+            existingSubmission.IsLate = activity.EndTime < DateTime.UtcNow;
+
+            if (dto.File != null)
+            {
+                await documentManager.ReplaceForSubmissionAsync(existingSubmission, dto.File, dto.FileDescription);
+            }
+            else if (dto.RemoveFile)
+            {
+                await documentManager.RemoveFromSubmissionAsync(existingSubmission);
+                await unitOfWork.CompleteAsync();
+            }
+            else
+            {
+                await unitOfWork.CompleteAsync();
+            }
+
+            if (!string.IsNullOrWhiteSpace(timelineComment))
+            {
+                existingSubmission.Comments.Add(SubmissionComment.CreateNew(existingSubmission.Id, userId, timelineComment));
+                await unitOfWork.CompleteAsync();
+            }
+
+            return mapper.Map<SubmissionDto>(existingSubmission);
+        }
 
         var submission = mapper.Map<Submission>(dto);
         submission.StudentId = userId;
@@ -126,7 +157,7 @@ public class SubmissionService : ISubmissionService
         ArgumentNullException.ThrowIfNull(dto);
         var submission = await GetStudentAccessedSubmission(id, userId);
 
-        await InternallyUpdateSubmissionAsync(submission, dto.Body, dto.ActivityId, dto.File, dto.FileDescription);
+        await InternallyUpdateSubmissionAsync(submission, dto.Body, dto.ActivityId, dto.File, dto.FileDescription, dto.RemoveFile);
     }
 
     public async Task UpdateSubmissionPartiallyAsync(int id, string userId, PatchSubmissionDto dto)
@@ -139,19 +170,34 @@ public class SubmissionService : ISubmissionService
                                               dto.Body ?? submission.Body ?? string.Empty,
                                               dto.ActivityId ?? submission.Activity.Id,
                                               dto.File ?? null,
-                                              dto.FileDescription ?? submission.Document?.Description);
+                                              dto.FileDescription ?? submission.Document?.Description,
+                                              false);
     }
-    private async Task InternallyUpdateSubmissionAsync(Submission submission, string? body, int? activityId, IFormFile? file, string? fileDescription)
+    private async Task InternallyUpdateSubmissionAsync(Submission submission, string? body, int? activityId, IFormFile? file, string? fileDescription, bool removeFile)
     {
+        var timelineComment = BuildResubmissionTimelineComment(submission, body, file, removeFile);
+
         submission.Body = body ?? submission.Body;
         submission.ActivityId = activityId ?? submission.ActivityId;
         if (file != null)
         {
             await documentManager.ReplaceForSubmissionAsync(submission, file, fileDescription);
-            return;
+        }
+        else if (removeFile && submission.Document is not null)
+        {
+            await documentManager.RemoveFromSubmissionAsync(submission);
+            await unitOfWork.CompleteAsync();
+        }
+        else
+        {
+            await unitOfWork.CompleteAsync();
         }
 
-        await unitOfWork.CompleteAsync();
+        if (!string.IsNullOrWhiteSpace(timelineComment))
+        {
+            submission.Comments.Add(SubmissionComment.CreateNew(submission.Id, submission.StudentId, timelineComment));
+            await unitOfWork.CompleteAsync();
+        }
     }
     public async Task DeleteSubmissionAsync(int id, string userId)
     {
@@ -188,4 +234,38 @@ public class SubmissionService : ISubmissionService
 
         //await ThrowIfNotAuthorizedToComment(submission, userId);
     }
+
+    private static string? BuildResubmissionTimelineComment(Submission submission, string? newBody, IFormFile? newFile, bool removeFile)
+    {
+        var previousBody = submission.Body?.Trim();
+        var nextBody = newBody?.Trim();
+
+        var previousFileName = submission.Document?.DisplayName;
+        var nextFileName = removeFile
+            ? null
+            : newFile?.FileName ?? previousFileName;
+
+        var bodyChanged = !string.Equals(previousBody, nextBody, StringComparison.Ordinal);
+        var fileChanged = !string.Equals(previousFileName, nextFileName, StringComparison.Ordinal);
+
+        if (!bodyChanged && !fileChanged)
+        {
+            return null;
+        }
+
+        return string.Join(Environment.NewLine, [
+            "Student resubmitted",
+            string.Empty,
+            "Previous submission",
+            $"Text: {FormatTimelineValue(previousBody)}",
+            $"File: {FormatTimelineValue(previousFileName)}",
+            string.Empty,
+            "New submission",
+            $"Text: {FormatTimelineValue(nextBody)}",
+            $"File: {FormatTimelineValue(nextFileName)}"
+        ]);
+    }
+
+    private static string FormatTimelineValue(string? value)
+        => string.IsNullOrWhiteSpace(value) ? "(none)" : value.Trim();
 }

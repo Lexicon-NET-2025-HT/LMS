@@ -123,6 +123,11 @@ public class SubmissionService : ISubmissionService
             content.Add(bodyContent, "Body");
         }
 
+        if (dto.RemoveFile)
+        {
+            content.Add(new StringContent(bool.TrueString), "RemoveFile");
+        }
+
         if (document is not null)
         {
             document.AddToMultipart(content);

@@ -28,6 +28,11 @@ public class ActivityRepository(ApplicationDbContext context) : RepositoryBase<A
                 .ThenInclude(d => d.UploadedByUser)
             .Include(a => a.Submissions)
                 .ThenInclude(s => s.Document)
+            .Include(a => a.Submissions)
+                .ThenInclude(s => s.Student)
+            .Include(a => a.Submissions)
+                .ThenInclude(s => s.Comments)
+                    .ThenInclude(c => c.Author)
             .FirstOrDefaultAsync();
     }
 
