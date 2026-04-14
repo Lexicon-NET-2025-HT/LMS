@@ -39,7 +39,8 @@ public class MapperProfile : Profile
                 src.CourseTeachers.Select(ct => ct.TeacherId).ToList()));
 
         CreateMap<Course, CourseDetailDto>()
-            .IncludeBase<Course, CourseDto>();
+            .IncludeBase<Course, CourseDto>()
+            .ForMember(dest => dest.Documents, opt => opt.MapFrom(src => src.Documents));
 
         CreateMap<CreateCourseDto, Course>();
 
