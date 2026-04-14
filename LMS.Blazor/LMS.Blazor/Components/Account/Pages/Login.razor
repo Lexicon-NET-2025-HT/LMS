@@ -160,13 +160,10 @@
             var user = await UserManager.FindByEmailAsync(Input.Email);
             if (user == null)
             {
-                errorMessage = "Error: Invalid login attempt!!!!!!!!!.";
+                errorMessage = "Error: Invalid login attempt. No user found with that email.";
                 return;
             }
             result = await SignInManager.PasswordSignInAsync(user.UserName!, Input.Password, Input.RememberMe, lockoutOnFailure: false);
-            Console.WriteLine("---------------------------------------");
-            Logger.LogWarning("Login result: Succeeded={S}, IsNotAllowed={NA}, IsLockedOut={L}, Requires2FA={TF}",
-    result.Succeeded, result.IsNotAllowed, result.IsLockedOut, result.RequiresTwoFactor);
         }
 
         if (result.Succeeded)
