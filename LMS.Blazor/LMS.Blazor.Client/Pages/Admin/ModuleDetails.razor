@@ -11,6 +11,7 @@
 @inject IActivityTypeService ActivityTypeService
 @inject IModuleService ModuleService
 @inject IActivityService ActivityService
+@inject IDocumentService DocumentService
 @inject NavigationManager Navigation
 @inject AuthenticationStateProvider AuthStateProvider
 @inject IDocumentService DocumentService
@@ -222,28 +223,10 @@
             @if (showUploadDocument)
             {
                 <div class="card-body border-bottom bg-light">
-                    <UploadDocumentField @bind-Value="uploadValue"
-                                         Label="Document"
-                                         FileHelpText="PDF, Word, or image files." />
-                    @if (!string.IsNullOrEmpty(uploadError))
-                    {
-                        <div class="text-danger small mb-2">@uploadError</div>
-                    }
-                    <div class="d-flex gap-2">
-                        <button class="btn btn-sm btn-success"
-                                @onclick="UploadDocumentAsync"
-                                disabled="@(isUploading || uploadValue?.HasFile != true)">
-                            @if (isUploading)
-                            {
-                                <span class="spinner-border spinner-border-sm me-1"></span>
-                            }
-                            Upload
-                        </button>
-                        <button class="btn btn-sm btn-secondary"
-                                @onclick="() => { showUploadDocument = false; uploadValue = null; uploadError = null; }">
-                            Cancel
-                        </button>
-                    </div>
+                    <UploadDocumentField 
+                        Label="Select Document"
+                        @bind-Value="documentUpload"
+                        HandleSubmit="SaveDocumentAsync" />
                 </div>
             }
 
@@ -258,20 +241,20 @@
                         <table class="table table-hover mb-0">
                             <thead class="table-light">
                                 <tr>
-                                    <th>Name</th>
-                                    <th class="d-none d-md-table-cell">File</th>
-                                    <th class="d-none d-sm-table-cell">Uploaded</th>
-                                    <th class="d-none d-sm-table-cell">By</th>
-                                    <th style="width:60px;"></th>
+                                    <th style="width:100%"></th> @* force minimize second column *@
+                                    <th></th>
                                 </tr>
                             </thead>
                             <tbody>
                                 @foreach (var doc in documents)
                                 {
                                     <tr>
-                                        <td><DocumentWithDownload Document="doc" /></td>
-                                        <td class="text-end">
+                                        <td class="align-middle">
+                                            <DocumentWithDownload Document="doc" />
+                                        </td>
+                                        <td class="align-middle">
                                             <button class="btn btn-sm btn-outline-danger"
+                                                    title="Delete"
                                                     @onclick="() => HandleDeleteDocument(doc)">
                                                 <i class="bi bi-trash"></i>
                                             </button>
@@ -385,10 +368,7 @@
     private bool showUploadDocument;
     private bool showDeleteDocumentConfirm;
     private DocumentDto? documentToDelete;
-    // ---- Upload ----
-    private UploadDocumentValue? uploadValue;
-    private bool isUploading;
-    private string? uploadError;
+    private UploadDocumentValue documentUpload = new();
 
     private async Task UploadDocumentAsync()
     {
@@ -436,6 +416,7 @@
     {
         isLoading = true;
         loadError = null;
+        documentUpload = new UploadDocumentValue();
         StateHasChanged();
 
         try
@@ -652,6 +633,26 @@
     }
 
     // ---- Document actions ----
+    private async Task SaveDocumentAsync()
+    {
+        var createdDocument = await DocumentService.CreateDocumentAsync(new CreateDocumentDto
+        {
+            ModuleId = ModuleId,
+            Description = documentUpload.Description
+        }, documentUpload);
+
+        if(createdDocument is not null)
+        {
+            documents.Add(createdDocument);
+            successMessage = $"Document '{createdDocument.DisplayName}' uploaded.";
+            documentUpload = new UploadDocumentValue();
+            showUploadDocument = false;
+        }
+        else
+        {
+            errorMessage = "Failed to upload document. Please try again.";
+        }
+    }
 
     private void HandleDeleteDocument(DocumentDto doc)
     {
@@ -663,9 +664,9 @@
     {
         if (documentToDelete is null) return;
 
-        // TODO: wire IDocumentService to client and call DeleteDocumentAsync
+        await DocumentService.DeleteDocumentAsync(documentToDelete.Id);
         documents.RemoveAll(d => d.Id == documentToDelete.Id);
-        successMessage = $"Document '{documentToDelete.DisplayName}' removed.";
+        successMessage = $"Document '{documentToDelete.DisplayName}' was deleted.";
         documentToDelete = null;
         showDeleteDocumentConfirm = false;
         await Task.CompletedTask;

@@ -269,7 +269,6 @@
                         <UploadDocumentField
                                 @bind-Value="documentUpload"
                                 Label="Attach File"
-                                DescriptionLabel="File description"
                                 DescriptionPlaceholder="Optional description" />
                     </div>
                         
@@ -366,7 +365,6 @@
 
             existingSubmission = null;
             submissionBody = string.Empty;
-            documentUpload = new UploadDocumentValue();
             showResubmitForm = false;
 
             // TODO: once ISubmissionService is added to client, load existing submission:
