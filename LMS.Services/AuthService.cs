@@ -3,7 +3,6 @@ using Domain.Models.Configurations;
 using Domain.Models.Entities;
 using Domain.Models.Exceptions;
 using LMS.Shared.DTOs.AuthDtos;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
@@ -14,6 +13,7 @@ using System.Security.Cryptography;
 using System.Text;
 
 namespace LMS.Services;
+
 public class AuthService : IAuthService
 {
     private readonly IMapper mapper;
@@ -132,7 +132,7 @@ public class AuthService : IAuthService
     {
         ArgumentNullException.ThrowIfNull(userDto);
 
-        user = await userManager.FindByNameAsync(userDto.UserName);
+        user = await userManager.FindByEmailAsync(userDto.Email);
 
         return user != null && await userManager.CheckPasswordAsync(user, userDto.Password);
     }
