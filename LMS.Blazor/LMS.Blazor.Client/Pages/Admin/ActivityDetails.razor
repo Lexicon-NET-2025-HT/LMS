@@ -6,14 +6,12 @@
 @using LMS.Shared.DTOs.ActivityType
 @using LMS.Shared.DTOs.Document
 @using LMS.Shared.DTOs.Submission
-@using Domain.Models.Enums
 @using LMS.Blazor.Client.Uploads
 @using LMS.Blazor.Client.Components.Document
-@using LMS.Blazor.Client.Components
 @inject IActivityService ActivityService
 @inject IActivityTypeService ActivityTypeService
-@inject NavigationManager Navigation
 @inject IDocumentService DocumentService
+@inject NavigationManager Navigation
 
 <PageTitle>Activity Details</PageTitle>
 
@@ -377,27 +375,8 @@
     private DocumentDto? documentToDelete;
     private UploadDocumentValue documentUpload = new();
 
-            if (created is not null)
-            {
-                documents.Add(created);
-                successMessage = $"'{created.DisplayName}' uploaded.";
-                showUploadDocument = false;
-                uploadValue = null;
-            }
-            else
-            {
-                uploadError = "Upload failed. Please try again.";
-            }
-        }
-        catch (Exception ex)
-        {
-            uploadError = $"Upload failed. {ex.Message}";
-        }
-        finally
-        {
-            isUploading = false;
-        }
-    }
+    // ---- Feedback drafts ----
+    private Dictionary<int, string> feedbackDrafts = new();
 
     // ---- Lifecycle ----
     protected override async Task OnInitializedAsync()
@@ -577,6 +556,9 @@
 
     private void ToggleSubmission(int submissionId)
     {
+        expandedSubmissionId = expandedSubmissionId == submissionId ? null : submissionId;
+    }
+
     private async Task SaveDocumentAsync()
     {
         var createdDocument = await DocumentService.CreateDocumentAsync(new CreateDocumentDto
@@ -585,7 +567,7 @@
             Description = documentUpload.Description
         }, documentUpload);
 
-        if(createdDocument is not null)
+        if (createdDocument is not null)
         {
             documents.Add(createdDocument);
             successMessage = $"Document '{createdDocument.DisplayName}' uploaded.";
@@ -596,9 +578,6 @@
         {
             errorMessage = "Failed to upload document. Please try again.";
         }
-    }
-
-        expandedSubmissionId = expandedSubmissionId == submissionId ? null : submissionId;
     }
 
     // ---- Document actions ----
