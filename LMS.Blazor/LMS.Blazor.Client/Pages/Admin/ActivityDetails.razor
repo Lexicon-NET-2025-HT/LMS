@@ -126,17 +126,29 @@
         {
             <div class="card mb-4">
                 <div class="card-header d-flex flex-wrap justify-content-between align-items-center gap-2">
-                    <h6 class="mb-0"><i class="bi bi-send me-2"></i>Submissions</h6>
-                    @if (submissions.Any())
-                    {
-                        <span class="badge bg-danger">@submissions.Count(s => s.IsLate) Late</span>
-                    }
+                    <div class="d-flex align-items-center gap-3 flex-wrap">
+                        <h6 class="mb-0"><i class="bi bi-send me-2"></i>Submissions</h6>
+                        @if (submissions.Any())
+                        {
+                            <span class="badge bg-danger">@submissions.Count(s => s.IsLate) Late</span>
+                        }
+                    </div>
+                    <div style="min-width:260px;">
+                        <input class="form-control form-control-sm"
+                               placeholder="Search by student name or ID"
+                               @bind="studentFilter"
+                               @bind:event="oninput" />
+                    </div>
                 </div>
 
                 <div class="card-body p-0">
-                    @if (!submissions.Any())
+                    @if (!FilteredSubmissions.Any())
                     {
-                        <p class="text-muted p-3 mb-0">No submissions yet for this activity.</p>
+                        <p class="text-muted p-3 mb-0">
+                            @(string.IsNullOrWhiteSpace(studentFilter)
+                                ? "No submissions yet for this activity."
+                                : "No submissions match that student filter.")
+                        </p>
                     }
                     else
                     {
@@ -153,7 +165,7 @@
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    @foreach (var sub in submissions)
+                                    @foreach (var sub in FilteredSubmissions)
                                     {
                                         <tr class="@(expandedSubmissionId == sub.Id ? "table-active" : "")">
                                             <td>
@@ -188,7 +200,14 @@
                                                 }
                                             </td>
                                             <td>
-                                                @* TODO: implement submission feedback *@
+                                                @if (sub.CommentCount > 0)
+                                                {
+                                                    <span class="badge bg-info text-dark">@sub.CommentCount</span>
+                                                }
+                                                else
+                                                {
+                                                    <span class="text-muted small">None</span>
+                                                }
                                             </td>
                                             <td class="text-end text-nowrap">
                                                 <button class="btn btn-sm @(expandedSubmissionId == sub.Id ? "btn-primary" : "btn-outline-primary")"
@@ -215,7 +234,23 @@
                                                                 
                                                                 @if (sub.Document is not null)
                                                                 {
-                                                                    <DocumentWithDownload Document="sub.Document" ShowDeleteButton="false" />
+                                                                    <div class="border rounded p-3 bg-light mb-2">
+                                                                        <div class="small text-muted mb-1">Attached file</div>
+                                                                        <div class="d-flex flex-wrap justify-content-between align-items-center gap-2">
+                                                                            <div>
+                                                                                <div class="fw-semibold">@sub.Document.DisplayName</div>
+                                                                                @if (!string.IsNullOrWhiteSpace(sub.Document.Description))
+                                                                                {
+                                                                                    <div class="text-muted small">@sub.Document.Description</div>
+                                                                                }
+                                                                            </div>
+                                                                            <a class="btn btn-sm btn-primary"
+                                                                               href="@DocumentService.GetDocumentFileUrl(sub.Document.Id, true)"
+                                                                               target="_blank">
+                                                                                <i class="bi bi-download me-1"></i>Download file
+                                                                            </a>
+                                                                        </div>
+                                                                    </div>
                                                                 }
                                                                 
                                                                 @if (string.IsNullOrEmpty(sub.Body) && sub.Document is null)
@@ -234,14 +269,24 @@
                                                                     @if (detail.Comments.Any())
                                                                     {
                                                                         <div class="mb-3">
-                                                                            @foreach (var c in detail.Comments)
+                                                                            @foreach (var c in detail.Comments.OrderBy(c => c.CreatedAt))
                                                                             {
-                                                                                <div class="border rounded p-2 bg-light small mb-2">
+                                                                                <div class="border rounded p-2 @(c.AuthorId == sub.StudentId ? "bg-warning bg-opacity-10" : "bg-light") small mb-2">
                                                                                     <div class="d-flex justify-content-between mb-1">
-                                                                                        <span class="fw-semibold">@c.AuthorName</span>
+                                                                                        <span class="fw-semibold">@(c.AuthorId == sub.StudentId ? $"{c.AuthorName} (Resubmission)" : c.AuthorName)</span>
                                                                                         <span class="text-muted" style="font-size: 0.75rem;">@c.CreatedAt.ToString("g")</span>
                                                                                     </div>
-                                                                                    <div>@c.Text</div>
+                                                                                    <div style="white-space:pre-wrap;">@c.Text</div>
+                                                                                    @if (c.AuthorId == sub.StudentId && sub.Document is not null)
+                                                                                    {
+                                                                                        <div class="mt-2">
+                                                                                            <a class="btn btn-sm btn-outline-primary"
+                                                                                               href="@DocumentService.GetDocumentFileUrl(sub.Document.Id, true)"
+                                                                                               target="_blank">
+                                                                                                <i class="bi bi-download me-1"></i>Download current file
+                                                                                            </a>
+                                                                                        </div>
+                                                                                    }
                                                                                 </div>
                                                                             }
                                                                         </div>
@@ -395,6 +440,7 @@
 
     // ---- Submissions ----
     private int? expandedSubmissionId;
+    private string studentFilter = string.Empty;
 
     // ---- Edit dialog ----
     private bool editDialogOpen;
@@ -421,6 +467,12 @@
     // ---- Lifecycle ----
     protected override async Task OnInitializedAsync()
         => await LoadActivityAsync();
+
+    private IEnumerable<SubmissionDto> FilteredSubmissions =>
+        submissions.Where(s =>
+            string.IsNullOrWhiteSpace(studentFilter) ||
+            s.StudentName.Contains(studentFilter, StringComparison.OrdinalIgnoreCase) ||
+            s.StudentId.Contains(studentFilter, StringComparison.OrdinalIgnoreCase));
 
     private async Task LoadActivityAsync()
     {

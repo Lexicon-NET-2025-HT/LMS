@@ -5,11 +5,12 @@
 @using LMS.Shared.DTOs.Activity
 @using LMS.Shared.DTOs.Document
 @using LMS.Shared.DTOs.Submission
+@using LMS.Shared.DTOs.SubmissionComment
 @using LMS.Blazor.Client.Uploads
 @inject IActivityService ActivityService
+@inject IDocumentService DocumentService
 @inject ISubmissionService SubmissionService
 @inject NavigationManager Navigation
-@inject AuthenticationStateProvider AuthStateProvider
 
 <PageTitle>Activity Details</PageTitle>
 
@@ -171,9 +172,17 @@
                             <div class="col-md-6">
                                 <div class="d-flex justify-content-between align-items-center mb-1">
                                     <p class="small fw-semibold text-muted mb-0">Your Submission Content</p>
-                                    <button class="btn btn-sm btn-outline-danger" @onclick="DeleteSubmissionAsync" disabled="@isSubmitting">
-                                        <i class="bi bi-trash"></i> Delete
-                                    </button>
+                                    <div class="d-flex gap-2">
+                                        @if (activity is not null && activity.EndTime >= DateTime.Now)
+                                        {
+                                            <button class="btn btn-sm btn-outline-primary" @onclick="OpenResendSubmission">
+                                                <i class="bi bi-arrow-repeat"></i> Resend
+                                            </button>
+                                        }
+                                        <button class="btn btn-sm btn-outline-danger" @onclick="DeleteSubmissionAsync" disabled="@isSubmitting">
+                                            <i class="bi bi-trash"></i> Delete
+                                        </button>
+                                    </div>
                                 </div>
 
                                 @if (!string.IsNullOrEmpty(mySubmission.Body))
@@ -183,7 +192,23 @@
                                 
                                 @if (mySubmission.Document is not null)
                                 {
-                                    <DocumentWithDownload Document="mySubmission.Document" ShowDeleteButton="false" />
+                                    <div class="border rounded p-3 bg-light mb-2">
+                                        <div class="d-flex flex-wrap justify-content-between align-items-center gap-2">
+                                            <div>
+                                                <div class="small text-muted">Attached file</div>
+                                                <div class="fw-semibold">@mySubmission.Document.DisplayName</div>
+                                                @if (!string.IsNullOrWhiteSpace(mySubmission.Document.Description))
+                                                {
+                                                    <div class="text-muted small">@mySubmission.Document.Description</div>
+                                                }
+                                            </div>
+                                            <a class="btn btn-sm btn-primary"
+                                               href="@DocumentService.GetDocumentFileUrl(mySubmission.Document.Id, true)"
+                                               target="_blank">
+                                                <i class="bi bi-download me-1"></i>Download file
+                                            </a>
+                                        </div>
+                                    </div>
                                 }
                                 
                                 @if (string.IsNullOrEmpty(mySubmission.Body) && mySubmission.Document is null)
@@ -197,11 +222,11 @@
                                 </div>
                             </div>
                             <div class="col-md-6">
-                                @if (mySubmission.Comments.Any())
+                                @if (TeacherComments.Any())
                                 {
                                     <div class="alert alert-info py-2">
                                         <div class="fw-bold mb-2"><i class="bi bi-chat-left-text me-2"></i>Teacher Feedback</div>
-                                        @foreach (var c in mySubmission.Comments)
+                                        @foreach (var c in TeacherComments)
                                         {
                                             <div class="bg-white bg-opacity-75 rounded p-2 mb-2 small text-dark">
                                                 <div class="d-flex justify-content-between text-muted mb-1" style="font-size: 0.75rem;">
@@ -212,6 +237,12 @@
                                             </div>
                                         }
                                     </div>
+                                }
+                                else
+                                {
+                                    <p class="text-muted small mb-0">
+                                        <i class="bi bi-hourglass-split me-1"></i>No feedback yet.
+                                    </p>
                                 }
                             </div>
                         </div>
@@ -291,7 +322,8 @@
     private ActivityDetailDto? activity;
     private List<DocumentDto> documents = [];
     private SubmissionDetailDto? mySubmission;
-    private string? currentUserId;
+    private IEnumerable<SubmissionCommentDto> TeacherComments =>
+        mySubmission?.Comments.Where(c => c.AuthorId != mySubmission.StudentId) ?? Enumerable.Empty<SubmissionCommentDto>();
 
     // ---- Page state ----
     private bool isLoading;
@@ -309,13 +341,7 @@
 
     // ---- Lifecycle ----
     protected override async Task OnInitializedAsync()
-    {
-        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
-        currentUserId = authState.User.FindFirst(
-            System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
-
-        await LoadActivityAsync();
-    }
+        => await LoadActivityAsync();
 
     private async Task LoadActivityAsync()
     {
@@ -347,11 +373,16 @@
 
                 documents = activity.Documents;
                 var baseSub = activity.Submissions
-                    .FirstOrDefault(s => s.StudentId == currentUserId);
+                    .OrderByDescending(s => s.SubmittedAt)
+                    .FirstOrDefault();
 
                 if (baseSub is not null)
                 {
                     mySubmission = await SubmissionService.GetSubmissionDetailByIdAsync(baseSub.Id);
+                }
+                else
+                {
+                    mySubmission = null;
                 }
             }
         }
@@ -387,7 +418,8 @@
             var dto = new CreateSubmissionDto
             {
                 ActivityId = ActivityId,
-                Body = submitMode == SubmitMode.Text ? submitBody.Trim() : null
+                Body = submitMode == SubmitMode.Text ? submitBody.Trim() : null,
+                RemoveFile = submitMode == SubmitMode.Text
             };
 
             var created = await SubmissionService.CreateSubmissionAsync(
@@ -447,6 +479,9 @@
         else
             Navigation.NavigateTo("/modules");
     }
+
+    private void OpenResendSubmission()
+        => Navigation.NavigateTo($"/student/activities/{ActivityId}/submit");
 
     private static class ActivityHelpers
     {

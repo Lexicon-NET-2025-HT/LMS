@@ -13,4 +13,5 @@ public class CreateSubmissionDto
     public string? Body { get; set; }
     public IFormFile? File { get; set; }
     public string? FileDescription { get; set; }
+    public bool RemoveFile { get; set; }
 }

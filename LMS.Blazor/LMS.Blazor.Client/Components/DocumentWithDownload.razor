@@ -43,6 +43,8 @@
     [Parameter] public bool ShowUploadedBy { get; set; } = true;
     [Parameter] public bool ShowUploadedDate { get; set; } = true;
     [Parameter] public bool ShowDescription { get; set; } = true;
+    [Parameter] public bool ShowDeleteButton { get; set; } = false;
+    [Parameter] public EventCallback<int> OnDeleted { get; set; }
 
     private string GetFileUrl(bool download = false)
     {
@@ -51,4 +53,4 @@
 
         return DocumentService.GetDocumentFileUrl(Document.Id, download);
     }
-}
+}
