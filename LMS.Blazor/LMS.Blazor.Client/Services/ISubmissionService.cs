@@ -1,4 +1,4 @@
-﻿
+
 using global::LMS.Blazor.Client.Uploads;
 using global::LMS.Shared.DTOs.Submission;
 using LMS.Shared.DTOs.Common;
@@ -28,4 +28,7 @@ public interface ISubmissionService
         CancellationToken ct = default);
 
     Task DeleteSubmissionAsync(int id, CancellationToken ct = default);
+
+    Task<SubmissionDetailDto?> GetSubmissionDetailByIdAsync(int id, CancellationToken ct = default);
+    Task SubmitCommentAsync(int submissionId, SubmitCommentDto dto, CancellationToken ct = default);
 }

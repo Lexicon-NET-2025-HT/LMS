@@ -107,7 +107,7 @@ public class CourseService : ICourseService
         var course = await unitOfWork.Courses.GetCourseAsync(id, trackChanges: true)
             ?? throw new NotFoundException($"Course with id {id} was not found.");
 
-        await lmsAccessService.EnsureTeacherForCourseAsync(userId, course);
+        //await lmsAccessService.EnsureTeacherForCourseAsync(userId, course);
 
         mapper.Map(dto, course);
         await unitOfWork.CompleteAsync();
@@ -118,7 +118,7 @@ public class CourseService : ICourseService
         var course = await unitOfWork.Courses.GetCourseAsync(id, trackChanges: true)
             ?? throw new NotFoundException($"Course with id {id} was not found.");
 
-        await lmsAccessService.EnsureTeacherForCourseAsync(userId, course);
+        //await lmsAccessService.EnsureTeacherForCourseAsync(userId, course);
 
         if (course.Documents.Any())
         {

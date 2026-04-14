@@ -1,4 +1,5 @@
 @page "/courses/{CourseId:int}"
+@page "/admin/courses/{CourseId:int}"
 @using LMS.Blazor.Client.Components.Module
 @using LMS.Blazor.Client.Components.Course
 @using LMS.Shared.DTOs.Module
@@ -156,7 +157,11 @@
 
     private void ToggleRole() => isTeacher = !isTeacher;
     private void CycleGradient(int id) => gradientIndex[id] = (gradientIndex.GetValueOrDefault(id, id % ModuleStyles.Gradients.Length) + 1) % ModuleStyles.Gradients.Length;
-    private void GoToModule(int id) => Nav.NavigateTo($"admin/modules/{id}/details");
+    
+    private void GoToModule(int id) =>
+     Nav.NavigateTo(isTeacher
+         ? $"/admin/modules/{id}/details"
+         : $"/modules/{id}/details");
     // private bool IsActive(ModuleDto m) => m.StartDate <= DateTime.Now && (!m.EndDate.HasValue || m.EndDate >= DateTime.Now);
     
     private async Task DeleteModule(int id)

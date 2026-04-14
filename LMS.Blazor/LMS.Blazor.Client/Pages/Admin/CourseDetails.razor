@@ -1,4 +1,5 @@
 @page "/admin/courses/{CourseId:int}/details"
+@page "/courses/{CourseId:int}/details"
 @attribute [Authorize(Roles = "Teacher")]
 @using Domain.Models.Entities
 @using LMS.Shared.DTOs.Activity
@@ -11,12 +12,9 @@
 @inject NavigationManager Navigation
 @inject IModuleService ModuleService
 @inject IActivityService ActivityService
-@inject ICourseService CourseService
 @inject IDocumentService DocumentService
 @inject IUserService UserService
 @inject IActivityTypeService ActivityTypeService
-@inject NavigationManager Navigation
-@using Domain.Models.Enums
 @using LMS.Blazor.Client.Uploads
 @using LMS.Blazor.Client.Components.Document
 @using LMS.Blazor.Client.Components
@@ -210,7 +208,7 @@
                                 {
                                     <tr>
                                         <td class="align-middle" colspan="4">
-                                            <DocumentWithDownload Document="doc" />
+                                            <DocumentWithDownload Document="doc" ShowDeleteButton="false" />
                                         </td>
                                         <td class="align-middle text-end pe-3">
                                             <button class="btn btn-sm btn-outline-danger"

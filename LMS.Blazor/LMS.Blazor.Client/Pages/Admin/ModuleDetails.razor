@@ -242,7 +242,10 @@
                             <thead class="table-light">
                                 <tr>
                                     <th style="width:100%"></th> @* force minimize second column *@
-                                    <th></th>
+                                    @if (isTeacher)
+                                    {
+                                        <th></th>
+                                    }
                                 </tr>
                             </thead>
                             <tbody>
@@ -252,13 +255,16 @@
                                         <td class="align-middle">
                                             <DocumentWithDownload Document="doc" />
                                         </td>
-                                        <td class="align-middle">
-                                            <button class="btn btn-sm btn-outline-danger"
-                                                    title="Delete"
-                                                    @onclick="() => HandleDeleteDocument(doc)">
-                                                <i class="bi bi-trash"></i>
-                                            </button>
-                                        </td>
+                                        @if (isTeacher)
+                                        {
+                                            <td class="align-middle">
+                                                <button class="btn btn-sm btn-outline-danger"
+                                                        title="Delete"
+                                                        @onclick="() => HandleDeleteDocument(doc)">
+                                                    <i class="bi bi-trash"></i>
+                                                </button>
+                                            </td>
+                                        }
                                     </tr>
                                 }
                             </tbody>
