@@ -5,7 +5,9 @@
 @using LMS.Shared.DTOs.Activity
 @using LMS.Shared.DTOs.Document
 @using LMS.Shared.DTOs.Submission
+@using LMS.Shared.DTOs.SubmissionComment
 @inject IActivityService ActivityService
+@inject IDocumentService DocumentService
 @inject ISubmissionService SubmissionService
 @inject NavigationManager Navigation
 
@@ -186,30 +188,47 @@
                     @if (existingSubmission.Document is not null)
                     {
                         <p class="small fw-semibold text-muted mb-1">Attached file</p>
-                        <DocumentWithDownload Document="@existingSubmission.Document" OnDeleted="HandleDocumentDeleted"/>
+                        <div class="border rounded p-3 bg-light">
+                            <div class="d-flex flex-wrap justify-content-between align-items-center gap-2">
+                                <div>
+                                    <div class="fw-semibold">@existingSubmission.Document.DisplayName</div>
+                                    @if (!string.IsNullOrWhiteSpace(existingSubmission.Document.Description))
+                                    {
+                                        <div class="text-muted small">@existingSubmission.Document.Description</div>
+                                    }
+                                </div>
+                                <a class="btn btn-sm btn-primary"
+                                   href="@DocumentService.GetDocumentFileUrl(existingSubmission.Document.Id, true)"
+                                   target="_blank">
+                                    <i class="bi bi-download me-1"></i>Download file
+                                </a>
+                            </div>
+                        </div>
                     }
 
-                    @* ---- Feedback block ---- *@
-                    @* TODO: implement new submission comments *@
-                    @* @if (existingSubmission.FeedbackText is not null)
+                    <hr />
+                    <p class="small fw-semibold text-muted mb-2">
+                        <i class="bi bi-chat-left-text me-1"></i>Teacher Feedback
+                    </p>
+                    @if (TeacherComments.Any())
                     {
-                        <hr />
-                        <p class="small fw-semibold text-muted mb-1">
-                            <i class="bi bi-chat-left-text me-1"></i>Teacher Feedback
-                            <span class="text-muted fw-normal ms-2">
-                                (@existingSubmission.FeedbackGivenAt?.ToString("MMM d, yyyy"))
-                            </span>
-                        </p>
-                        <div class="border rounded p-3 bg-white small" style="white-space:pre-wrap;">
-                            @existingSubmission.FeedbackText
-                        </div>
+                        @foreach (var comment in TeacherComments)
+                        {
+                            <div class="border rounded p-3 bg-white small mb-2">
+                                <div class="d-flex justify-content-between align-items-center mb-1">
+                                    <span class="fw-semibold">@comment.AuthorName</span>
+                                    <span class="text-muted">@comment.CreatedAt.ToString("MMM d, yyyy HH:mm")</span>
+                                </div>
+                                <div style="white-space:pre-wrap;">@comment.Text</div>
+                            </div>
+                        }
                     }
                     else
                     {
                         <p class="text-muted small mt-3 mb-0">
                             <i class="bi bi-hourglass-split me-1"></i>Feedback not yet given.
                         </p>
-                    } *@
+                    }
 
                     @* ---- Re-submit option (only if deadline not passed) ---- *@
                     @if (!isOverdue)
@@ -218,7 +237,7 @@
                             <button class="btn btn-sm btn-outline-primary"
                                     @onclick="ToggleEditSubmission">
                                 <i class="bi bi-pencil me-1"></i>
-                                @(showResubmitForm ? "Cancel Edit" : "Edit Submission")
+                                @(showResubmitForm ? "Cancel" : "Resend Submission")
                             </button>
                         </div>
                     }
@@ -235,7 +254,7 @@
                 <div class="card-header d-flex bg-success bg-opacity-10 justify-content-between align-items-center">
                     <h6 class="mb-0 text-success">
                         <i class="bi bi-send me-2"></i>
-                        @(existingSubmission is null ? "Your Submission" : "Edit Submission")
+                        @(existingSubmission is null ? "Your Submission" : "Resend Submission")
                     </h6>
                     @if (isOverdue)
                     {
@@ -286,7 +305,7 @@
                             {
                                 <i class="bi bi-send me-1"></i>
                             }
-                            @(existingSubmission is null ? "Submit" : "Update Submission")
+                            @(existingSubmission is null ? "Submit" : "Resend Submission")
                         </button>
 
                         @if (existingSubmission is not null)
@@ -316,7 +335,9 @@
     // ---- Data ----
     private ActivityDto? activity;
     private List<DocumentDto> activityDocuments = [];
-    private SubmissionDto? existingSubmission;
+    private SubmissionDetailDto? existingSubmission;
+    private IEnumerable<SubmissionCommentDto> TeacherComments =>
+        existingSubmission?.Comments.Where(c => c.AuthorId != existingSubmission.StudentId) ?? Enumerable.Empty<SubmissionCommentDto>();
 
     // ---- Page state ----
     private bool isLoading;
@@ -367,18 +388,18 @@
             submissionBody = string.Empty;
             showResubmitForm = false;
 
-            // TODO: once ISubmissionService is added to client, load existing submission:
-            var pagedSubmissions = await SubmissionService.GetAllSubmissionsAsync(activityId: ActivityId);
-            if (pagedSubmissions?.TotalCount > 0)
+            var detail = await ActivityService.GetActivityDetailByIdAsync(ActivityId);
+            activityDocuments = detail?.Documents ?? [];
+
+            var baseSubmission = detail?.Submissions
+                .OrderByDescending(s => s.SubmittedAt)
+                .FirstOrDefault();
+
+            if (baseSubmission is not null)
             {
-                existingSubmission = pagedSubmissions.Items[0];
+                existingSubmission = await SubmissionService.GetSubmissionDetailByIdAsync(baseSubmission.Id);
                 PopulateFormFromExistingSubmission();
             }
-            // For now, existingSubmission stays null.
-
-            // TODO: load activityDocuments once detail endpoint is wired:
-            // var detail = await ActivityService.GetActivityDetailByIdAsync(ActivityId);
-            // activityDocuments = detail?.Documents ?? [];
         }
         catch (Exception ex)
         {
@@ -446,7 +467,8 @@
                 {
                     ActivityId = ActivityId,
                     Body = submissionBody,
-                    FileDescription = documentUpload.Description
+                    FileDescription = documentUpload.Description,
+                    RemoveFile = documentUpload.RemoveExistingDocument
                 };
 
                 errorMessage = null;
@@ -459,7 +481,7 @@
                     return;
                 }
                 successMessage = "Your submission has been recorded! 🎉";
-                existingSubmission = createdSubmission;
+                existingSubmission = await SubmissionService.GetSubmissionDetailByIdAsync(createdSubmission.Id);
             }
             else
             {
@@ -467,7 +489,8 @@
                 {
                     ActivityId = ActivityId,
                     Body = submissionBody,
-                    FileDescription = documentUpload.Description
+                    FileDescription = documentUpload.Description,
+                    RemoveFile = documentUpload.RemoveExistingDocument
                 };
                 var updatedSubmission = await SubmissionService.UpdateSubmissionAsync(existingSubmission.Id, dto, documentUpload);
                 if (updatedSubmission is null)
@@ -476,7 +499,7 @@
                     return;
                 }
                 successMessage = "Your submission has been updated.";
-                existingSubmission = updatedSubmission;
+                existingSubmission = await SubmissionService.GetSubmissionDetailByIdAsync(updatedSubmission.Id);
             }
 
             showResubmitForm = false;
@@ -497,8 +520,12 @@
     {
         var errors = new Dictionary<string, string>();
 
-        if (string.IsNullOrWhiteSpace(submissionBody))
-            errors["Body"] = "Please write something before submitting.";
+        var hasBody = !string.IsNullOrWhiteSpace(submissionBody);
+        var hasNewFile = documentUpload.HasFile;
+        var keepsExistingFile = existingSubmission?.Document is not null && !documentUpload.RemoveExistingDocument && !hasNewFile;
+
+        if (!hasBody && !hasNewFile && !keepsExistingFile)
+            errors["Body"] = "Please add text or attach a file before submitting.";
 
         return errors;
     }
@@ -506,7 +533,7 @@
     // ---- Helpers ----
     private void HandleFilePicked(ChangeEventArgs e) { /* file upload not yet supported */ }
 
-    private void GoBack() => Navigation.NavigateTo("/student/dashboard");
+    private void GoBack() => Navigation.NavigateTo("/student/overview");
 
     private static string FormatTimeRemaining(TimeSpan t)
     {

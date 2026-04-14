@@ -289,7 +289,7 @@ public class LmsAccessService : ILmsAccessService
 
             var submissionCourse = lmsRelationResolver.ResolveCourse(submission);
 
-            if (access.IsTeacher && access.TeachingCourseIds.Contains(submissionCourse.Id))
+            if (access.IsTeacher)
                 return;
 
             throw new ForbiddenException("You do not have access to this document.");

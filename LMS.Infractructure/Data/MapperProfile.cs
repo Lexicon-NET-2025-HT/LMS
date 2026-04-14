@@ -126,7 +126,10 @@ public class MapperProfile : Profile
             .ForMember(dest => dest.DocumentCount, opt => opt.MapFrom(src =>
                 src.Documents.Count))
             .ForMember(dest => dest.SubmissionCount, opt => opt.MapFrom(src =>
-                src.Submissions.Count))
+                src.Submissions
+                    .Select(s => s.StudentId)
+                    .Distinct()
+                    .Count()))
             .IncludeAllDerived();
 
         CreateMap<Activity, ActivityDetailDto>();

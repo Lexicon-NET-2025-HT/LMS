@@ -69,7 +69,7 @@ public class ApiProxyController : ControllerBase
             return StatusCode(StatusCodes.Status503ServiceUnavailable,
                 "Service unavailable could not reach API");
         }
-        catch (Exception ex)
+        catch (Exception)
         {
             return StatusCode(StatusCodes.Status500InternalServerError, "Internal server error");
         }
@@ -106,7 +106,7 @@ public class ApiProxyController : ControllerBase
             return newTokens;
 
         }
-        catch (Exception ex)
+        catch (Exception)
         {
             return null;
         }
@@ -153,7 +153,7 @@ public class ApiProxyController : ControllerBase
             {
                 foreach (var value in field.Value)
                 {
-                    multipartContent.Add(new StringContent(value), field.Key);
+                    multipartContent.Add(new StringContent(value ?? string.Empty), field.Key);
                 }
             }
 
