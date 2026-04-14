@@ -1,4 +1,4 @@
-﻿using LMS.Blazor.Client.Uploads;
+using LMS.Blazor.Client.Uploads;
 using LMS.Shared.DTOs.Common;
 using LMS.Shared.DTOs.Submission;
 
@@ -129,5 +129,31 @@ public class SubmissionService : ISubmissionService
         }
 
         return content;
+    }
+
+    public async Task<SubmissionDetailDto?> GetSubmissionDetailByIdAsync(int id, CancellationToken ct = default)
+    {
+        try
+        {
+            return await _apiService.GetAsync<SubmissionDetailDto>($"{Base}/{id}/detail", ct);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error fetching submission detail {SubmissionId}.", id);
+            return null;
+        }
+    }
+
+    public async Task SubmitCommentAsync(int submissionId, SubmitCommentDto dto, CancellationToken ct = default)
+    {
+        try
+        {
+            await _apiService.PostAsync<object>($"{Base}/{submissionId}/comment", dto, ct);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error submitting comment for submission {SubmissionId}.", submissionId);
+            throw;
+        }
     }
 }

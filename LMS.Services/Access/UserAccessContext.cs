@@ -1,4 +1,4 @@
-﻿using Service.Contracts;
+using Service.Contracts;
 
 namespace LMS.Services.Access;
 
@@ -16,7 +16,7 @@ public record UserAccessContext : IUserAccessContext
     public bool HasCourseAccess(int courseId)
     {
         if (IsAdmin) return true;
-        if (IsTeacher && TeachingCourseIds.Contains(courseId)) return true;
+        if (IsTeacher) return true;  // Teachers have access to all courses
         if (IsStudent && StudentCourseId == courseId) return true;
 
         return false;

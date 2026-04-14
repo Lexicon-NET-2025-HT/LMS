@@ -14,6 +14,7 @@ public class ActivityRepository(ApplicationDbContext context) : RepositoryBase<A
             .Include(a => a.Documents)
                 .ThenInclude(d => d.UploadedByUser)
             .Include(a => a.Submissions)
+                .ThenInclude(s => s.Document)
             .FirstAsync(a => a.Id == id);
     }
 
@@ -26,6 +27,7 @@ public class ActivityRepository(ApplicationDbContext context) : RepositoryBase<A
             .Include(a => a.Documents)
                 .ThenInclude(d => d.UploadedByUser)
             .Include(a => a.Submissions)
+                .ThenInclude(s => s.Document)
             .FirstOrDefaultAsync();
     }
 
