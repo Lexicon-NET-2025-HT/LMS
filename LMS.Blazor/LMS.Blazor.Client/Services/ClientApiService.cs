@@ -1,8 +1,31 @@
-﻿using Microsoft.AspNetCore.Components;
+using Microsoft.AspNetCore.Components;
 using System.Net.Http.Json;
 using System.Text.Json;
+using Domain.Models.Exceptions;
 
 namespace LMS.Blazor.Client.Services;
+
+public static class HttpResponseMessageExtensions{
+    // https://github.com/dotnet/dotnet/blob/b0f34d51fccc69fd334253924abd8d6853fad7aa/src/runtime/src/libraries/System.Net.Http/src/System/Net/Http/HttpResponseMessage.cs#L163C13-L175C25
+    public static HttpResponseMessage EnsureSuccessStatusCode(this HttpResponseMessage message, System.Collections.IDictionary? data)
+	{
+        if (!message.IsSuccessStatusCode)
+        {
+            var ex = new HttpRequestException(
+                string.Format(
+                    System.Globalization.CultureInfo.InvariantCulture,
+                    string.IsNullOrWhiteSpace(message.ReasonPhrase) ? "Response status code does not indicate success: {0}." : "Response status code does not indicate success: {0} ({1}).",
+                    (int)message.StatusCode,
+                    message.ReasonPhrase),
+                inner: null,
+                message.StatusCode);
+            // Added body Data to HttpRequestException:
+            if(data != null) foreach (object key in data.Keys) ex.Data[key] = data[key];
+            throw ex;
+        }
+        return message;
+	}
+}
 
 public class ClientApiService : IApiService
 {
@@ -30,11 +53,29 @@ public class ClientApiService : IApiService
         return await DeserializeAsync<T>(response, ct);
     }
 
+    public async Task<T?> GetAllowNotFoundAsync<T>(string endpoint, CancellationToken ct = default)
+    {
+        var response = await _httpClient.GetAsync($"api/proxy/{endpoint}", ct);
+        HandleUnauthorized(response);
+        if (response.StatusCode == System.Net.HttpStatusCode.NotFound)
+            return default;
+        response.EnsureSuccessStatusCode();
+        return await DeserializeAsync<T>(response, ct);
+    }
+
     public async Task<T?> PostAsync<T>(string endpoint, object body, CancellationToken ct = default)
     {
         var response = await _httpClient.PostAsJsonAsync($"api/proxy/{endpoint}", body, _jsonOptions, ct);
         HandleUnauthorized(response);
-        response.EnsureSuccessStatusCode();
+        if (!response.IsSuccessStatusCode){
+            // temp solution, to not get DeserializeUnableToConvertValue exception for other post calls
+            if(endpoint == "api/users"){
+                var json = await DeserializeAsync<BadRequestException>(response, ct);
+                response.EnsureSuccessStatusCode(json?.Data);
+            } else {
+                response.EnsureSuccessStatusCode();
+            }
+        }
         return await DeserializeAsync<T>(response, ct);
     }
 

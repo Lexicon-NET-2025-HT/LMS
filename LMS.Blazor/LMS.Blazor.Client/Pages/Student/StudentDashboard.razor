@@ -1,4 +1,4 @@
-﻿@page "/student/dashboard"
+@page "/student/dashboard"
 @attribute [Authorize(Roles = "Student")]
 @using LMS.Blazor.Client.Components.User
 @using LMS.Shared.DTOs.Activity
@@ -98,6 +98,19 @@
             </div>
         </div>
 
+        <div class="card mb-4">
+            <div class="card-header">
+                <h6 class="mb-0"><i class="bi bi-lightning-charge me-2"></i>Quick links</h6>
+            </div>
+            <div class="card-body">
+                <div class="d-flex flex-wrap gap-2">
+                    <a class="btn btn-outline-primary btn-sm" href="@($"/courses/{course.Id}")">Module overview</a>
+                    <a class="btn btn-outline-primary btn-sm" href="/student/activities">My activities</a>
+                    <a class="btn btn-outline-primary btn-sm" href="/student/documents">Documents</a>
+                </div>
+            </div>
+        </div>
+
         <div class="row g-4">
 
             @* ==============================
@@ -137,9 +150,9 @@
                         {
                             @foreach (var module in modules)
                             {
-                                var isActive = module.StartDate <= DateTime.Now &&
-                                               module.EndDate >= DateTime.Now;
-                                var isPast   = module.EndDate < DateTime.Now;
+                                var now = DateTime.Now;
+                                var isPast = module.EndDate < now;
+                                var isActive = !isPast && module.StartDate <= now;
 
                                 <div class="border-bottom">
                                     @* Module header row *@
@@ -313,7 +326,6 @@
 
     // ---- Page state ----
     private bool isLoading;
-    private bool isLoadingClassmates;
     private int? loadingActivitiesForModule;
     private string? loadError;
     private string? errorMessage;
@@ -331,24 +343,21 @@
 
         try
         {
-            // TODO: replace with GET /api/studentcourse/mycourse (needs auth token forwarding).
-            // For now we load the first available course as a stand-in.
-            var coursePage = await CourseService.GetAllCoursesAsync(1, 1);
-            if (coursePage?.Items.FirstOrDefault() is CourseDto first)
+            var myCourse = await CourseService.GetMyCourseAsync();
+            if (myCourse is not null)
             {
-                var detail = await CourseService.GetCourseDetailByIdAsync(first.Id);
+                var detail = await CourseService.GetCourseDetailByIdAsync(myCourse.Id);
                 if (detail is not null)
                 {
-                    course  = detail;
+                    course = detail;
                     modules = detail.Modules;
                 }
             }
 
             if (course is not null)
             {
-                // Load all activities for deadline calculation
-                var actPage = await ActivityService.GetAllActivitiesAsync(pageSize: 100);
-                allActivities = actPage?.Items ?? [];
+                var moduleIds = modules.Select(m => m.Id).ToHashSet();
+                allActivities = await LoadActivitiesForCourseModulesAsync(moduleIds);
 
                 upcomingDeadlines = allActivities
                     .Where(a => a.Type == ActivityType.Assignment
@@ -368,6 +377,29 @@
         }
     }
 
+    private async Task<List<ActivityDto>> LoadActivitiesForCourseModulesAsync(HashSet<int> moduleIds)
+    {
+        if (moduleIds.Count == 0)
+            return [];
+
+        const int pageSize = 100;
+        var collected = new List<ActivityDto>();
+        var page = 1;
+        while (true)
+        {
+            var actPage = await ActivityService.GetAllActivitiesAsync(page, pageSize);
+            if (actPage?.Items is null || actPage.Items.Count == 0)
+                break;
+
+            collected.AddRange(actPage.Items.Where(a => moduleIds.Contains(a.ModuleId)));
+
+            if (!actPage.HasNextPage)
+                break;
+            page++;
+        }
+
+        return collected;
+    }
 
     // ---- Module expand / lazy-load activities ----
     private async Task ToggleModule(int moduleId)

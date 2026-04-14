@@ -58,6 +58,18 @@
                disabled="@Disabled" />
 </div>
 
+@if (HandleSubmit.HasDelegate)
+{
+    <div class="mb-3">
+        <button type="button"
+                class="btn btn-primary"
+                @onclick="OnSubmitClicked"
+                disabled="@Disabled">
+            Save
+        </button>
+    </div>
+}
+
 @code {
     private IReadOnlyList<FileUploadItem>? files;
 
@@ -68,7 +80,7 @@
     public EventCallback<UploadDocumentValue?> ValueChanged { get; set; }
 
     [Parameter] public string? Label { get; set; } = "File";
-    [Parameter] public string DescriptionLabel { get; set; } = "Description";
+    [Parameter] public string DescriptionLabel { get; set; } = "File Description";
     [Parameter] public string DescriptionPlaceholder { get; set; } = "Describe the file";
     [Parameter] public string? FileHelpText { get; set; } = "You can upload one file.";
     [Parameter] public string Accept { get; set; } = ".pdf,.doc,.docx,.png,.jpg,.jpeg";
@@ -76,11 +88,15 @@
     [Parameter] public bool ShowFileName { get; set; } = true;
     [Parameter] public bool AllowRemoveExistingDocument { get; set; } = true;
 
+
+    [Parameter] public EventCallback HandleSubmit { get; set; }
+
     private string CurrentDescription => Value?.Description ?? string.Empty;
     private bool CurrentRemoveExistingDocument => Value?.RemoveExistingDocument ?? false;
 
     protected override void OnParametersSet()
     {
+
         if (Value?.File is not null)
         {
             files = new List<FileUploadItem> { Value.File };
@@ -126,5 +142,13 @@
         }
 
         await ValueChanged.InvokeAsync(current);
+    }
+
+    private async Task OnSubmitClicked()
+    {
+        if (HandleSubmit.HasDelegate)
+        {
+            await HandleSubmit.InvokeAsync();
+        }
     }
 }
