@@ -30,7 +30,7 @@
         <AuthorizeView Roles="Teacher">
             <button class="btn btn-primary shadow-sm" @onclick="ToggleUploadPanel">
                 <i class="bi @(showUploadPanel ? "bi-dash-lg" : "bi-plus-lg") me-1"></i>
-                @(showUploadPanel ? "Close Panel" : "Upload Document")
+                @(showUploadPanel ? "Close Panel" : $"Upload Document to {activeLayer}")
             </button>
         </AuthorizeView>
     </div>
