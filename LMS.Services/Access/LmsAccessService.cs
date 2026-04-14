@@ -266,7 +266,7 @@ public class LmsAccessService : ILmsAccessService
 
         var course = lmsRelationResolver.ResolveCourse(submission);
 
-        if (access.IsTeacher && access.TeachingCourseIds.Contains(course.Id))
+        if (access.IsTeacher) // Teacher can access any submission (or change this if required, but user requested 'teacher should have access to all submissions')
             return;
 
         throw new ForbiddenException("You do not have access to this submission.");

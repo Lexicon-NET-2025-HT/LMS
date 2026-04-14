@@ -11,6 +11,7 @@
 @inject IActivityService ActivityService
 @inject IActivityTypeService ActivityTypeService
 @inject IDocumentService DocumentService
+@inject ISubmissionService SubmissionService
 @inject NavigationManager Navigation
 
 <PageTitle>Activity Details</PageTitle>
@@ -121,121 +122,158 @@
         @* ==============================
            SUBMISSIONS SECTION
            ============================== *@
-        <div class="card mb-4">
-            <div class="card-header d-flex flex-wrap justify-content-between align-items-center gap-2">
-                <h6 class="mb-0"><i class="bi bi-send me-2"></i>Submissions</h6>
-                @if (submissions.Any())
-                {
-                    <span class="badge bg-danger">@submissions.Count(s => s.IsLate) Late</span>
-                }
-            </div>
+        @if (activity?.ActivityTypeName == "Assignment")
+        {
+            <div class="card mb-4">
+                <div class="card-header d-flex flex-wrap justify-content-between align-items-center gap-2">
+                    <h6 class="mb-0"><i class="bi bi-send me-2"></i>Submissions</h6>
+                    @if (submissions.Any())
+                    {
+                        <span class="badge bg-danger">@submissions.Count(s => s.IsLate) Late</span>
+                    }
+                </div>
 
-            <div class="card-body p-0">
-                @if (!submissions.Any())
-                {
-                    <p class="text-muted p-3 mb-0">No submissions yet for this activity.</p>
-                }
-                else
-                {
-                    <div class="table-responsive">
-                        <table class="table table-hover mb-0 align-middle">
-                            <thead class="table-light">
-                                <tr>
-                                    <th>Student</th>
-                                    <th class="d-none d-md-table-cell">Submitted</th>
-                                    <th class="d-none d-sm-table-cell">Status</th>
-                                    <th class="d-none d-lg-table-cell">Body</th>
-                                    <th>Feedback</th>
-                                    <th style="width:80px;"></th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @foreach (var sub in submissions)
-                                {
-                                    <tr class="@(expandedSubmissionId == sub.Id ? "table-active" : "")">
-                                        <td>
-                                            <div class="fw-semibold">@sub.StudentName</div>
-                                            <div class="text-muted small">@sub.StudentId</div>
-                                        </td>
-                                        <td class="d-none d-md-table-cell text-muted small">
-                                            @sub.SubmittedAt.ToString("yyyy-MM-dd HH:mm")
-                                        </td>
-                                        <td class="d-none d-sm-table-cell">
-                                            @if (sub.IsLate)
-                                            {
-                                                <span class="badge bg-danger">Late</span>
-                                            }
-                                            else
-                                            {
-                                                <span class="badge bg-success">On time</span>
-                                            }
-                                        </td>
-                                        <td class="d-none d-lg-table-cell">
-                                            @if (!string.IsNullOrEmpty(sub.Body))
-                                            {
-                                                <span class="text-truncate d-inline-block" style="max-width:180px;">@sub.Body</span>
-                                            }
-                                            else if (sub.DocumentId is not null)
-                                            {
-                                                <span class="text-muted small"><i class="bi bi-file-earmark me-1"></i>Attachment</span>
-                                            }
-                                            else
-                                            {
-                                                <span class="text-muted small">—</span>
-                                            }
-                                        </td>
-                                        <td>
-                                            @* TODO: implement submission feedback *@
-                                        </td>
-                                        <td class="text-end text-nowrap">
-                                            <button class="btn btn-sm @(expandedSubmissionId == sub.Id ? "btn-primary" : "btn-outline-primary")"
-                                                    title="@(expandedSubmissionId == sub.Id ? "Collapse" : "Review")"
-                                                    @onclick="() => ToggleSubmission(sub.Id)">
-                                                <i class="bi bi-@(expandedSubmissionId == sub.Id ? "chevron-up" : "chat-left-text")"></i>
-                                            </button>
-                                        </td>
+                <div class="card-body p-0">
+                    @if (!submissions.Any())
+                    {
+                        <p class="text-muted p-3 mb-0">No submissions yet for this activity.</p>
+                    }
+                    else
+                    {
+                        <div class="table-responsive">
+                            <table class="table table-hover mb-0 align-middle">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Student</th>
+                                        <th class="d-none d-md-table-cell">Submitted</th>
+                                        <th class="d-none d-sm-table-cell">Status</th>
+                                        <th class="d-none d-lg-table-cell">Body</th>
+                                        <th>Feedback</th>
+                                        <th style="width:80px;"></th>
                                     </tr>
-
-                                    @* ---- Expanded feedback panel ---- *@
-                                    @if (expandedSubmissionId == sub.Id)
+                                </thead>
+                                <tbody>
+                                    @foreach (var sub in submissions)
                                     {
-                                        <tr class="table-active">
-                                            <td colspan="7" class="pt-0">
-                                                <div class="bg-white border rounded p-3 mt-1">
-                                                    <div class="row g-3">
-                                                        <div class="col-md-6">
-                                                            <p class="small fw-semibold text-muted mb-1">Submission Content</p>
-                                                            @if (!string.IsNullOrEmpty(sub.Body))
-                                                            {
-                                                                <div class="border rounded p-2 bg-light small" style="white-space:pre-wrap;">@sub.Body</div>
-                                                            }
-                                                            else if (sub.Document is not null)
-                                                            {
-                                                                <div class="d-flex align-items-center gap-2 border rounded p-2 bg-light">
-                                                                    <i class="bi bi-file-earmark-text fs-4 text-muted"></i>
-                                                                    <div class="fw-semibold small">@sub.Document.DisplayName</div>
-                                                                </div>
-                                                            }
-                                                            else
-                                                            {
-                                                                <p class="text-muted small">No content provided.</p>
-                                                            }
-                                                        </div>
-                                                        <div class="col-md-6">
-                                                            @* TODO: implement submission feedback *@
-                                                        </div>
-                                                    </div>
-                                                </div>
+                                        <tr class="@(expandedSubmissionId == sub.Id ? "table-active" : "")">
+                                            <td>
+                                                <div class="fw-semibold">@sub.StudentName</div>
+                                                <div class="text-muted small">@sub.StudentId</div>
+                                            </td>
+                                            <td class="d-none d-md-table-cell text-muted small">
+                                                @sub.SubmittedAt.ToString("yyyy-MM-dd HH:mm")
+                                            </td>
+                                            <td class="d-none d-sm-table-cell">
+                                                @if (sub.IsLate)
+                                                {
+                                                    <span class="badge bg-danger">Late</span>
+                                                }
+                                                else
+                                                {
+                                                    <span class="badge bg-success">On time</span>
+                                                }
+                                            </td>
+                                            <td class="d-none d-lg-table-cell">
+                                                @if (!string.IsNullOrEmpty(sub.Body))
+                                                {
+                                                    <span class="text-truncate d-inline-block" style="max-width:180px;">@sub.Body</span>
+                                                }
+                                                else if (sub.DocumentId is not null)
+                                                {
+                                                    <span class="text-muted small"><i class="bi bi-file-earmark me-1"></i>Attachment</span>
+                                                }
+                                                else
+                                                {
+                                                    <span class="text-muted small">—</span>
+                                                }
+                                            </td>
+                                            <td>
+                                                @* TODO: implement submission feedback *@
+                                            </td>
+                                            <td class="text-end text-nowrap">
+                                                <button class="btn btn-sm @(expandedSubmissionId == sub.Id ? "btn-primary" : "btn-outline-primary")"
+                                                        title="@(expandedSubmissionId == sub.Id ? "Collapse" : "Review")"
+                                                        @onclick="() => ToggleSubmission(sub.Id)">
+                                                    <i class="bi bi-@(expandedSubmissionId == sub.Id ? "chevron-up" : "chat-left-text")"></i>
+                                                </button>
                                             </td>
                                         </tr>
+
+                                        @* ---- Expanded feedback panel ---- *@
+                                        @if (expandedSubmissionId == sub.Id)
+                                        {
+                                            <tr class="table-active">
+                                                <td colspan="7" class="pt-0">
+                                                    <div class="bg-white border rounded p-3 mt-1">
+                                                        <div class="row g-3">
+                                                            <div class="col-md-6">
+                                                                <p class="small fw-semibold text-muted mb-1">Submission Content</p>
+                                                                @if (!string.IsNullOrEmpty(sub.Body))
+                                                                {
+                                                                    <div class="border rounded p-2 bg-light small mb-2" style="white-space:pre-wrap;">@sub.Body</div>
+                                                                }
+                                                                
+                                                                @if (sub.Document is not null)
+                                                                {
+                                                                    <DocumentWithDownload Document="sub.Document" ShowDeleteButton="false" />
+                                                                }
+                                                                
+                                                                @if (string.IsNullOrEmpty(sub.Body) && sub.Document is null)
+                                                                {
+                                                                    <p class="text-muted small">No content provided.</p>
+                                                                }
+                                                            </div>
+                                                            <div class="col-md-6">
+                                                                <p class="small fw-semibold text-muted mb-1">Feedback</p>
+                                                                @if (loadingSubmissionDetailId == sub.Id)
+                                                                {
+                                                                    <div class="spinner-border spinner-border-sm text-primary" role="status"></div>
+                                                                }
+                                                                else if (submissionDetails.TryGetValue(sub.Id, out var detail))
+                                                                {
+                                                                    @if (detail.Comments.Any())
+                                                                    {
+                                                                        <div class="mb-3">
+                                                                            @foreach (var c in detail.Comments)
+                                                                            {
+                                                                                <div class="border rounded p-2 bg-light small mb-2">
+                                                                                    <div class="d-flex justify-content-between mb-1">
+                                                                                        <span class="fw-semibold">@c.AuthorName</span>
+                                                                                        <span class="text-muted" style="font-size: 0.75rem;">@c.CreatedAt.ToString("g")</span>
+                                                                                    </div>
+                                                                                    <div>@c.Text</div>
+                                                                                </div>
+                                                                            }
+                                                                        </div>
+                                                                    }
+                                                                    
+                                                                    <div class="d-flex flex-column gap-2">
+                                                                        <textarea class="form-control form-control-sm"
+                                                                                  rows="3"
+                                                                                  placeholder="Write feedback..."
+                                                                                  @bind="feedbackDrafts[sub.Id]"
+                                                                                  @bind:event="oninput"></textarea>
+                                                                        <button class="btn btn-sm btn-primary align-self-end"
+                                                                                disabled="@string.IsNullOrWhiteSpace(feedbackDrafts[sub.Id])"
+                                                                                @onclick="() => SendFeedbackAsync(sub.Id)">
+                                                                            <i class="bi bi-send me-1"></i>Send Feedback
+                                                                        </button>
+                                                                    </div>
+                                                                }
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        }
                                     }
-                                }
-                            </tbody>
-                        </table>
-                    </div>
-                }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+                </div>
             </div>
-        </div>
+        }
 
         @* ==============================
            DOCUMENTS SECTION
@@ -377,6 +415,8 @@
 
     // ---- Feedback drafts ----
     private Dictionary<int, string> feedbackDrafts = new();
+    private Dictionary<int, SubmissionDetailDto> submissionDetails = new();
+    private int? loadingSubmissionDetailId;
 
     // ---- Lifecycle ----
     protected override async Task OnInitializedAsync()
@@ -552,11 +592,57 @@
         }
     }
 
-    // ---- Submission actions ----
-
-    private void ToggleSubmission(int submissionId)
+    // ---- Toggle submission row ----
+    private async Task ToggleSubmission(int submissionId)
     {
-        expandedSubmissionId = expandedSubmissionId == submissionId ? null : submissionId;
+        if (expandedSubmissionId == submissionId)
+        {
+            expandedSubmissionId = null;
+            return;
+        }
+
+        expandedSubmissionId = submissionId;
+
+        if (!submissionDetails.ContainsKey(submissionId))
+        {
+            loadingSubmissionDetailId = submissionId;
+            StateHasChanged();
+            
+            var detail = await SubmissionService.GetSubmissionDetailByIdAsync(submissionId);
+            if (detail is not null)
+            {
+                submissionDetails[submissionId] = detail;
+            }
+            loadingSubmissionDetailId = null;
+        }
+
+        if (!feedbackDrafts.ContainsKey(submissionId))
+        {
+            feedbackDrafts[submissionId] = string.Empty;
+        }
+    }
+
+    private async Task SendFeedbackAsync(int submissionId)
+    {
+        if (!feedbackDrafts.TryGetValue(submissionId, out var draft) || string.IsNullOrWhiteSpace(draft))
+            return;
+
+        try
+        {
+            await SubmissionService.SubmitCommentAsync(submissionId, new SubmitCommentDto { CommentText = draft });
+            feedbackDrafts[submissionId] = string.Empty;
+            
+            // Reload the detailed submission to show the new comment
+            var detail = await SubmissionService.GetSubmissionDetailByIdAsync(submissionId);
+            if (detail is not null)
+            {
+                submissionDetails[submissionId] = detail;
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Failed to save feedback: {ex.Message}";
+        }
     }
 
     private async Task SaveDocumentAsync()
