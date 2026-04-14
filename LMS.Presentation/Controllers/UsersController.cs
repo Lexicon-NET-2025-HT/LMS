@@ -1,10 +1,10 @@
+using Domain.Models.Exceptions;
 using LMS.Shared.DTOs.User;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Service.Contracts;
 using Swashbuckle.AspNetCore.Annotations;
 using System.Security.Claims;
-using Domain.Models.Exceptions;
 
 namespace LMS.Presentation.Controllers;
 
@@ -94,7 +94,7 @@ public class UsersController : ControllerBase
         var (result, user) = await _serviceManager.UserService.CreateUserAsync(userDto, cancellationToken);
         // couldnt throw bc limitations in <Microsoft.AspNetCore.Mvc.Infrastructure.ProblemDetailsFactory>.CreateProblemDetails() (used in /LMS.API/Extensions/ExceptionMiddlewareExtetensions.cs)
         // if(!result.Succeeded) throw new BadRequestException(message:"Failed to create user", data:result.Errors.ToDictionary(err=>err.Code, err=>err.Description));
-        if(!result.Succeeded) return BadRequest(new BadRequestException(message:"Failed to create user", data:result.Errors.ToDictionary(err=>err.Code, err=>err.Description)));
+        if (!result.Succeeded) return BadRequest(new BadRequestException(message: "Failed to create user", data: result.Errors.ToDictionary(err => err.Code, err => err.Description)));
         return Created((string?)null, user);
     }
 
@@ -173,5 +173,15 @@ public class UsersController : ControllerBase
         }
         catch (KeyNotFoundException ex) { return NotFound(ex.Message); }
         catch (InvalidOperationException ex) { return BadRequest(ex.Message); }
+    }
+
+    // GET api/users/course/{courseId}/teachers
+    [Authorize(Roles = "Teacher,Admin,Student")]
+    [HttpGet("course/{courseId:int}/teachers")]
+    [SwaggerOperation(Summary = "Get teachers assigned to a course")]
+    public async Task<IActionResult> GetTeachersByCourse(int courseId, CancellationToken cancellationToken)
+    {
+        var result = await _serviceManager.UserService.GetTeachersByCourseAsync(courseId, cancellationToken);
+        return Ok(result);
     }
 }

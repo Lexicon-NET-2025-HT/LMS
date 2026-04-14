@@ -5,11 +5,11 @@
 <BbCard Class="@Class">
     <BbCardHeader Class="flex flex-row items-center justify-between space-y-0 pb-3">
         <BbCardTitle Class="text-sm font-semibold">
-            <i class="bi bi-people me-2"></i>@Title
+            <i class="bi bi-@(Role == "Teacher" ? "person-badge" : "people") me-2"></i>@ResolvedTitle
         </BbCardTitle>
-        @if (!isLoading && classmates.Count > 0)
+        @if (!isLoading && users.Count > 0)
         {
-            <BbBadge Variant="BadgeVariant.Secondary">@classmates.Count</BbBadge>
+            <BbBadge Variant="BadgeVariant.Secondary">@users.Count</BbBadge>
         }
     </BbCardHeader>
 
@@ -40,31 +40,29 @@
             </div>
         }
 
-        else if (!classmates.Any())
+        else if (!users.Any())
         {
-            <p class="text-muted px-3 py-3 text-sm mb-0">No other students enrolled yet.</p>
+            <p class="text-muted px-3 py-3 text-sm mb-0">@EmptyMessage</p>
         }
 
         else
         {
-            var visible = classmates.Take(MaxVisible).ToList();
-            var overflow = classmates.Count - visible.Count;
+            var visible  = users.Take(MaxVisible).ToList();
+            var overflow = users.Count - visible.Count;
 
             <BbScrollArea Class="max-h-[340px]">
                 <div class="divide-y">
-                    @foreach (var mate in visible)
+                    @foreach (var user in visible)
                     {
                         <div class="flex items-center gap-3 px-3 py-2">
-
                             <BbAvatar Class="h-8 w-8 flex-shrink-0">
                                 <BbAvatarFallback Class="bg-primary/10 text-primary text-xs font-semibold">
-                                    @GetInitials(mate.Name)
+                                    @GetInitials(user.Name)
                                 </BbAvatarFallback>
                             </BbAvatar>
-
                             <div class="flex-1 overflow-hidden">
-                                <p class="text-sm font-semibold truncate mb-0">@mate.Name</p>
-                                <p class="text-xs text-muted-foreground truncate mb-0">@mate.Email</p>
+                                <p class="text-sm font-semibold truncate mb-0">@user.Name</p>
+                                <p class="text-xs text-muted-foreground truncate mb-0">@user.Email</p>
                             </div>
                         </div>
                     }
@@ -72,7 +70,7 @@
                     @if (overflow > 0)
                     {
                         <p class="text-xs text-muted-foreground text-center py-2 mb-0">
-                            +@overflow more student@(overflow > 1 ? "s" : "")
+                            +@overflow more @(Role == "Teacher" ? "teacher" : "student")@(overflow > 1 ? "s" : "")
                         </p>
                     }
                 </div>
@@ -83,35 +81,36 @@
 </BbCard>
 
 @code {
-    /// <summary>The course whose enrolled students to display.</summary>
     [Parameter, EditorRequired]
     public int CourseId { get; set; }
 
-    /// <summary>Card title text.</summary>
     [Parameter]
-    public string Title { get; set; } = "Classmates";
+    public string Role { get; set; } = "Student";
 
-    /// <summary>Maximum rows to render before showing an overflow count.</summary>
+    [Parameter]
+    public string? Title { get; set; }
+
     [Parameter]
     public int MaxVisible { get; set; } = 10;
 
-    /// <summary>Number of skeleton rows shown while loading.</summary>
     [Parameter]
     public int SkeletonCount { get; set; } = 4;
 
-    /// <summary>Extra CSS classes forwarded to the root BbCard.</summary>
     [Parameter]
     public string? Class { get; set; }
 
-    private List<StudentDto> classmates = [];
+    private record UserDisplay(string Name, string Email);
+
+    private List<UserDisplay> users = [];
     private bool isLoading;
     private string? loadError;
 
+    private string ResolvedTitle => Title ?? (Role == "Teacher" ? "Teachers" : "Classmates");
+    private string AvatarClass   => Role == "Teacher" ? "bg-warning/10 text-warning" : "bg-primary/10 text-primary";
+    private string EmptyMessage  => Role == "Teacher" ? "No teachers assigned to this course yet." : "No other students enrolled yet.";
+
     protected override async Task OnParametersSetAsync()
-    {
-        // Re-fetch whenever CourseId changes (e.g. component reused in a loop).
-        await LoadAsync();
-    }
+        => await LoadAsync();
 
     private async Task LoadAsync()
     {
@@ -124,13 +123,21 @@
 
         try
         {
-            var result = await UserService.GetUsersByCourseAsync(CourseId);
-            classmates = result ?? [];
+            if (Role == "Teacher")
+            {
+                var result = await UserService.GetTeachersByCourseAsync(CourseId);
+                users = result?.Select(u => new UserDisplay(u.Name, u.Email)).ToList() ?? [];
+            }
+            else
+            {
+                var result = await UserService.GetUsersByCourseAsync(CourseId);
+                users = result?.Select(s => new UserDisplay(s.Name, s.Email)).ToList() ?? [];
+            }
         }
         catch (Exception ex)
         {
-            loadError = $"Could not load classmates. {ex.Message}";
-            classmates = [];
+            loadError = $"Could not load {ResolvedTitle.ToLower()}. {ex.Message}";
+            users = [];
         }
         finally
         {

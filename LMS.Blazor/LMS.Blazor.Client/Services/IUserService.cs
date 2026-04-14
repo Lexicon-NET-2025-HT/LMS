@@ -13,4 +13,5 @@ public interface IUserService
     Task<bool> RemoveUserFromCourseAsync(string userId, CancellationToken ct = default);
     Task<bool> DeleteUserAsync(string userId, CancellationToken ct = default);
     Task<UserDto?> UpdateUserAsync(string userId, UpdateUserDto dto, CancellationToken ct = default);
+    Task<List<UserDto>?> GetTeachersByCourseAsync(int courseId, CancellationToken ct = default);
 }

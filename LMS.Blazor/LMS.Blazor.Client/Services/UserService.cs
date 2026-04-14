@@ -46,4 +46,7 @@ public class UserService(IApiService apiService, ILogger<UserService> logger) : 
 
     public Task<UserDto?> UpdateUserAsync(string userId, UpdateUserDto dto, CancellationToken ct = default)
     => _apiService.PutAsync<UserDto>($"{Base}/{userId}", dto, ct);
+
+    public Task<List<UserDto>?> GetTeachersByCourseAsync(int courseId, CancellationToken ct = default)
+    => _apiService.GetAsync<List<UserDto>>($"{Base}/course/{courseId}/teachers", ct);
 }

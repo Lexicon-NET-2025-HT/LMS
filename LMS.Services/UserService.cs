@@ -163,7 +163,7 @@ public class UserService : IUserService
 
     // commands
 
-    public async Task<(IdentityResult,UserDto?)> CreateUserAsync(CreateUserDto createUserDto, CancellationToken ct = default)
+    public async Task<(IdentityResult, UserDto?)> CreateUserAsync(CreateUserDto createUserDto, CancellationToken ct = default)
     {
         ArgumentNullException.ThrowIfNull(createUserDto);
 
@@ -293,5 +293,23 @@ public class UserService : IUserService
         await _db.Entry(user).Reference(u => u.Course).LoadAsync(ct);
 
         return await MapToUserDtoAsync(user);
+    }
+
+    public async Task<IEnumerable<UserDto>> GetTeachersByCourseAsync(int courseId, CancellationToken ct = default)
+    {
+        var course = await _db.Courses
+            .Include(c => c.CourseTeachers)
+                .ThenInclude(ct => ct.Teacher)
+            .FirstOrDefaultAsync(c => c.Id == courseId, ct);
+
+        if (course is null) return [];
+
+        return course.CourseTeachers.Select(ct => new UserDto
+        {
+            Id = ct.TeacherId,
+            Name = ct.Teacher?.UserName ?? string.Empty,
+            Email = ct.Teacher?.Email ?? string.Empty,
+            Role = "Teacher"
+        });
     }
 }
