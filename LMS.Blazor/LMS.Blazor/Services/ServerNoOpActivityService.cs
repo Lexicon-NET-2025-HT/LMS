@@ -1,4 +1,4 @@
-﻿using LMS.Blazor.Client.Services;
+using LMS.Blazor.Client.Services;
 using LMS.Shared.DTOs.Activity;
 using LMS.Shared.DTOs.Common;
 
@@ -11,6 +11,9 @@ public class ServerNoOpActivityService : IActivityService
 
     public Task<ActivityDto?> GetActivityByIdAsync(int id, CancellationToken ct = default)
         => Task.FromResult<ActivityDto?>(null);
+
+    public Task<ActivityDetailDto?> GetActivityDetailByIdAsync(int id, CancellationToken ct = default)
+        => Task.FromResult<ActivityDetailDto?>(null);
 
     public Task<ActivityDto?> CreateActivityAsync(CreateActivityDto dto, CancellationToken ct = default)
         => Task.FromResult<ActivityDto?>(null);

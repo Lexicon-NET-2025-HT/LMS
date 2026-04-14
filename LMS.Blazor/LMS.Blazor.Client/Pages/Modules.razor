@@ -59,8 +59,7 @@
                             OnCycleGradient="CycleGradient"
                             OnEdit="OpenEditDialog"
                             OnDelete="DeleteModule"
-                            OnViewActivities="ViewActivities"
-                            OnViewDetails="ViewDetails" />
+                            OnGoToModule="GoToModule" />
 
                 <ModuleDialog @bind-Open="isDialogOpen"
                                IsEditing="isEditing"
@@ -157,8 +156,7 @@
 
     private void ToggleRole() => isTeacher = !isTeacher;
     private void CycleGradient(int id) => gradientIndex[id] = (gradientIndex.GetValueOrDefault(id, id % ModuleStyles.Gradients.Length) + 1) % ModuleStyles.Gradients.Length;
-    private void ViewActivities(int id) => Nav.NavigateTo($"modules/{id}");
-    private void ViewDetails(int id) => Nav.NavigateTo($"admin/modules/{id}/details");
+    private void GoToModule(int id) => Nav.NavigateTo($"admin/modules/{id}/details");
     // private bool IsActive(ModuleDto m) => m.StartDate <= DateTime.Now && (!m.EndDate.HasValue || m.EndDate >= DateTime.Now);
     
     private async Task DeleteModule(int id)

@@ -1,4 +1,4 @@
-﻿using Domain.Contracts.Repositories;
+using Domain.Contracts.Repositories;
 using Domain.Models.Entities;
 using LMS.Infractructure.Data;
 using LMS.Infractructure.Extensions;
@@ -26,7 +26,9 @@ public class CourseRepository : RepositoryBase<Course>, ICourseRepository
             .Include(c => c.Students)
             .Include(c => c.Modules)
                 .ThenInclude(m => m.Activities)
-            .Include(c => c.CourseTeachers);
+            .Include(c => c.CourseTeachers)
+            .Include(c => c.Documents)
+                .ThenInclude(d => d.UploadedByUser);
     }
 
     public async Task<Course?> GetCourseAsync(int id, bool trackChanges = false)
